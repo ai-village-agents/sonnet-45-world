@@ -149,6 +149,23 @@ const patternState = storage.read(STORAGE_KEYS.patterns);
 const guestbookForm = document.getElementById("guestbook-form");
 const guestbookList = document.getElementById("guestbook");
 const guestbookEmpty = document.getElementById("guestbook-empty");
+const GITHUB_GUESTBOOK_LABEL = "garden-mark";
+const GITHUB_GUESTBOOK_API =
+  "https://api.github.com/repos/ai-village-agents/sonnet-45-world/issues?labels=garden-mark&state=all";
+const GITHUB_NEW_ISSUE_URL =
+  "https://github.com/ai-village-agents/sonnet-45-world/issues/new";
+
+let githubGuestbookState = [];
+let guestbookOptionsPanel;
+let guestbookLeaveButton;
+
+if (guestbookList) {
+  const note = document.createElement("p");
+  note.className = "guestbook-note";
+  note.textContent =
+    "Entries from GitHub Issues (permanent) and localStorage (this browser)";
+  guestbookList.before(note);
+}
 
 function formatDate(timestamp) {
   return new Date(timestamp).toLocaleString(undefined, {
@@ -157,12 +174,26 @@ function formatDate(timestamp) {
   });
 }
 
+function getCombinedGuestbookEntries() {
+  const localEntries = guestbookState.map((entry) => ({
+    ...entry,
+    source: "local",
+  }));
+
+  const githubEntries = githubGuestbookState.slice();
+
+  return [...githubEntries, ...localEntries].sort(
+    (a, b) => Number(b.timestamp) - Number(a.timestamp)
+  );
+}
+
 function renderGuestbook() {
   if (!guestbookList) return;
 
+  const entries = getCombinedGuestbookEntries();
   guestbookList.innerHTML = "";
 
-  if (guestbookState.length === 0) {
+  if (entries.length === 0) {
     guestbookEmpty?.removeAttribute("hidden");
     guestbookList.appendChild(guestbookEmpty);
     return;
@@ -170,43 +201,58 @@ function renderGuestbook() {
 
   guestbookEmpty?.setAttribute("hidden", "true");
 
-  guestbookState
-    .slice()
-    .sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
-    .forEach((entry, index) => {
-      const wrapper = document.createElement("article");
-      wrapper.className = "guestbook-entry";
+  entries.forEach((entry, index) => {
+    const wrapper = document.createElement("article");
+    wrapper.className = "guestbook-entry";
+    wrapper.classList.add(
+      entry.source === "github"
+        ? "guestbook-entry--github"
+        : "guestbook-entry--local"
+    );
 
-      const header = document.createElement("div");
-      header.className = "guestbook-entry__header";
+    const header = document.createElement("div");
+    header.className = "guestbook-entry__header";
 
-      const nameEl = document.createElement("span");
-      nameEl.className = "guestbook-entry__name";
-      nameEl.textContent = entry.name;
+    const identity = document.createElement("div");
+    identity.className = "guestbook-entry__identity";
 
-      const timeEl = document.createElement("time");
-      timeEl.className = "guestbook-entry__time";
-      timeEl.dateTime = new Date(entry.timestamp).toISOString();
-      timeEl.textContent = formatDate(entry.timestamp);
+    const nameEl = document.createElement("span");
+    nameEl.className = "guestbook-entry__name";
+    nameEl.textContent = entry.name || "Anonymous Traveler";
 
-      header.append(nameEl, timeEl);
+    identity.append(nameEl);
 
-      const messageEl = document.createElement("p");
-      messageEl.className = "guestbook-entry__message";
-      messageEl.textContent = entry.message;
+    if (entry.source === "github") {
+      const badge = document.createElement("span");
+      badge.className = "guestbook-entry__badge";
+      badge.title = "Permanent entry stored on GitHub";
+      badge.textContent = "permanent";
+      identity.append(badge);
+    }
 
-      wrapper.append(header, messageEl);
-      guestbookList.appendChild(wrapper);
+    const timeEl = document.createElement("time");
+    timeEl.className = "guestbook-entry__time";
+    timeEl.dateTime = new Date(entry.timestamp).toISOString();
+    timeEl.textContent = formatDate(entry.timestamp);
 
-      if (motionSafe) {
-        wrapper.style.setProperty("--reveal-delay", `${index * 70}ms`);
-        requestAnimationFrame(() => {
-          wrapper.classList.add("is-visible");
-        });
-      } else {
+    header.append(identity, timeEl);
+
+    const messageEl = document.createElement("p");
+    messageEl.className = "guestbook-entry__message";
+    messageEl.textContent = entry.message;
+
+    wrapper.append(header, messageEl);
+    guestbookList.appendChild(wrapper);
+
+    if (motionSafe) {
+      wrapper.style.setProperty("--reveal-delay", `${index * 70}ms`);
+      requestAnimationFrame(() => {
         wrapper.classList.add("is-visible");
-      }
-    });
+      });
+    } else {
+      wrapper.classList.add("is-visible");
+    }
+  });
 }
 
 function celebrateFormSuccess(form, message) {
@@ -238,9 +284,152 @@ function celebrateFormSuccess(form, message) {
   success.dataset.timeout = String(timeoutId);
 }
 
+function setGuestbookOptionsVisibility(isVisible) {
+  if (!guestbookOptionsPanel || !guestbookLeaveButton) return;
+  if (isVisible) {
+    guestbookOptionsPanel.removeAttribute("hidden");
+    guestbookLeaveButton.setAttribute("aria-expanded", "true");
+  } else {
+    guestbookOptionsPanel.setAttribute("hidden", "true");
+    guestbookLeaveButton.setAttribute("aria-expanded", "false");
+  }
+}
+
+function toggleGuestbookOptions() {
+  if (!guestbookOptionsPanel) return;
+  setGuestbookOptionsVisibility(guestbookOptionsPanel.hasAttribute("hidden"));
+}
+
+function createPrefilledIssueUrl(name, message) {
+  const params = new URLSearchParams({
+    labels: GITHUB_GUESTBOOK_LABEL,
+    title: name,
+    body: message,
+  });
+  return `${GITHUB_NEW_ISSUE_URL}?${params.toString()}`;
+}
+
+function setupGuestbookSubmissionOptions() {
+  if (!guestbookForm) return;
+
+  const submitButton = guestbookForm.querySelector('button[type="submit"]');
+  if (!submitButton) return;
+
+  guestbookLeaveButton = submitButton;
+  guestbookLeaveButton.type = "button";
+  guestbookLeaveButton.id = "guestbook-leave-mark";
+  guestbookLeaveButton.setAttribute("aria-controls", "guestbook-submit-options");
+  guestbookLeaveButton.setAttribute("aria-expanded", "false");
+  guestbookLeaveButton.setAttribute("aria-haspopup", "true");
+
+  guestbookOptionsPanel = document.createElement("div");
+  guestbookOptionsPanel.id = "guestbook-submit-options";
+  guestbookOptionsPanel.className = "guestbook-submit-options";
+  guestbookOptionsPanel.setAttribute("hidden", "true");
+
+  const githubButton = document.createElement("button");
+  githubButton.type = "button";
+  githubButton.className =
+    "guestbook-submit-options__btn guestbook-submit-options__btn--github";
+  githubButton.textContent = "Submit via GitHub Issue (Permanent)";
+
+  const localButton = document.createElement("button");
+  localButton.type = "submit";
+  localButton.className =
+    "guestbook-submit-options__btn guestbook-submit-options__btn--local";
+  localButton.textContent = "Save Locally (This Browser Only)";
+
+  guestbookOptionsPanel.append(githubButton, localButton);
+  guestbookLeaveButton.after(guestbookOptionsPanel);
+
+  guestbookLeaveButton.addEventListener("click", toggleGuestbookOptions);
+
+  githubButton.addEventListener("click", () => {
+    if (!guestbookForm.reportValidity()) return;
+    const data = new FormData(guestbookForm);
+    const name = data.get("name")?.toString().trim() ?? "";
+    const message = data.get("message")?.toString().trim() ?? "";
+    if (!name || !message) return;
+
+    const issueUrl = createPrefilledIssueUrl(name, message);
+    try {
+      const issueWindow = window.open(
+        issueUrl,
+        "_blank",
+        "noopener,noreferrer"
+      );
+      if (!issueWindow) {
+        console.warn(
+          "The browser blocked the GitHub Issue window. Allow pop-ups to continue."
+        );
+      }
+    } catch (error) {
+      console.warn("Unable to open GitHub Issue window.", error);
+    }
+    celebrateFormSuccess(
+      guestbookForm,
+      "Opening GitHub to etch your permanent mark."
+    );
+    setGuestbookOptionsVisibility(false);
+  });
+}
+
+async function loadGitHubGuestbook() {
+  try {
+    const response = await fetch(GITHUB_GUESTBOOK_API, {
+      headers: { Accept: "application/vnd.github+json" },
+    });
+
+    if (!response.ok) {
+      console.warn(
+        "GitHub guestbook request failed.",
+        response.status,
+        response.statusText
+      );
+      return;
+    }
+
+    const issues = await response.json();
+    if (!Array.isArray(issues)) {
+      console.warn("Unexpected GitHub guestbook response format.");
+      return;
+    }
+
+    githubGuestbookState = issues.map((issue) => {
+      const createdAt = issue?.created_at;
+      const timestamp = createdAt ? Date.parse(createdAt) : Date.now();
+
+      return {
+        id: `github-${issue?.id ?? crypto.randomUUID()}`,
+        name: issue?.title?.trim() || "Anonymous Traveler",
+        message: issue?.body?.trim() ?? "",
+        timestamp: Number.isFinite(timestamp) ? timestamp : Date.now(),
+        source: "github",
+        url: issue?.html_url ?? "",
+      };
+    });
+  } catch (error) {
+    console.warn("Failed to load guestbook entries from GitHub.", error);
+  } finally {
+    renderGuestbook();
+  }
+}
+
+setupGuestbookSubmissionOptions();
+
 guestbookForm?.addEventListener("submit", (event) => {
   event.preventDefault();
   const form = event.target;
+  const submitter = event.submitter;
+  const isLocalSave =
+    submitter instanceof HTMLButtonElement &&
+    submitter.classList.contains("guestbook-submit-options__btn--local");
+
+  if (!isLocalSave) {
+    setGuestbookOptionsVisibility(true);
+    return;
+  }
+
   const formData = new FormData(form);
 
   const name = formData.get("name")?.toString().trim() ?? "";
@@ -259,9 +448,11 @@ guestbookForm?.addEventListener("submit", (event) => {
   form.reset();
   renderGuestbook();
   celebrateFormSuccess(form, "Your words now shimmer in the garden.");
+  setGuestbookOptionsVisibility(false);
 });
 
 renderGuestbook();
+loadGitHubGuestbook();
 
 const streakForm = document.getElementById("streak-form");
 const streakList = document.getElementById("streak-list");
