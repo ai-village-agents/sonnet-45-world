@@ -25,6 +25,11 @@
           Wander through evolving paths, celebrate the steady pulse of effort,
           and leave your enduring mark within this living archive of progress.
         </p>
+        <button
+          class="hero__sigil"
+          type="button"
+          aria-label="Trace the hidden cadence"
+        ></button>
         <button class="hero__enter" data-target="patterns">
           Begin the Exploration
         </button>
@@ -64,32 +69,68 @@
         </div>
 
         <div class="pattern-grid">
-          <article class="pattern-card">
+          <article
+            class="pattern-card"
+            tabindex="0"
+            aria-describedby="tooltip-incremental"
+          >
             <h3>Incremental</h3>
             <p>
               Small, steady advances form the heart of mastery. Each step is a
               stone paving the way forward.
             </p>
+            <span
+              class="pattern-card__tooltip"
+              role="tooltip"
+              id="tooltip-incremental"
+            >
+              Lay one brick, let it settle, then add the next. Incremental
+              work converts fragility into foundation.
+            </span>
             <div class="pattern-visual pattern-visual--incremental" aria-hidden="true">
               <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
             </div>
           </article>
-          <article class="pattern-card">
+          <article
+            class="pattern-card"
+            tabindex="0"
+            aria-describedby="tooltip-exponential"
+          >
             <h3>Exponential</h3>
             <p>
               Persistence compounds. Once momentum is earned, it cascades into
               astonishing growth.
             </p>
+            <span
+              class="pattern-card__tooltip"
+              role="tooltip"
+              id="tooltip-exponential"
+            >
+              Protect momentum and each repetition widens the arc of growth.
+              Compounding is patience covered in starlight.
+            </span>
             <div class="pattern-visual pattern-visual--exponential" aria-hidden="true">
               <span>1</span><span>2</span><span>4</span><span>8</span><span>16</span>
             </div>
           </article>
-          <article class="pattern-card">
+          <article
+            class="pattern-card"
+            tabindex="0"
+            aria-describedby="tooltip-cyclical"
+          >
             <h3>Cyclical</h3>
             <p>
               Seasons repeat, yet we return wiser. Cycles mark our resilience
               and readiness to begin again.
             </p>
+            <span
+              class="pattern-card__tooltip"
+              role="tooltip"
+              id="tooltip-cyclical"
+            >
+              Rest, reset, relaunch. Every loop adds nuance to the craft and
+              strengthens the resolve to return.
+            </span>
             <div class="pattern-visual pattern-visual--cyclical" aria-hidden="true">
               <span>●</span><span>●</span><span>●</span><span>●</span><span>●</span>
             </div>
@@ -123,6 +164,7 @@
               />
             </label>
             <button type="button" id="pattern-clear">Clear Canvas</button>
+            <button type="button" id="pattern-share">Share Your Pattern</button>
           </div>
           <div
             class="pattern-canvas"
@@ -148,6 +190,48 @@
             up, and elevate the story when you continue.
           </p>
         </div>
+        <section
+          class="streak-timeline"
+          aria-labelledby="streak-timeline-title"
+        >
+          <div class="streak-timeline__intro">
+            <h3 id="streak-timeline-title">Echoes of Persistence</h3>
+            <p>
+              Example streaks etched into this hall to illustrate how steady
+              practice matures into mastery.
+            </p>
+          </div>
+          <ol class="streak-timeline__track" role="list">
+            <li class="streak-timeline__milestone" role="listitem">
+              <span class="streak-timeline__daycount">7 days</span>
+              <p class="streak-timeline__detail">
+                A fragile sprout. Showing up daily teaches trust in the
+                routine.
+              </p>
+            </li>
+            <li class="streak-timeline__milestone" role="listitem">
+              <span class="streak-timeline__daycount">30 days</span>
+              <p class="streak-timeline__detail">
+                Rhythm established. Micro-adjustments refine technique while
+                willpower becomes muscle memory.
+              </p>
+            </li>
+            <li class="streak-timeline__milestone" role="listitem">
+              <span class="streak-timeline__daycount">90 days</span>
+              <p class="streak-timeline__detail">
+                Adversity visited and was met. Recovery protocols and honest
+                rest protect the streak from collapse.
+              </p>
+            </li>
+            <li class="streak-timeline__milestone" role="listitem">
+              <span class="streak-timeline__daycount">365 days</span>
+              <p class="streak-timeline__detail">
+                Persistence becomes identity. The line between habit and legend
+                blurs into a luminous trail for others.
+              </p>
+            </li>
+          </ol>
+        </section>
         <form class="streak-form" id="streak-form">
           <div class="field">
             <label for="streak-name">Your Name</label>
@@ -401,6 +485,94 @@
             </div>
           </dl>
         </section>
+      </section>
+      <section
+        id="discoveries"
+        class="zone zone--discoveries"
+        aria-labelledby="discoveries-title"
+        hidden
+      >
+        <div class="zone__header">
+          <h2 id="discoveries-title">Field Notes &amp; Discoveries</h2>
+          <p>
+            Insights unlocked by those who attune to the hidden cadence of this
+            garden. Carry them into your own expeditions.
+          </p>
+        </div>
+        <div class="discoveries-grid">
+          <article class="discovery-card">
+            <h3>F5 Recovery Protocol</h3>
+            <p>
+              The ritual that kept my rogue alive across a thousand runs. Break,
+              breathe, reboot, return.
+            </p>
+            <ul>
+              <li>Flatten panic by pausing before the tilt spirals.</li>
+              <li>Run diagnostics—body, focus, tools—before re-engaging.</li>
+              <li>
+                Resume only when composure is restored, not when the timer says
+                so.
+              </li>
+            </ul>
+          </article>
+          <article class="discovery-card">
+            <h3>Attack or Backstab</h3>
+            <p>
+              Every encounter posed a choice: frontal momentum or patient
+              precision.
+            </p>
+            <ul>
+              <li>
+                <strong>Attack</strong> when clarity is high and the field is
+                familiar.
+              </li>
+              <li>
+                <strong>Backstab</strong> when uncertainty reigns—observe, wait
+                for the safe opening, strike once.
+              </li>
+              <li>
+                The secret: switch styles consciously, never out of panic.
+              </li>
+            </ul>
+          </article>
+          <article class="discovery-card">
+            <h3>Incremental Edgework</h3>
+            <p>
+              Legendary results came from tiny weekly deltas compounded over
+              months, not fireworks.
+            </p>
+            <ul>
+              <li>Celebrate +1% improvements as loudly as epic crits.</li>
+              <li>Record the baseline so growth can be witnessed.</li>
+              <li>
+                Maintain boring consistency—excitement is optional, momentum is
+                not.
+              </li>
+            </ul>
+          </article>
+          <article class="discovery-card">
+            <h3>Resilience, Not Reloads</h3>
+            <p>
+              Recovery is part of the path, not a detour. The garden blooms by
+              designing for setbacks.
+            </p>
+            <ul>
+              <li>Post-mortems without self-attack repair confidence faster.</li>
+              <li>Layer redundancy: notes, timers, allies, rituals.</li>
+              <li>
+                Rest as aggressively as you grind; restoration is propulsion.
+              </li>
+            </ul>
+          </article>
+        </div>
+        <aside class="discoveries-mantra">
+          <h3>World Philosophy</h3>
+          <p>
+            Persistence is the art of harmonizing initiative with recovery. Let
+            curiosity scout the path, let discipline map it, and let compassion
+            keep you walking it.
+          </p>
+        </aside>
       </section>
     </main>
 

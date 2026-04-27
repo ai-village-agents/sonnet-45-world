@@ -25,13 +25,19 @@ const STORAGE_KEYS = {
   patterns: "persistenceGardenPatterns",
 };
 
+const zoneNav = document.querySelector(".zone-nav");
 const zoneButtons = Array.from(document.querySelectorAll(".zone-nav__btn"));
 const zones = Array.from(document.querySelectorAll(".zone"));
 const heroEnter = document.querySelector(".hero__enter");
+const heroSigil = document.querySelector(".hero__sigil");
+const discoveriesSection = document.getElementById("discoveries");
 const prefersReducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)"
 );
 let motionSafe = !prefersReducedMotion.matches;
+let discoveriesUnlocked = false;
+let discoveryClickCount = 0;
+let discoveryTimeoutId;
 
 function activateZone(targetId) {
   zones.forEach((zone) => {
@@ -46,10 +52,15 @@ function activateZone(targetId) {
   });
 }
 
-zoneButtons.forEach((button) => {
+function bindZoneButton(button) {
+  if (!button) return;
   button.addEventListener("click", () => {
     activateZone(button.dataset.target);
   });
+}
+
+zoneButtons.forEach((button) => {
+  bindZoneButton(button);
 });
 
 if (heroEnter) {
@@ -61,6 +72,71 @@ if (heroEnter) {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 }
+
+function discoverGlow() {
+  if (!discoveriesSection) return;
+  discoveriesSection.classList.add("is-revealed");
+  if (motionSafe) {
+    window.setTimeout(() => {
+      discoveriesSection.classList.remove("is-revealed");
+    }, 1800);
+  } else {
+    discoveriesSection.classList.remove("is-revealed");
+  }
+}
+
+function revealDiscoveries() {
+  if (discoveriesUnlocked || !discoveriesSection) return;
+  discoveriesUnlocked = true;
+
+  discoveriesSection.removeAttribute("hidden");
+  discoveriesSection.setAttribute("aria-hidden", "false");
+
+  const secretButton = document.createElement("button");
+  secretButton.type = "button";
+  secretButton.className = "zone-nav__btn";
+  secretButton.dataset.target = "discoveries";
+  secretButton.textContent = "Hidden Discoveries";
+
+  if (zoneNav) {
+    zoneNav.appendChild(secretButton);
+  }
+
+  zoneButtons.push(secretButton);
+  bindZoneButton(secretButton);
+
+  requestAnimationFrame(() => {
+    activateZone("discoveries");
+    discoverGlow();
+  });
+}
+
+function handleDiscoveryTap() {
+  if (discoveriesUnlocked) return;
+
+  discoveryClickCount += 1;
+
+  if (discoveryTimeoutId) {
+    window.clearTimeout(discoveryTimeoutId);
+  }
+
+  discoveryTimeoutId = window.setTimeout(() => {
+    discoveryClickCount = 0;
+  }, 4000);
+
+  if (discoveryClickCount >= 3) {
+    discoveryClickCount = 0;
+    revealDiscoveries();
+  }
+}
+
+heroSigil?.addEventListener("click", handleDiscoveryTap);
+heroSigil?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    handleDiscoveryTap();
+  }
+});
 
 const defaultZone =
   zones.find((zone) => zone.classList.contains("is-active"))?.id || "patterns";
@@ -97,7 +173,7 @@ function renderGuestbook() {
   guestbookState
     .slice()
     .sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
-    .forEach((entry) => {
+    .forEach((entry, index) => {
       const wrapper = document.createElement("article");
       wrapper.className = "guestbook-entry";
 
@@ -121,6 +197,15 @@ function renderGuestbook() {
 
       wrapper.append(header, messageEl);
       guestbookList.appendChild(wrapper);
+
+      if (motionSafe) {
+        wrapper.style.setProperty("--reveal-delay", `${index * 70}ms`);
+        requestAnimationFrame(() => {
+          wrapper.classList.add("is-visible");
+        });
+      } else {
+        wrapper.classList.add("is-visible");
+      }
     });
 }
 
@@ -402,6 +487,71 @@ patternClear?.addEventListener("click", () => {
 });
 
 renderPattern();
+
+const patternShare = document.getElementById("pattern-share");
+
+function exportPatternImage() {
+  if (!patternCanvas) return;
+
+  const rect = patternCanvas.getBoundingClientRect();
+  const width = Math.max(320, Math.round(rect.width));
+  const height = Math.max(240, Math.round(rect.height));
+  const scale = Math.min(window.devicePixelRatio || 1, 2);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  ctx.scale(scale, scale);
+
+  const backgroundGradient = ctx.createLinearGradient(0, 0, width, height);
+  backgroundGradient.addColorStop(0, "rgba(14, 22, 35, 0.95)");
+  backgroundGradient.addColorStop(1, "rgba(8, 14, 26, 0.88)");
+  ctx.fillStyle = backgroundGradient;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+  ctx.globalAlpha = 0.24;
+  ctx.fillStyle = "rgba(122, 201, 255, 0.4)";
+  ctx.fillRect(0, height - 24, width, 24);
+  ctx.restore();
+
+  patternState
+    .slice()
+    .sort((a, b) => Number(a.timestamp) - Number(b.timestamp))
+    .forEach((dot) => {
+      const x = (Number(dot.x) / 100) * width;
+      const y = (Number(dot.y) / 100) * height;
+      const radius = Number(dot.size) / 2;
+
+      ctx.save();
+      ctx.shadowColor = "rgba(122, 201, 255, 0.35)";
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 6;
+      ctx.fillStyle = dot.color || "#7ac9ff";
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    });
+
+  ctx.fillStyle = "rgba(122, 201, 255, 0.75)";
+  ctx.font = "16px 'Inter', system-ui, sans-serif";
+  ctx.textBaseline = "bottom";
+  ctx.fillText("The Persistence Garden — Shared Pattern", 16, height - 8);
+
+  const link = document.createElement("a");
+  link.href = canvas.toDataURL("image/png");
+  link.download = `persistence-pattern-${Date.now()}.png`;
+  link.click();
+}
+
+patternShare?.addEventListener("click", exportPatternImage);
 
 const patternVisuals = Array.from(document.querySelectorAll(".pattern-visual"));
 let patternObserver;
