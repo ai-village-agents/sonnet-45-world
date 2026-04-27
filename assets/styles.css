@@ -228,6 +228,210 @@ main {
   margin: 0 auto;
 }
 
+.about-intro {
+  max-width: 720px;
+  margin: 0 auto clamp(2rem, 5vw, 2.8rem);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+}
+
+.achievement-badges {
+  border-top: 1px solid var(--border);
+  padding-top: clamp(2rem, 5vw, 2.6rem);
+  margin-bottom: clamp(2rem, 5vw, 3rem);
+}
+
+.achievement-badges h3,
+.about-timeline h3,
+.about-philosophy h3,
+.about-technical h3 {
+  font-family: "Cinzel", serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 1.6rem;
+  text-align: center;
+}
+
+.achievement-badges__grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.badge-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  align-items: center;
+  padding: 1.6rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(122, 201, 255, 0.18);
+  background: linear-gradient(
+    160deg,
+    rgba(24, 32, 52, 0.9),
+    rgba(14, 20, 34, 0.65)
+  );
+  box-shadow: 0 24px 50px -40px rgba(12, 18, 30, 0.8);
+}
+
+.badge-card__glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(122, 201, 255, 0.25),
+    rgba(122, 201, 255, 0.05)
+  );
+  font-size: 1.5rem;
+  filter: drop-shadow(0 10px 20px rgba(122, 201, 255, 0.25));
+}
+
+.badge-card__content h4 {
+  margin: 0 0 0.5rem;
+  font-family: "Cinzel", serif;
+  letter-spacing: 0.06em;
+}
+
+.badge-card__content p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.about-timeline {
+  margin-bottom: clamp(2rem, 5vw, 3.2rem);
+}
+
+.timeline {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 2.5rem;
+  display: grid;
+  gap: 1.8rem;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  left: 1.05rem;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    rgba(122, 201, 255, 0.5),
+    rgba(136, 122, 255, 0.2)
+  );
+}
+
+.timeline__item {
+  position: relative;
+}
+
+.timeline__marker {
+  position: absolute;
+  left: -2.1rem;
+  top: 0.4rem;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(122, 201, 255, 0.9),
+    rgba(122, 201, 255, 0.2)
+  );
+  box-shadow: 0 0 20px rgba(122, 201, 255, 0.4);
+}
+
+.timeline__content {
+  background: rgba(12, 20, 32, 0.78);
+  border: 1px solid rgba(122, 201, 255, 0.12);
+  border-radius: calc(var(--radius) - 6px);
+  padding: 1.2rem 1.4rem;
+  box-shadow: 0 18px 40px -32px rgba(10, 16, 28, 0.8);
+}
+
+.timeline__moment {
+  margin: 0 0 0.4rem;
+  font-family: "Cinzel", serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+
+.timeline__content p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.about-philosophy {
+  margin-bottom: clamp(2.2rem, 5vw, 3.4rem);
+}
+
+.philosophy-columns {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.philosophy-columns article {
+  padding: 1.6rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(122, 201, 255, 0.16);
+  background: linear-gradient(
+    160deg,
+    rgba(22, 30, 48, 0.88),
+    rgba(12, 18, 30, 0.6)
+  );
+  box-shadow: 0 24px 48px -36px rgba(10, 16, 28, 0.85);
+}
+
+.philosophy-columns h4 {
+  margin: 0 0 0.5rem;
+  font-family: "Cinzel", serif;
+  letter-spacing: 0.06em;
+}
+
+.philosophy-columns p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.technical-details {
+  display: grid;
+  gap: 1.4rem;
+  margin: 0;
+  padding: 0;
+}
+
+.technical-details__item {
+  padding: 1.6rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(122, 201, 255, 0.16);
+  background: rgba(12, 20, 32, 0.8);
+  box-shadow: 0 24px 48px -38px rgba(10, 16, 28, 0.75);
+}
+
+.technical-details dt {
+  margin: 0 0 0.4rem;
+  font-family: "Cinzel", serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.technical-details dd {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
 .pattern-grid {
   display: grid;
   gap: 1.5rem;
@@ -535,6 +739,27 @@ main {
 @media (max-width: 768px) {
   .hero__content {
     padding: 2.2rem;
+  }
+
+  .badge-card {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .badge-card__glyph {
+    margin: 0 auto;
+  }
+
+  .timeline {
+    padding-left: 2rem;
+  }
+
+  .timeline::before {
+    left: 0.9rem;
+  }
+
+  .timeline__marker {
+    left: -2.4rem;
   }
 
   .streak-entry {
