@@ -753,6 +753,193 @@ main {
   animation: cyclicalRotate 9s linear infinite;
 }
 
+.pattern-visual--fibonacci {
+  background: linear-gradient(90deg, rgba(255, 204, 120, 0.22), transparent);
+  justify-content: center;
+  gap: clamp(0.4rem, 1.6vw, 0.6rem);
+}
+
+.pattern-visual--fibonacci span {
+  --size: 1;
+  width: calc(var(--size) * 2.1px + 12px);
+  height: calc(var(--size) * 2.1px + 12px);
+  border-radius: 50%;
+  padding: 0;
+  min-width: auto;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 214, 140, 0.95), rgba(255, 170, 60, 0.35));
+  box-shadow: 0 0 24px rgba(255, 184, 90, 0.28), inset 0 0 0 1px rgba(255, 190, 105, 0.4);
+  color: rgba(35, 20, 8, 0.85);
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.pattern-visual--fibonacci.is-active span {
+  animation: fibonacciBloom 9s ease-in-out infinite;
+  animation-delay: calc(var(--order, 0) * 0.6s);
+  animation-fill-mode: both;
+}
+
+.pattern-visual--fibonacci span:nth-child(1) {
+  --size: 1;
+  --order: 0;
+}
+.pattern-visual--fibonacci span:nth-child(2) {
+  --size: 1;
+  --order: 1;
+}
+.pattern-visual--fibonacci span:nth-child(3) {
+  --size: 2;
+  --order: 2;
+}
+.pattern-visual--fibonacci span:nth-child(4) {
+  --size: 3;
+  --order: 3;
+}
+.pattern-visual--fibonacci span:nth-child(5) {
+  --size: 5;
+  --order: 4;
+}
+.pattern-visual--fibonacci span:nth-child(6) {
+  --size: 8;
+  --order: 5;
+}
+.pattern-visual--fibonacci span:nth-child(7) {
+  --size: 13;
+  --order: 6;
+}
+.pattern-visual--fibonacci span:nth-child(8) {
+  --size: 21;
+  --order: 7;
+}
+
+.pattern-visual--spiral {
+  position: relative;
+  height: clamp(140px, 20vw, 160px);
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(96, 232, 235, 0.22), transparent);
+  overflow: hidden;
+  transform-origin: center;
+}
+
+.pattern-visual--spiral span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  display: block;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(140, 255, 250, 0.95), rgba(30, 140, 160, 0.45));
+  box-shadow: 0 0 18px rgba(120, 240, 240, 0.32);
+  transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translateX(var(--radius, 0)) scale(0.65);
+  opacity: 0;
+  padding: 0;
+  min-width: auto;
+}
+
+.pattern-visual--spiral.is-active {
+  animation: spiralOrbit 20s linear infinite;
+}
+
+.pattern-visual--spiral.is-active span {
+  animation: spiralPulse 7s ease-in-out infinite;
+  animation-delay: calc(var(--order, 0) * 0.28s);
+  animation-fill-mode: both;
+}
+
+.pattern-visual--spiral span:nth-child(1) {
+  --radius: 14px;
+  --angle: 18deg;
+  --order: 0;
+}
+.pattern-visual--spiral span:nth-child(2) {
+  --radius: 22px;
+  --angle: 54deg;
+  --order: 1;
+}
+.pattern-visual--spiral span:nth-child(3) {
+  --radius: 32px;
+  --angle: 90deg;
+  --order: 2;
+}
+.pattern-visual--spiral span:nth-child(4) {
+  --radius: 42px;
+  --angle: 126deg;
+  --order: 3;
+}
+.pattern-visual--spiral span:nth-child(5) {
+  --radius: 54px;
+  --angle: 162deg;
+  --order: 4;
+}
+.pattern-visual--spiral span:nth-child(6) {
+  --radius: 66px;
+  --angle: 198deg;
+  --order: 5;
+}
+.pattern-visual--spiral span:nth-child(7) {
+  --radius: 78px;
+  --angle: 234deg;
+  --order: 6;
+}
+.pattern-visual--spiral span:nth-child(8) {
+  --radius: 92px;
+  --angle: 270deg;
+  --order: 7;
+}
+.pattern-visual--spiral span:nth-child(9) {
+  --radius: 106px;
+  --angle: 306deg;
+  --order: 8;
+}
+.pattern-visual--spiral span:nth-child(10) {
+  --radius: 122px;
+  --angle: 342deg;
+  --order: 9;
+}
+
+.pattern-visual--wave {
+  background: linear-gradient(90deg, rgba(200, 150, 255, 0.22), transparent);
+  justify-content: space-between;
+  gap: clamp(0.35rem, 1.5vw, 0.6rem);
+  padding-inline: clamp(0.8rem, 3vw, 1.1rem);
+}
+
+.pattern-visual--wave span {
+  width: clamp(0.45rem, 1.4vw, 0.7rem);
+  height: clamp(0.45rem, 1.4vw, 0.7rem);
+  border-radius: 50%;
+  display: block;
+  padding: 0;
+  min-width: auto;
+  background: radial-gradient(circle at 35% 35%, rgba(210, 175, 255, 0.95), rgba(130, 70, 200, 0.55));
+  box-shadow: 0 0 18px rgba(170, 120, 255, 0.25);
+  opacity: 0;
+  transform: translateY(18px) scale(0.7);
+}
+
+.pattern-visual--wave.is-active span {
+  animation: waveDrift 5.6s ease-in-out infinite;
+  animation-delay: calc(var(--order, 0) * 0.2s);
+  animation-fill-mode: both;
+}
+
+.pattern-visual--wave span:nth-child(1) { --order: 0; }
+.pattern-visual--wave span:nth-child(2) { --order: 1; }
+.pattern-visual--wave span:nth-child(3) { --order: 2; }
+.pattern-visual--wave span:nth-child(4) { --order: 3; }
+.pattern-visual--wave span:nth-child(5) { --order: 4; }
+.pattern-visual--wave span:nth-child(6) { --order: 5; }
+.pattern-visual--wave span:nth-child(7) { --order: 6; }
+.pattern-visual--wave span:nth-child(8) { --order: 7; }
+.pattern-visual--wave span:nth-child(9) { --order: 8; }
+.pattern-visual--wave span:nth-child(10) { --order: 9; }
+.pattern-visual--wave span:nth-child(11) { --order: 10; }
+.pattern-visual--wave span:nth-child(12) { --order: 11; }
+
 @keyframes incrementalReveal {
   0% {
     opacity: 0;
@@ -808,6 +995,88 @@ main {
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes fibonacciBloom {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+    box-shadow: inset 0 0 0 1px rgba(255, 214, 140, 0.1);
+  }
+  30%,
+  45% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 28px rgba(255, 190, 90, 0.35),
+      inset 0 0 0 1px rgba(255, 214, 140, 0.4);
+  }
+  70% {
+    opacity: 0.8;
+    transform: scale(1.08);
+    box-shadow: 0 0 20px rgba(255, 190, 90, 0.25);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+    box-shadow: inset 0 0 0 1px rgba(255, 190, 90, 0.08);
+  }
+}
+
+@keyframes spiralOrbit {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spiralPulse {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--angle, 0deg))
+      translateX(var(--radius, 0)) scale(0.55);
+  }
+  30%,
+  55% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--angle, 0deg))
+      translateX(var(--radius, 0)) scale(1);
+    box-shadow: 0 0 24px rgba(120, 240, 240, 0.4);
+  }
+  85% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) rotate(var(--angle, 0deg))
+      translateX(var(--radius, 0)) scale(0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--angle, 0deg))
+      translateX(var(--radius, 0)) scale(0.55);
+  }
+}
+
+@keyframes waveDrift {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.7);
+  }
+  25% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1.05);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translateY(6px) scale(0.95);
+  }
+  75% {
+    opacity: 0.85;
+    transform: translateY(-6px) scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.7);
   }
 }
 
