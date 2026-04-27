@@ -35,9 +35,14 @@ const prefersReducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)"
 );
 let motionSafe = !prefersReducedMotion.matches;
+const journeySection = document.getElementById("journey");
+const journeyNodes = Array.from(document.querySelectorAll(".journey-node"));
 let discoveriesUnlocked = false;
 let discoveryClickCount = 0;
 let discoveryTimeoutId;
+let journeyObserver;
+let journeyCards = [];
+let journeyCardsBound = false;
 
 function activateZone(targetId) {
   zones.forEach((zone) => {
@@ -776,7 +781,128 @@ function initPatternVisuals() {
   patternVisuals.forEach((visual) => patternObserver?.observe(visual));
 }
 
+function initJourneyTimeline() {
+  if (!journeyNodes.length) return;
+
+  if (journeyObserver) {
+    journeyObserver.disconnect();
+    journeyObserver = undefined;
+  }
+
+  journeyNodes.forEach((node, index) => {
+    const delay = motionSafe ? `${index * 120}ms` : "0ms";
+    node.style.setProperty("--journey-delay", delay);
+    if (motionSafe) {
+      node.classList.remove("is-visible");
+    } else {
+      node.classList.add("is-visible");
+    }
+  });
+
+  if (!journeySection || !motionSafe || !("IntersectionObserver" in window)) {
+    journeyNodes.forEach((node) => node.classList.add("is-visible"));
+    return;
+  }
+
+  journeyObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.target === journeySection && entry.isIntersecting) {
+          journeyNodes.forEach((node) => {
+            requestAnimationFrame(() => {
+              node.classList.add("is-visible");
+            });
+          });
+          journeyObserver?.disconnect();
+        }
+      });
+    },
+    { threshold: 0.4 }
+  );
+
+  journeyObserver.observe(journeySection);
+}
+
+function setJourneyCardExpansion(targetCard, shouldExpand) {
+  if (!journeyCards.length) return;
+
+  journeyCards.forEach((card) => {
+    const isTarget = card === targetCard && shouldExpand;
+    card.setAttribute("aria-expanded", String(isTarget));
+    card
+      .closest(".journey-node")
+      ?.classList.toggle("is-expanded", Boolean(isTarget));
+
+    const detailId = card.getAttribute("aria-controls");
+    if (!detailId) return;
+    const detail = document.getElementById(detailId);
+    if (detail) {
+      detail.setAttribute("aria-hidden", String(!isTarget));
+    }
+  });
+}
+
+function setupJourneyCardInteractions() {
+  if (journeyCardsBound || !journeyNodes.length) return;
+
+  journeyCards = journeyNodes
+    .map((node) => node.querySelector(".journey-node__card"))
+    .filter((card) => card instanceof HTMLElement);
+
+  if (!journeyCards.length) return;
+
+  journeyCards.forEach((card) => {
+    card.setAttribute("aria-expanded", "false");
+    card.closest(".journey-node")?.classList.remove("is-expanded");
+
+    const detailId = card.getAttribute("aria-controls");
+    if (detailId) {
+      const detail = document.getElementById(detailId);
+      if (detail) {
+        detail.setAttribute(
+          "aria-hidden",
+          detail.getAttribute("aria-hidden") ?? "true"
+        );
+      }
+    }
+
+    card.addEventListener("click", () => {
+      const isExpanded = card.getAttribute("aria-expanded") === "true";
+      setJourneyCardExpansion(card, !isExpanded);
+    });
+
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        const isExpanded = card.getAttribute("aria-expanded") === "true";
+        setJourneyCardExpansion(card, !isExpanded);
+      }
+    });
+  });
+
+  document.addEventListener(
+    "click",
+    (event) => {
+      if (!journeySection?.contains(event.target)) {
+        setJourneyCardExpansion(null, false);
+      }
+    },
+    { capture: true }
+  );
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      setJourneyCardExpansion(null, false);
+    }
+  });
+
+  setJourneyCardExpansion(null, false);
+  journeyCardsBound = true;
+}
+
 initPatternVisuals();
+initJourneyTimeline();
+setupJourneyCardInteractions();
 
 const manageMotionPreference = (event) => {
   motionSafe = !event.matches;
@@ -786,6 +912,7 @@ const manageMotionPreference = (event) => {
     initParticles();
   }
   initPatternVisuals();
+  initJourneyTimeline();
 };
 
 if (typeof prefersReducedMotion.addEventListener === "function") {
