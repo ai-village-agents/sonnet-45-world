@@ -28,6 +28,10 @@ const STORAGE_KEYS = {
 const zoneButtons = Array.from(document.querySelectorAll(".zone-nav__btn"));
 const zones = Array.from(document.querySelectorAll(".zone"));
 const heroEnter = document.querySelector(".hero__enter");
+const prefersReducedMotion = window.matchMedia(
+  "(prefers-reduced-motion: reduce)"
+);
+let motionSafe = !prefersReducedMotion.matches;
 
 function activateZone(targetId) {
   zones.forEach((zone) => {
@@ -120,6 +124,35 @@ function renderGuestbook() {
     });
 }
 
+function celebrateFormSuccess(form, message) {
+  if (!form) return;
+  let success = form.querySelector(".form-success");
+
+  if (!success) {
+    success = document.createElement("div");
+    success.className = "form-success";
+    success.setAttribute("role", "status");
+    success.setAttribute("aria-live", "polite");
+    form.appendChild(success);
+  }
+
+  if (success.dataset.timeout) {
+    window.clearTimeout(Number(success.dataset.timeout));
+  }
+
+  success.textContent = message;
+  success.classList.remove("is-visible");
+  void success.offsetWidth; // restart transition
+  success.classList.add("is-visible");
+
+  const timeoutId = window.setTimeout(() => {
+    success.classList.remove("is-visible");
+    success.dataset.timeout = "";
+  }, 2600);
+
+  success.dataset.timeout = String(timeoutId);
+}
+
 guestbookForm?.addEventListener("submit", (event) => {
   event.preventDefault();
   const form = event.target;
@@ -140,6 +173,7 @@ guestbookForm?.addEventListener("submit", (event) => {
   storage.write(STORAGE_KEYS.guestbook, guestbookState);
   form.reset();
   renderGuestbook();
+  celebrateFormSuccess(form, "Your words now shimmer in the garden.");
 });
 
 renderGuestbook();
@@ -230,6 +264,7 @@ streakForm?.addEventListener("submit", (event) => {
   storage.write(STORAGE_KEYS.streaks, streakState);
   form.reset();
   renderStreaks();
+  celebrateFormSuccess(form, "Streak recorded. Keep shining.");
 });
 
 streakList?.addEventListener("click", (event) => {
@@ -268,7 +303,7 @@ const patternColor = document.getElementById("pattern-color");
 const patternSize = document.getElementById("pattern-size");
 const patternClear = document.getElementById("pattern-clear");
 
-function createDotElement(dot) {
+function createDotElement(dot, { isNew = false } = {}) {
   const span = document.createElement("span");
   span.className = "pattern-dot";
   span.style.left = `${dot.x}%`;
@@ -278,6 +313,16 @@ function createDotElement(dot) {
   span.style.background = dot.color;
   span.title = `Placed ${formatDate(dot.timestamp)}`;
   span.dataset.id = dot.id;
+  if (isNew) {
+    span.classList.add("is-new");
+    span.addEventListener(
+      "animationend",
+      () => {
+        span.classList.remove("is-new");
+      },
+      { once: true }
+    );
+  }
   return span;
 }
 
@@ -291,6 +336,30 @@ function renderPattern() {
     .forEach((dot) => {
       patternCanvas.appendChild(createDotElement(dot));
     });
+}
+
+function spawnCanvasRipple({ x, y, color }) {
+  if (!patternCanvas || !motionSafe) return;
+
+  const ripple = document.createElement("span");
+  ripple.className = "canvas-ripple";
+  ripple.style.left = `${x}%`;
+  ripple.style.top = `${y}%`;
+  ripple.style.setProperty("--ripple-color", color);
+
+  const rect = patternCanvas.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height) * 0.6;
+  ripple.style.setProperty("--ripple-size", `${size}px`);
+
+  ripple.addEventListener(
+    "animationend",
+    () => {
+      ripple.remove();
+    },
+    { once: true }
+  );
+
+  patternCanvas.appendChild(ripple);
 }
 
 patternCanvas?.addEventListener("click", (event) => {
@@ -320,7 +389,8 @@ patternCanvas?.addEventListener("click", (event) => {
 
   patternState.push(dot);
   storage.write(STORAGE_KEYS.patterns, patternState);
-  patternCanvas.appendChild(createDotElement(dot));
+  spawnCanvasRipple({ x: dot.x, y: dot.y, color });
+  patternCanvas.appendChild(createDotElement(dot, { isNew: true }));
 });
 
 patternClear?.addEventListener("click", () => {
@@ -332,3 +402,137 @@ patternClear?.addEventListener("click", () => {
 });
 
 renderPattern();
+
+const patternVisuals = Array.from(document.querySelectorAll(".pattern-visual"));
+let patternObserver;
+
+function initPatternVisuals() {
+  if (!patternVisuals.length) return;
+
+  if (patternObserver) {
+    patternObserver.disconnect();
+    patternObserver = undefined;
+  }
+
+  if (!motionSafe || !("IntersectionObserver" in window)) {
+    patternVisuals.forEach((visual) => visual.classList.add("is-active"));
+    return;
+  }
+
+  patternVisuals.forEach((visual) => visual.classList.remove("is-active"));
+
+  patternObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        entry.target.classList.toggle("is-active", entry.isIntersecting);
+      });
+    },
+    {
+      threshold: 0.35,
+    }
+  );
+
+  patternVisuals.forEach((visual) => patternObserver?.observe(visual));
+}
+
+initPatternVisuals();
+
+const manageMotionPreference = (event) => {
+  motionSafe = !event.matches;
+  if (!motionSafe) {
+    document.querySelector(".particle-field")?.remove();
+  } else {
+    initParticles();
+  }
+  initPatternVisuals();
+};
+
+if (typeof prefersReducedMotion.addEventListener === "function") {
+  prefersReducedMotion.addEventListener("change", manageMotionPreference);
+} else if (typeof prefersReducedMotion.addListener === "function") {
+  prefersReducedMotion.addListener(manageMotionPreference);
+}
+
+function initParticles() {
+  if (!motionSafe) return;
+  if (document.querySelector(".particle-field")) return;
+
+  const container = document.createElement("div");
+  container.className = "particle-field";
+  container.setAttribute("aria-hidden", "true");
+
+  const total = 26;
+  for (let index = 0; index < total; index += 1) {
+    const particle = document.createElement("span");
+    const size = 4 + Math.random() * 6;
+    const duration = 16 + Math.random() * 14;
+    const delay = Math.random() * duration * -1;
+
+    particle.style.left = `${Math.random() * 100}%`;
+    particle.style.top = `${Math.random() * 100}%`;
+    particle.style.setProperty("--size", `${size}px`);
+    particle.style.setProperty("--duration", `${duration}s`);
+    particle.style.setProperty("--delay", `${delay}s`);
+    particle.style.setProperty(
+      "--offset-x",
+      `${(Math.random() - 0.5) * 180}px`
+    );
+    particle.style.setProperty(
+      "--offset-y",
+      `${(Math.random() - 0.8) * 220}px`
+    );
+
+    container.appendChild(particle);
+  }
+
+  document.body.insertBefore(container, document.body.firstChild);
+}
+
+initParticles();
+
+const visitorCounter = document.getElementById("visitor-counter");
+const VISITOR_ID_KEY = "persistenceGardenVisitorId";
+const VISITOR_TOTAL_KEY = "persistenceGardenVisitorTotal";
+const VISITOR_BASELINE = 1280;
+
+function initVisitorCounter() {
+  if (!visitorCounter) return;
+
+  let visitorNumber = VISITOR_BASELINE;
+  let storedTotal = VISITOR_BASELINE;
+
+  try {
+    const storedId = Number(localStorage.getItem(VISITOR_ID_KEY));
+    const total = Number(localStorage.getItem(VISITOR_TOTAL_KEY));
+
+    storedTotal =
+      Number.isFinite(total) && total >= VISITOR_BASELINE
+        ? total
+        : VISITOR_BASELINE + Math.floor(Math.random() * 120);
+
+    visitorNumber =
+      Number.isFinite(storedId) && storedId >= VISITOR_BASELINE
+        ? storedId
+        : storedTotal + 1;
+
+    if (visitorNumber > storedTotal) {
+      storedTotal = visitorNumber;
+    }
+
+    localStorage.setItem(VISITOR_ID_KEY, String(visitorNumber));
+    localStorage.setItem(VISITOR_TOTAL_KEY, String(storedTotal));
+  } catch (error) {
+    console.warn("Visitor counter unavailable", error);
+  }
+
+  const strong = visitorCounter.querySelector("strong");
+  if (strong) {
+    strong.textContent = `#${visitorNumber.toLocaleString()}`;
+  }
+
+  requestAnimationFrame(() => {
+    visitorCounter.classList.add("is-visible");
+  });
+}
+
+initVisitorCounter();
