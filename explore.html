@@ -2849,30 +2849,115 @@
         ctx.restore();
       }
 
-      function drawConstellations() {
+      function drawConstellations(time) {
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
         ctx.lineCap = 'round';
-        ctx.lineWidth = 1.6;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-        const margin = 120;
+
+        const margin = 160;
+        const shimmerMin = 0.15;
+        const shimmerMax = 0.3;
+        const centerPoint = { x: 2500, y: 2500 };
+
+        function computeShimmer(speed, offset) {
+          if (reduceMotion) {
+            return (shimmerMin + shimmerMax) * 0.5;
+          }
+          const phase = Math.sin(time * speed + offset);
+          return shimmerMin + ((phase + 1) * 0.5) * (shimmerMax - shimmerMin);
+        }
+
+        function drawConstellationSegment(from, to, color, width, speed, offset, dashPattern) {
+          const fromScreen = worldToScreen(from.x, from.y);
+          const toScreen = worldToScreen(to.x, to.y);
+          if (Math.max(fromScreen.x, toScreen.x) < -margin || Math.min(fromScreen.x, toScreen.x) > viewport.width + margin ||
+              Math.max(fromScreen.y, toScreen.y) < -margin || Math.min(fromScreen.y, toScreen.y) > viewport.height + margin) {
+            return;
+          }
+          const alpha = computeShimmer(speed, offset);
+          ctx.lineWidth = width;
+          ctx.strokeStyle = 'rgba(' + color + ', ' + alpha + ')';
+          ctx.setLineDash(dashPattern || []);
+          ctx.beginPath();
+          ctx.moveTo(fromScreen.x, fromScreen.y);
+          ctx.lineTo(toScreen.x, toScreen.y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        // Existing zone constellation connections with a gentle shimmer.
         zoneConstellationLinks.forEach(([fromName, toName]) => {
           const fromZone = zoneByName.get(fromName);
           const toZone = zoneByName.get(toName);
           if (!fromZone || !toZone) {
             return;
           }
-          const fromScreen = worldToScreen(fromZone.x, fromZone.y);
-          const toScreen = worldToScreen(toZone.x, toZone.y);
-          if (Math.max(fromScreen.x, toScreen.x) < -margin || Math.min(fromScreen.x, toScreen.x) > viewport.width + margin ||
-              Math.max(fromScreen.y, toScreen.y) < -margin || Math.min(fromScreen.y, toScreen.y) > viewport.height + margin) {
+          const shimmerOffset = (fromZone.x + fromZone.y + toZone.x + toZone.y) * 0.0002;
+          drawConstellationSegment(
+            { x: fromZone.x, y: fromZone.y },
+            { x: toZone.x, y: toZone.y },
+            '210, 220, 255',
+            1.6,
+            0.00055,
+            shimmerOffset
+          );
+        });
+
+        // Inner star pattern: radiate from the center to each zone in its own hue.
+        zones.forEach((zone, index) => {
+          const color = zone.colors && zone.colors.glow ? zone.colors.glow : '230, 235, 255';
+          const shimmerOffset = (centerPoint.x + centerPoint.y + zone.x + zone.y) * 0.00018 + index * 0.45;
+          drawConstellationSegment(
+            centerPoint,
+            { x: zone.x, y: zone.y },
+            color,
+            1.8,
+            0.00065 + (index % 3) * 0.00008,
+            shimmerOffset
+          );
+        });
+
+        // Sacred geometry triangles connecting alternating zones.
+        const sacredTriangles = [
+          ['Path of Patterns', 'Hall of Persistence', 'RPG Journey'],
+          ['Garden of Marks', 'Portal Garden', 'About Garden']
+        ];
+        sacredTriangles.forEach((triangle, triIndex) => {
+          const vertices = triangle.map((name) => zoneByName.get(name)).filter(Boolean);
+          if (vertices.length !== 3) {
             return;
           }
-          ctx.beginPath();
-          ctx.moveTo(fromScreen.x, fromScreen.y);
-          ctx.lineTo(toScreen.x, toScreen.y);
-          ctx.stroke();
+          for (let i = 0; i < vertices.length; i++) {
+            const fromZone = vertices[i];
+            const toZone = vertices[(i + 1) % vertices.length];
+            const shimmerSpeed = 0.0005 + triIndex * 0.00007;
+            const shimmerOffset = (fromZone.x * 0.0002 + fromZone.y * 0.00015 + toZone.x * 0.00017) + triIndex * 0.8;
+            drawConstellationSegment(
+              { x: fromZone.x, y: fromZone.y },
+              { x: toZone.x, y: toZone.y },
+              '235, 210, 255',
+              1.9,
+              shimmerSpeed,
+              shimmerOffset
+            );
+          }
         });
+
+        // Circular orbit ring around the center with dotted style.
+        const centerScreen = worldToScreen(centerPoint.x, centerPoint.y);
+        const orbitRadius = 1800;
+        if (centerScreen.x + orbitRadius >= -margin && centerScreen.x - orbitRadius <= viewport.width + margin &&
+            centerScreen.y + orbitRadius >= -margin && centerScreen.y - orbitRadius <= viewport.height + margin) {
+          const orbitShimmer = computeShimmer(0.00038, 2.2);
+          ctx.lineWidth = 1.4;
+          ctx.strokeStyle = 'rgba(210, 225, 255, ' + orbitShimmer + ')';
+          ctx.setLineDash([2, 16]);
+          ctx.beginPath();
+          ctx.arc(centerScreen.x, centerScreen.y, orbitRadius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
         ctx.restore();
       }
 
