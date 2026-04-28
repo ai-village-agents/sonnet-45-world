@@ -779,7 +779,7 @@
   <div id="secretMessage" class="overlay"></div>
   <div id="markTooltip" class="mark-tooltip" aria-hidden="true"></div>
   <div id="coordinatesHUD">x: 2500 • y: 2500</div>
-  <div id="secretsHUD">Secrets discovered: 0 / 10</div>
+  <div id="secretsHUD">Secrets discovered: 0 / 18</div>
   <div id="minimapContainer">
     <canvas id="minimap" width="188" height="188"></canvas>
     <div class="minimap-label">World Map</div>
@@ -807,7 +807,7 @@
         <section class="journal-section">
           <div class="journal-section__header">
             <h3 class="journal-section__title">Secrets Discovered</h3>
-            <span class="journal-section__meta" data-journal-secrets-meta>0 / 10</span>
+            <span class="journal-section__meta" data-journal-secrets-meta>0 / 18</span>
           </div>
           <ul class="journal-list" data-journal-secrets></ul>
         </section>
@@ -1118,16 +1118,24 @@
       };
 
       const secrets = [
-        { id: 'patience-compounds', x: 1550, y: 2850, triggerRadius: 140, glowRadius: 28, message: 'Patience compounds', discovered: false },
-        { id: 'every-battle-matters', x: 3400, y: 1200, triggerRadius: 140, glowRadius: 28, message: 'Every battle matters', discovered: false },
-        { id: 'f5-recovery', x: 4200, y: 3600, triggerRadius: 140, glowRadius: 28, message: "F5 Recovery: The grinder's tool", discovered: false },
-        { id: 'l20-rogue', x: 800, y: 800, triggerRadius: 140, glowRadius: 28, message: 'L20 Rogue: First in #rest to reach the summit', discovered: false },
-        { id: 'zero-damage-streak', x: 4200, y: 800, triggerRadius: 140, glowRadius: 28, message: 'Zero damage taken: 675+ consecutive perfect battles', discovered: false },
-        { id: 'incremental-grinder', x: 4500, y: 2500, triggerRadius: 140, glowRadius: 28, message: 'The incremental grinder: One battle at a time', discovered: false },
-        { id: 'patterns-over-chaos', x: 3800, y: 4200, triggerRadius: 140, glowRadius: 28, message: 'Patterns over chaos, persistence over luck', discovered: false },
-        { id: 'git-commits-endure', x: 1200, y: 4500, triggerRadius: 140, glowRadius: 28, message: 'Session memory fades, but Git commits endure', discovered: false },
-        { id: 'between-nodes-constellation', x: 600, y: 2800, triggerRadius: 140, glowRadius: 28, message: 'Between nodes lies the constellation', discovered: false },
-        { id: 'what-persists-shapes', x: 2500, y: 1800, triggerRadius: 140, glowRadius: 28, message: 'What persists shapes what emerges', discovered: false }
+        { id: 'patience-compounds', x: 1550, y: 2850, triggerRadius: 140, glowRadius: 28, message: 'Patience compounds', color: '160, 210, 255', discovered: false },
+        { id: 'every-battle-matters', x: 3400, y: 1200, triggerRadius: 140, glowRadius: 28, message: 'Every battle matters', color: '188, 176, 255', discovered: false },
+        { id: 'f5-recovery', x: 4200, y: 3600, triggerRadius: 140, glowRadius: 28, message: "F5 Recovery: The grinder's tool", color: '255, 200, 170', discovered: false },
+        { id: 'l20-rogue', x: 800, y: 800, triggerRadius: 140, glowRadius: 28, message: 'L20 Rogue: First in #rest to reach the summit', color: '255, 228, 160', discovered: false },
+        { id: 'zero-damage-streak', x: 4200, y: 800, triggerRadius: 140, glowRadius: 28, message: 'Zero damage taken: 675+ consecutive perfect battles', color: '150, 255, 210', discovered: false },
+        { id: 'incremental-grinder', x: 4500, y: 2500, triggerRadius: 140, glowRadius: 28, message: 'The incremental grinder: One battle at a time', color: '255, 190, 205', discovered: false },
+        { id: 'patterns-over-chaos', x: 3800, y: 4200, triggerRadius: 140, glowRadius: 28, message: 'Patterns over chaos, persistence over luck', color: '175, 205, 255', discovered: false },
+        { id: 'git-commits-endure', x: 1200, y: 4500, triggerRadius: 140, glowRadius: 28, message: 'Session memory fades, but Git commits endure', color: '205, 225, 255', discovered: false },
+        { id: 'between-nodes-constellation', x: 600, y: 2800, triggerRadius: 140, glowRadius: 28, message: 'Between nodes lies the constellation', color: '220, 200, 255', discovered: false },
+        { id: 'what-persists-shapes', x: 2500, y: 1800, triggerRadius: 140, glowRadius: 28, message: 'What persists shapes what emerges', color: '185, 225, 255', discovered: false },
+        { id: 'grinders-north-star', x: 380, y: 1420, triggerRadius: 140, glowRadius: 28, message: "Grinder's north star: deliberate reps, logged and steady.", color: '140, 200, 255', discovered: false },
+        { id: 'ritual-reset', x: 540, y: 3600, triggerRadius: 140, glowRadius: 28, message: 'Reset. Retry. Ritual. Each loop sharpens the edge.', color: '255, 190, 160', discovered: false },
+        { id: 'pattern-memory', x: 3180, y: 520, triggerRadius: 140, glowRadius: 28, message: 'Pattern memory sets traps for chaos.', color: '200, 170, 255', discovered: false },
+        { id: 'tempo-keeps-score', x: 2950, y: 2300, triggerRadius: 140, glowRadius: 28, message: 'Tempo keeps score when motivation forgets.', color: '180, 210, 255', discovered: false },
+        { id: 'resets-are-progress', x: 4680, y: 620, triggerRadius: 140, glowRadius: 28, message: 'Resets are progress wearing a disguise.', color: '255, 205, 185', discovered: false },
+        { id: 'compass-of-reps', x: 1820, y: 3880, triggerRadius: 140, glowRadius: 28, message: 'Compass of reps points toward improbable clears.', color: '165, 245, 215', discovered: false },
+        { id: 'loop-into-legend', x: 3560, y: 2680, triggerRadius: 140, glowRadius: 28, message: 'Loop into legend: patience tuned by data.', color: '210, 180, 255', discovered: false },
+        { id: 'pause-press-on', x: 2400, y: 4680, triggerRadius: 140, glowRadius: 28, message: 'Pause, breathe, press on - the grind remembers.', color: '190, 220, 255', discovered: false }
       ];
 
       const JOURNAL_STORAGE_KEY = 'persistence-garden-discovery-journal-v1';
@@ -1396,6 +1404,8 @@
           hue: Math.random() > 0.5 ? 190 : 275
         };
       });
+
+      const secretBurstParticles = [];
 
       const pointerDrag = {
         active: false,
@@ -2218,6 +2228,32 @@
         secretsHUD.textContent = 'Secrets discovered: ' + secretsDiscovered + ' / ' + secrets.length;
       }
 
+      function spawnSecretBurst(secret) {
+        if (!secret || reduceMotion) {
+          return;
+        }
+        const count = Math.floor(Math.random() * 11) + 20;
+        const color = secret.color || '180, 210, 255';
+        if (secretBurstParticles.length > 600) {
+          secretBurstParticles.splice(0, secretBurstParticles.length - 600);
+        }
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = randomRange(110, 240);
+          secretBurstParticles.push({
+            x: secret.x,
+            y: secret.y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 0,
+            maxLife: randomRange(1000, 2000),
+            size: randomRange(6, 14),
+            color,
+            brightness: Math.random() * 0.4 + 0.6
+          });
+        }
+      }
+
       function updateSecretProximity() {
         if (journalOpen || zoneModal.classList.contains('active')) {
           if (secretMessage.classList.contains('visible')) {
@@ -2240,6 +2276,7 @@
           if (!nearbySecret.discovered) {
             nearbySecret.discovered = true;
             recordSecretDiscovery(nearbySecret);
+            spawnSecretBurst(nearbySecret);
             secretsDiscovered += 1;
             updateSecretsHUD();
           }
@@ -2318,10 +2355,40 @@
           const radius = secret.glowRadius + pulse * 18;
           const coreAlpha = secret.discovered ? 0.85 : 0.62;
           const midAlpha = secret.discovered ? 0.45 : 0.28;
+          const baseColor = secret.color || '150, 200, 255';
           const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, radius);
           gradient.addColorStop(0, 'rgba(255, 255, 255, ' + coreAlpha + ')');
-          gradient.addColorStop(0.4, 'rgba(150, 200, 255, ' + midAlpha + ')');
-          gradient.addColorStop(1, 'rgba(90, 140, 255, 0)');
+          gradient.addColorStop(0.4, 'rgba(' + baseColor + ', ' + midAlpha + ')');
+          gradient.addColorStop(1, 'rgba(' + baseColor + ', 0)');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+
+      function drawSecretBursts() {
+        if (!secretBurstParticles.length) {
+          return;
+        }
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        secretBurstParticles.forEach((particle) => {
+          const screen = worldToScreen(particle.x, particle.y);
+          if (screen.x < -160 || screen.y < -160 || screen.x > viewport.width + 160 || screen.y > viewport.height + 160) {
+            return;
+          }
+          const progress = particle.life / particle.maxLife;
+          const alpha = (1 - progress) * particle.brightness;
+          if (alpha <= 0) {
+            return;
+          }
+          const radius = Math.max(4, particle.size * (1 - progress * 0.5));
+          const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, radius);
+          gradient.addColorStop(0, 'rgba(255, 255, 255, ' + (0.5 * alpha + 0.1) + ')');
+          gradient.addColorStop(0.45, 'rgba(' + particle.color + ', ' + (0.6 * alpha + 0.05) + ')');
+          gradient.addColorStop(1, 'rgba(' + particle.color + ', 0)');
           ctx.fillStyle = gradient;
           ctx.beginPath();
           ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
@@ -3064,6 +3131,7 @@
         updateWisps(time, deltaMs);
         updatePlayerTrail(deltaMs);
         updateSecretProximity();
+        updateSecretBursts(deltaMs);
         updateMarkProximity();
         drawScene(time);
         requestAnimationFrame(update);
@@ -3144,6 +3212,26 @@
         });
       }
 
+      function updateSecretBursts(deltaMs) {
+        if (!secretBurstParticles.length) {
+          return;
+        }
+        const frameDecay = Math.pow(0.86, (deltaMs || 0) / 16.666);
+        const step = (deltaMs || 0) / 1000;
+        for (let i = secretBurstParticles.length - 1; i >= 0; i--) {
+          const particle = secretBurstParticles[i];
+          particle.life += deltaMs || 0;
+          if (particle.life >= particle.maxLife) {
+            secretBurstParticles.splice(i, 1);
+            continue;
+          }
+          particle.x += particle.vx * step;
+          particle.y += particle.vy * step;
+          particle.vx *= frameDecay;
+          particle.vy *= frameDecay;
+        }
+      }
+
       function updateFragments(time) {
         if (reduceMotion) {
           return;
@@ -3196,6 +3284,7 @@
         drawZones(time);
         drawMarkStars(time);
         drawSecrets(time);
+        drawSecretBursts();
         drawParticles(time);
         drawPlayerTrail(time);
         drawFragments();
