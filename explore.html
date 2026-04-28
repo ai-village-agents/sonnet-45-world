@@ -64,6 +64,31 @@
       opacity: 1;
     }
 
+    #zoneBadge {
+      position: fixed;
+      top: 116px;
+      right: 32px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      background: var(--zone-badge-bg, rgba(20, 30, 55, 0.85));
+      border: 1px solid var(--zone-badge-border, rgba(140, 180, 255, 0.45));
+      color: rgba(240, 244, 255, 0.95);
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0;
+      transform: translateY(-10px);
+      pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      box-shadow: 0 12px 28px rgba(10, 20, 45, 0.6);
+      z-index: 20;
+    }
+
+    #zoneBadge.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     .mark-tooltip {
       position: fixed;
       top: 0;
@@ -775,6 +800,7 @@
   <div id="titleOverlay" class="overlay">The Persistence Garden – Explorable World</div>
   <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • J - Journal • Tap A for audio <span id="audioIndicator" role="status" aria-live="polite">AUDIO: OFF</span></div>
   <div id="zoneOverlay" class="overlay"></div>
+  <div id="zoneBadge" role="status" aria-live="polite" aria-atomic="true"></div>
   <div id="enterOverlay" class="overlay"></div>
   <div id="secretMessage" class="overlay"></div>
   <div id="markTooltip" class="mark-tooltip" aria-hidden="true"></div>
@@ -842,6 +868,7 @@
       const minimapCanvas = document.getElementById('minimap');
       const minimapCtx = minimapCanvas.getContext('2d');
       const zoneOverlay = document.getElementById('zoneOverlay');
+      const zoneBadge = document.getElementById('zoneBadge');
       const enterOverlay = document.getElementById('enterOverlay');
       const minimapContainer = document.getElementById('minimapContainer');
       const coordinatesHUD = document.getElementById('coordinatesHUD');
@@ -1175,6 +1202,8 @@
         nextSpawn: 0
       }));
 
+      const zonePulseEffects = [];
+
       const nebulaPalettes = [
         { core: '140, 180, 255', mid: '70, 110, 220', outer: '18, 26, 70' },
         { core: '250, 190, 235', mid: '180, 120, 210', outer: '34, 20, 52' },
@@ -1346,9 +1375,11 @@
       const inputState = { up: false, down: false, left: false, right: false };
       let minimapVisible = true;
       let activeZone = null;
+      let lastActiveZoneRef = null;
       let lastZoneName = null;
       let currentAudioZoneKey = null;
       let enterTimeout = null;
+      let zoneBadgeTimeout = null;
       let hoverPoint = null;
       let hoveredZone = null;
 
@@ -1857,6 +1888,18 @@
         return Math.max(min, Math.min(max, value));
       }
 
+      function lerp(a, b, t) {
+        return a + (b - a) * t;
+      }
+
+      function easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      function easeInCubic(t) {
+        return t * t * t;
+      }
+
       function updateInputState(key, pressed) {
         const lower = key.toLowerCase();
         let handled = false;
@@ -2032,6 +2075,74 @@
         enterTimeout = setTimeout(() => {
           enterOverlay.classList.remove('visible');
         }, duration);
+      }
+
+      function queueZonePulseEffect(type, zone, origin) {
+        if (!zone || reduceMotion) {
+          return;
+        }
+        const glow = zone.colors && zone.colors.glow ? zone.colors.glow : '210, 220, 255';
+        const zoneRadius = zone.radius || 240;
+        const targetRadius = clamp(zoneRadius * 0.32, 60, 150);
+        const innerRadius = clamp(zoneRadius * 0.16, 14, 52);
+        const startRadius = type === 'enter' ? innerRadius : targetRadius;
+        const endRadius = type === 'enter' ? targetRadius : Math.max(6, innerRadius * 0.45);
+        const duration = type === 'enter' ? 900 : 650;
+        const lineWidth = type === 'enter' ? 2.3 : 1.9;
+        zonePulseEffects.push({
+          type,
+          x: origin.x,
+          y: origin.y,
+          startTime: performance.now(),
+          duration,
+          startRadius,
+          endRadius,
+          maxAlpha: type === 'enter' ? 0.38 : 0.3,
+          color: glow,
+          lineWidth,
+          glowPadding: type === 'enter' ? 34 : 24
+        });
+      }
+
+      function showZoneBadge(zone) {
+        if (!zoneBadge) {
+          return;
+        }
+        const glow = zone.colors && zone.colors.glow ? zone.colors.glow : '210, 220, 255';
+        zoneBadge.style.setProperty('--zone-badge-bg', 'rgba(' + glow + ', 0.2)');
+        zoneBadge.style.setProperty('--zone-badge-border', 'rgba(' + glow + ', 0.5)');
+        zoneBadge.textContent = zone.name;
+        zoneBadge.setAttribute('data-zone', zone.name);
+        zoneBadge.classList.add('visible');
+        clearTimeout(zoneBadgeTimeout);
+        zoneBadgeTimeout = setTimeout(() => {
+          zoneBadge.classList.remove('visible');
+        }, 1400);
+      }
+
+      function hideZoneBadge() {
+        if (!zoneBadge) {
+          return;
+        }
+        clearTimeout(zoneBadgeTimeout);
+        zoneBadgeTimeout = null;
+        zoneBadge.classList.remove('visible');
+        zoneBadge.removeAttribute('data-zone');
+      }
+
+      function handleZoneTransition(previousZone, nextZone) {
+        if (previousZone === nextZone) {
+          return;
+        }
+        if (previousZone) {
+          queueZonePulseEffect('exit', previousZone, { x: player.x, y: player.y });
+        }
+        if (nextZone) {
+          queueZonePulseEffect('enter', nextZone, { x: player.x, y: player.y });
+          showZoneBadge(nextZone);
+        } else {
+          hideZoneBadge();
+        }
       }
 
       function openZoneModal(zone) {
@@ -2515,6 +2626,52 @@
           ctx.arc(endScreen.x, endScreen.y, emberRadius, 0, Math.PI * 2);
           ctx.fill();
         });
+        ctx.restore();
+      }
+
+      function drawZoneTransitionEffects(time) {
+        if (!zonePulseEffects.length) {
+          return;
+        }
+        if (reduceMotion) {
+          zonePulseEffects.length = 0;
+          return;
+        }
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = zonePulseEffects.length - 1; i >= 0; i--) {
+          const effect = zonePulseEffects[i];
+          const elapsed = time - effect.startTime;
+          if (elapsed >= effect.duration) {
+            zonePulseEffects.splice(i, 1);
+            continue;
+          }
+          const progress = clamp(elapsed / effect.duration, 0, 1);
+          const eased = effect.type === 'enter' ? easeOutCubic(progress) : easeInCubic(progress);
+          const radius = lerp(effect.startRadius, effect.endRadius, eased);
+          const alphaMultiplier = effect.type === 'enter' ? 1 - progress * 0.85 : 1 - progress * 0.7;
+          const alpha = Math.max(0, effect.maxAlpha * alphaMultiplier);
+          if (alpha <= 0.001) {
+            continue;
+          }
+          const screen = worldToScreen(effect.x, effect.y);
+          if (screen.x + radius < -30 || screen.y + radius < -30 || screen.x - radius > viewport.width + 30 || screen.y - radius > viewport.height + 30) {
+            continue;
+          }
+          ctx.lineWidth = effect.lineWidth;
+          ctx.strokeStyle = 'rgba(' + effect.color + ', ' + alpha + ')';
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+          ctx.stroke();
+          const glowRadius = radius + effect.glowPadding;
+          const gradient = ctx.createRadialGradient(screen.x, screen.y, radius, screen.x, screen.y, glowRadius);
+          gradient.addColorStop(0, 'rgba(' + effect.color + ', ' + (alpha * 0.5) + ')');
+          gradient.addColorStop(1, 'rgba(' + effect.color + ', 0)');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, glowRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
         ctx.restore();
       }
 
@@ -3287,6 +3444,7 @@
         drawSecretBursts();
         drawParticles(time);
         drawPlayerTrail(time);
+        drawZoneTransitionEffects(time);
         drawFragments();
         drawPlayer(time);
         updateZoneOverlay();
@@ -3603,20 +3761,33 @@
             zoneOverlay.classList.remove('visible');
             lastZoneName = null;
           }
+          hideZoneBadge();
+          lastActiveZoneRef = null;
           return;
         }
         if (zoneModal.classList.contains('active')) {
+          activeZone = null;
           if (lastZoneName) {
             zoneOverlay.classList.remove('visible');
             lastZoneName = null;
           }
+          hideZoneBadge();
+          lastActiveZoneRef = null;
           return;
         }
+
+        const previousZone = lastActiveZoneRef;
         activeZone = zones.find((zone) => {
           const dx = player.x - zone.x;
           const dy = player.y - zone.y;
           return Math.hypot(dx, dy) <= zone.radius;
         }) || null;
+
+        if (previousZone !== activeZone) {
+          handleZoneTransition(previousZone, activeZone);
+          lastActiveZoneRef = activeZone;
+        }
+
         const newZoneKey = activeZone ? activeZone.key : null;
         if (currentAudioZoneKey !== newZoneKey) {
           currentAudioZoneKey = newZoneKey;
@@ -3633,6 +3804,9 @@
         } else if (lastZoneName) {
           zoneOverlay.classList.remove('visible');
           lastZoneName = null;
+        }
+        if (!activeZone) {
+          hideZoneBadge();
         }
       }
 
