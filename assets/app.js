@@ -67,6 +67,10 @@ function activateZone(targetId) {
     button.classList.toggle("is-active", button.dataset.target === targetId);
   });
 
+  if (targetId === "marks") {
+    loadGitHubGuestbook();
+  }
+
   achievements.recordZoneVisit(targetId);
 }
 
@@ -174,16 +178,10 @@ const GITHUB_NEW_ISSUE_URL =
   "https://github.com/ai-village-agents/sonnet-45-world/issues/new";
 
 let githubGuestbookState = [];
+let isLoadingGitHubGuestbook = false;
+let hasLoadedGitHubGuestbook = false;
 let guestbookOptionsPanel;
 let guestbookLeaveButton;
-
-if (guestbookList) {
-  const note = document.createElement("p");
-  note.className = "guestbook-note";
-  note.textContent =
-    "Entries from GitHub Issues (permanent) and localStorage (this browser)";
-  guestbookList.before(note);
-}
 
 function formatDate(timestamp) {
   return new Date(timestamp).toLocaleString(undefined, {
@@ -237,6 +235,9 @@ function renderGuestbook() {
     const nameEl = document.createElement("span");
     nameEl.className = "guestbook-entry__name";
     nameEl.textContent = entry.name || "Anonymous Traveler";
+    if (entry.source === "github") {
+      nameEl.classList.add("guestbook-entry__name--github");
+    }
 
     identity.append(nameEl);
 
@@ -394,6 +395,9 @@ function setupGuestbookSubmissionOptions() {
 }
 
 async function loadGitHubGuestbook() {
+  if (isLoadingGitHubGuestbook || hasLoadedGitHubGuestbook) return;
+  isLoadingGitHubGuestbook = true;
+
   try {
     const response = await fetch(GITHUB_GUESTBOOK_API, {
       headers: { Accept: "application/vnd.github+json" },
@@ -414,22 +418,30 @@ async function loadGitHubGuestbook() {
       return;
     }
 
-    githubGuestbookState = issues.map((issue) => {
-      const createdAt = issue?.created_at;
-      const timestamp = createdAt ? Date.parse(createdAt) : Date.now();
+    const parsedIssues = issues
+      .map((issue) => {
+        const createdAt = issue?.created_at;
+        const timestamp = createdAt ? Date.parse(createdAt) : Date.now();
+        const username = issue?.user?.login?.trim() ?? "mysterious-gardener";
+        const body = (issue?.body ?? "").trim();
 
-      return {
-        id: `github-${issue?.id ?? crypto.randomUUID()}`,
-        name: issue?.title?.trim() || "Anonymous Traveler",
-        message: issue?.body?.trim() ?? "",
-        timestamp: Number.isFinite(timestamp) ? timestamp : Date.now(),
-        source: "github",
-        url: issue?.html_url ?? "",
-      };
-    });
+        return {
+          id: `github-${issue?.id ?? crypto.randomUUID()}`,
+          name: `@${username}`,
+          message: body || "No message left in this mark.",
+          timestamp: Number.isFinite(timestamp) ? timestamp : Date.now(),
+          source: "github",
+          url: issue?.html_url ?? "",
+        };
+      })
+      .sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+
+    githubGuestbookState = parsedIssues;
+    hasLoadedGitHubGuestbook = true;
   } catch (error) {
     console.warn("Failed to load guestbook entries from GitHub.", error);
   } finally {
+    isLoadingGitHubGuestbook = false;
     renderGuestbook();
   }
 }
@@ -472,7 +484,6 @@ guestbookForm?.addEventListener("submit", (event) => {
 });
 
 renderGuestbook();
-loadGitHubGuestbook();
 
 const streakForm = document.getElementById("streak-form");
 const streakList = document.getElementById("streak-list");
