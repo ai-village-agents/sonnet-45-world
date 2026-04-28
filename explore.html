@@ -140,6 +140,17 @@
       animation: hintFade 8s ease forwards;
     }
 
+    #audioIndicator {
+      display: inline-block;
+      margin-left: 12px;
+      color: rgba(180, 210, 255, 0.78);
+      transition: color 0.4s ease;
+    }
+
+    #audioIndicator[data-audio-state="on"] {
+      color: rgba(140, 255, 210, 0.88);
+    }
+
     @keyframes hintFade {
       0% {
         opacity: 0;
@@ -762,7 +773,7 @@
 <body>
   <canvas id="worldCanvas"></canvas>
   <div id="titleOverlay" class="overlay">The Persistence Garden – Explorable World</div>
-  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • J - Journal</div>
+  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • J - Journal • Tap A for audio <span id="audioIndicator" role="status" aria-live="polite">AUDIO: OFF</span></div>
   <div id="zoneOverlay" class="overlay"></div>
   <div id="enterOverlay" class="overlay"></div>
   <div id="secretMessage" class="overlay"></div>
@@ -836,6 +847,7 @@
       const coordinatesHUD = document.getElementById('coordinatesHUD');
       const titleOverlay = document.getElementById('titleOverlay');
       const controlsHint = document.getElementById('controlsHint');
+      const audioIndicator = document.getElementById('audioIndicator');
       const secretMessage = document.getElementById('secretMessage');
       const markTooltip = document.getElementById('markTooltip');
       const secretsHUD = document.getElementById('secretsHUD');
@@ -854,6 +866,10 @@
       const journalTimeValue = journalOverlay.querySelector('[data-journal-time]');
       const journalZoneCountValue = journalOverlay.querySelector('[data-journal-zone-count]');
       const journalTotalVisitsValue = journalOverlay.querySelector('[data-journal-total-visits]');
+      let audioEnabled = false;
+      let aKeyDownTimestamp = null;
+      const audioManager = createAmbientAudioManager();
+      updateAudioIndicator();
 
       const zones = [
         {
@@ -864,11 +880,13 @@
           y: 1500,
           radius: 300,
           pulseAmplitude: 26,
+          pulseSpeed: 0.00185,
           colors: {
             inner: 'rgba(120, 240, 255, 0.85)',
             mid: 'rgba(60, 200, 255, 0.35)',
             outer: 'rgba(20, 150, 255, 0.12)',
-            stroke: 'rgba(130, 230, 255, 0.9)'
+            stroke: 'rgba(130, 230, 255, 0.9)',
+            glow: '120, 240, 255'
           }
         },
         {
@@ -879,11 +897,13 @@
           y: 800,
           radius: 250,
           pulseAmplitude: 22,
+          pulseSpeed: 0.0017,
           colors: {
             inner: 'rgba(255, 198, 120, 0.8)',
             mid: 'rgba(255, 170, 70, 0.35)',
             outer: 'rgba(160, 110, 30, 0.12)',
-            stroke: 'rgba(255, 200, 140, 0.9)'
+            stroke: 'rgba(255, 200, 140, 0.9)',
+            glow: '255, 195, 120'
           }
         },
         {
@@ -894,11 +914,13 @@
           y: 2200,
           radius: 350,
           pulseAmplitude: 28,
+          pulseSpeed: 0.00192,
           colors: {
             inner: 'rgba(255, 232, 120, 0.8)',
             mid: 'rgba(255, 210, 90, 0.35)',
             outer: 'rgba(190, 140, 30, 0.1)',
-            stroke: 'rgba(255, 225, 160, 0.85)'
+            stroke: 'rgba(255, 225, 160, 0.85)',
+            glow: '255, 220, 140'
           }
         },
         {
@@ -909,11 +931,13 @@
           y: 3500,
           radius: 280,
           pulseAmplitude: 24,
+          pulseSpeed: 0.0018,
           colors: {
             inner: 'rgba(190, 160, 255, 0.8)',
             mid: 'rgba(150, 110, 255, 0.35)',
             outer: 'rgba(120, 80, 220, 0.1)',
-            stroke: 'rgba(210, 180, 255, 0.85)'
+            stroke: 'rgba(210, 180, 255, 0.85)',
+            glow: '190, 160, 255'
           }
         },
         {
@@ -924,11 +948,13 @@
           y: 2500,
           radius: 200,
           pulseAmplitude: 18,
+          pulseSpeed: 0.00165,
           colors: {
             inner: 'rgba(255, 255, 255, 0.85)',
             mid: 'rgba(240, 240, 255, 0.35)',
             outer: 'rgba(180, 180, 220, 0.1)',
-            stroke: 'rgba(255, 255, 255, 0.9)'
+            stroke: 'rgba(255, 255, 255, 0.9)',
+            glow: '255, 255, 255'
           }
         },
         {
@@ -939,11 +965,13 @@
           y: 3200,
           radius: 300,
           pulseAmplitude: 26,
+          pulseSpeed: 0.00175,
           colors: {
             inner: 'rgba(130, 255, 180, 0.75)',
             mid: 'rgba(70, 220, 150, 0.35)',
             outer: 'rgba(30, 160, 110, 0.12)',
-            stroke: 'rgba(130, 255, 200, 0.85)'
+            stroke: 'rgba(130, 255, 200, 0.85)',
+            glow: '120, 240, 190'
           }
         }
       ];
@@ -1283,6 +1311,7 @@
       let minimapVisible = true;
       let activeZone = null;
       let lastZoneName = null;
+      let currentAudioZoneKey = null;
       let enterTimeout = null;
       let hoverPoint = null;
       let hoveredZone = null;
@@ -1825,6 +1854,9 @@
           closeZoneModal();
           return;
         }
+        if ((event.key === 'a' || event.key === 'A') && !event.repeat) {
+          aKeyDownTimestamp = event.timeStamp;
+        }
         if (event.key === 'm' || event.key === 'M') {
           minimapVisible = !minimapVisible;
           minimapContainer.classList.toggle('hidden', !minimapVisible);
@@ -1839,6 +1871,19 @@
       window.addEventListener('keyup', (event) => {
         if (journalOpen) {
           return;
+        }
+        if ((event.key === 'a' || event.key === 'A') && aKeyDownTimestamp !== null) {
+          const elapsed = event.timeStamp - aKeyDownTimestamp;
+          aKeyDownTimestamp = null;
+          if (!event.shiftKey && !event.ctrlKey && !event.metaKey && elapsed < 220) {
+            toggleAudio();
+            inputState.left = false;
+            player.vx = Math.max(0, player.vx);
+            player.target = null;
+            updateInputState(event.key, false);
+            event.preventDefault();
+            return;
+          }
         }
         if (updateInputState(event.key, false)) {
           event.preventDefault();
@@ -2482,6 +2527,498 @@
         return Math.random() * (max - min) + min;
       }
 
+      function updateAudioIndicator() {
+        if (!audioIndicator) {
+          return;
+        }
+        const state = audioEnabled ? 'on' : 'off';
+        audioIndicator.textContent = audioEnabled ? 'AUDIO: ON' : 'AUDIO: OFF';
+        audioIndicator.setAttribute('data-audio-state', state);
+      }
+
+      function toggleAudio(forceState) {
+        if (!audioManager || !audioManager.isSupported) {
+          if (audioIndicator) {
+            audioIndicator.textContent = 'AUDIO: OFF';
+            audioIndicator.removeAttribute('data-audio-state');
+          }
+          audioEnabled = false;
+          return false;
+        }
+        const desiredState = typeof forceState === 'boolean' ? forceState : !audioEnabled;
+        if (desiredState === audioEnabled) {
+          return audioEnabled;
+        }
+        if (desiredState) {
+          const enabled = audioManager.enable();
+          if (!enabled) {
+            return audioEnabled;
+          }
+          audioEnabled = true;
+          audioManager.refresh();
+        } else {
+          audioManager.disable();
+          audioEnabled = false;
+        }
+        updateAudioIndicator();
+        return audioEnabled;
+      }
+
+      function createAmbientAudioManager() {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) {
+          console.warn('Ambient audio disabled: Web Audio API unavailable in this browser.');
+          return {
+            isSupported: false,
+            enable: () => false,
+            disable: () => {},
+            setZone: () => {},
+            refresh: () => {}
+          };
+        }
+
+        let context = null;
+        let masterGain = null;
+        let currentZoneKey = null;
+        const zoneStates = new Map();
+        let suspendTimer = null;
+        let noiseBuffer = null;
+        const fadeSeconds = 1.5;
+
+        function ensureNoiseBuffer(ctx) {
+          if (!noiseBuffer) {
+            noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+            const data = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < data.length; i += 1) {
+              data[i] = Math.random() * 2 - 1;
+            }
+          }
+          return noiseBuffer;
+        }
+
+        function createLoopingNoise(ctx) {
+          const source = ctx.createBufferSource();
+          source.buffer = ensureNoiseBuffer(ctx);
+          source.loop = true;
+          source.start(0);
+          return source;
+        }
+
+        function applyLFO(ctx, param, frequency, depth, type) {
+          const lfo = ctx.createOscillator();
+          lfo.type = type || 'sine';
+          lfo.frequency.value = frequency;
+          const lfoGain = ctx.createGain();
+          lfoGain.gain.value = depth;
+          lfo.connect(lfoGain);
+          lfoGain.connect(param);
+          lfo.start();
+          return lfo;
+        }
+
+        const zoneBlueprints = {
+          'path-of-patterns': {
+            level: 1,
+            setup(ctx, zoneGain) {
+              const crystalline = ctx.createGain();
+              crystalline.gain.value = 0.05;
+              crystalline.connect(zoneGain);
+
+              const primary = ctx.createOscillator();
+              primary.type = 'triangle';
+              primary.frequency.value = 720;
+              primary.connect(crystalline);
+              primary.start();
+              applyLFO(ctx, primary.detune, 0.24, 6);
+
+              const companion = ctx.createOscillator();
+              companion.type = 'triangle';
+              companion.frequency.value = 728;
+              companion.connect(crystalline);
+              companion.start();
+              applyLFO(ctx, companion.detune, 0.28, 7);
+
+              applyLFO(ctx, crystalline.gain, 0.32, 0.015);
+
+              const sparkle = ctx.createOscillator();
+              sparkle.type = 'sine';
+              sparkle.frequency.value = 1180;
+              const sparkleGain = ctx.createGain();
+              sparkleGain.gain.value = 0.012;
+              sparkle.connect(sparkleGain);
+              sparkleGain.connect(zoneGain);
+              sparkle.start();
+              applyLFO(ctx, sparkle.detune, 0.45, 10);
+
+              const shimmerNoise = createLoopingNoise(ctx);
+              const shimmerFilter = ctx.createBiquadFilter();
+              shimmerFilter.type = 'highpass';
+              shimmerFilter.frequency.value = 3000;
+              shimmerFilter.Q.value = 0.8;
+              const shimmerGain = ctx.createGain();
+              shimmerGain.gain.value = 0.01;
+              shimmerNoise.connect(shimmerFilter);
+              shimmerFilter.connect(shimmerGain);
+              shimmerGain.connect(zoneGain);
+            }
+          },
+          'hall-of-persistence': {
+            level: 1,
+            setup(ctx, zoneGain) {
+              const droneMix = ctx.createGain();
+              droneMix.gain.value = 0.09;
+              const warmFilter = ctx.createBiquadFilter();
+              warmFilter.type = 'lowpass';
+              warmFilter.frequency.value = 850;
+              warmFilter.Q.value = 0.9;
+              droneMix.connect(warmFilter);
+              warmFilter.connect(zoneGain);
+
+              const base = ctx.createOscillator();
+              base.type = 'sine';
+              base.frequency.value = 110;
+              const baseGain = ctx.createGain();
+              baseGain.gain.value = 0.08;
+              base.connect(baseGain);
+              baseGain.connect(droneMix);
+              base.start();
+              applyLFO(ctx, base.detune, 0.08, 3);
+
+              const middle = ctx.createOscillator();
+              middle.type = 'sine';
+              middle.frequency.value = 220;
+              const middleGain = ctx.createGain();
+              middleGain.gain.value = 0.06;
+              middle.connect(middleGain);
+              middleGain.connect(droneMix);
+              middle.start();
+              applyLFO(ctx, middle.detune, 0.12, 4);
+
+              const overtone = ctx.createOscillator();
+              overtone.type = 'triangle';
+              overtone.frequency.value = 330;
+              const overtoneGain = ctx.createGain();
+              overtoneGain.gain.value = 0.04;
+              overtone.connect(overtoneGain);
+              overtoneGain.connect(droneMix);
+              overtone.start();
+              applyLFO(ctx, overtone.detune, 0.16, 6);
+
+              applyLFO(ctx, droneMix.gain, 0.07, 0.028);
+
+              const warmthNoise = createLoopingNoise(ctx);
+              const warmthFilter = ctx.createBiquadFilter();
+              warmthFilter.type = 'lowpass';
+              warmthFilter.frequency.value = 520;
+              const warmthGain = ctx.createGain();
+              warmthGain.gain.value = 0.008;
+              warmthNoise.connect(warmthFilter);
+              warmthFilter.connect(warmthGain);
+              warmthGain.connect(zoneGain);
+            }
+          },
+          'rpg-journey': {
+            level: 1,
+            setup(ctx, zoneGain) {
+              const mix = ctx.createGain();
+              mix.gain.value = 0.08;
+              const toneFilter = ctx.createBiquadFilter();
+              toneFilter.type = 'lowpass';
+              toneFilter.frequency.value = 1400;
+              toneFilter.Q.value = 0.6;
+              mix.connect(toneFilter);
+              toneFilter.connect(zoneGain);
+
+              const chord = [196, 246.94, 293.66, 329.63];
+              const gains = [0.08, 0.06, 0.05, 0.04];
+              chord.forEach((freq, index) => {
+                const osc = ctx.createOscillator();
+                osc.type = index < 2 ? 'sawtooth' : 'triangle';
+                osc.frequency.value = freq;
+                const oscGain = ctx.createGain();
+                oscGain.gain.value = gains[index];
+                osc.connect(oscGain);
+                oscGain.connect(mix);
+                osc.start();
+                applyLFO(ctx, osc.detune, 0.14 + index * 0.04, 6 + index * 2.5);
+              });
+
+              applyLFO(ctx, mix.gain, 0.18, 0.022);
+
+              const sweepLfo = ctx.createOscillator();
+              sweepLfo.type = 'sine';
+              sweepLfo.frequency.value = 0.05;
+              const sweepDepth = ctx.createGain();
+              sweepDepth.gain.value = 320;
+              sweepLfo.connect(sweepDepth);
+              sweepDepth.connect(toneFilter.frequency);
+              sweepLfo.start();
+
+              const sparkle = ctx.createOscillator();
+              sparkle.type = 'sine';
+              sparkle.frequency.value = 880;
+              const sparkleGain = ctx.createGain();
+              sparkleGain.gain.value = 0.01;
+              sparkle.connect(sparkleGain);
+              sparkleGain.connect(zoneGain);
+              sparkle.start();
+              applyLFO(ctx, sparkle.detune, 0.4, 15);
+
+              const ambienceNoise = createLoopingNoise(ctx);
+              const ambienceFilter = ctx.createBiquadFilter();
+              ambienceFilter.type = 'bandpass';
+              ambienceFilter.frequency.value = 1600;
+              ambienceFilter.Q.value = 1.8;
+              const ambienceGain = ctx.createGain();
+              ambienceGain.gain.value = 0.009;
+              ambienceNoise.connect(ambienceFilter);
+              ambienceFilter.connect(ambienceGain);
+              ambienceGain.connect(zoneGain);
+            }
+          },
+          'garden-of-marks': {
+            level: 1,
+            setup(ctx, zoneGain) {
+              const whisper = ctx.createGain();
+              whisper.gain.value = 0.05;
+              whisper.connect(zoneGain);
+
+              const whisperTone = ctx.createOscillator();
+              whisperTone.type = 'sine';
+              whisperTone.frequency.value = 1040;
+              whisperTone.connect(whisper);
+              whisperTone.start();
+              applyLFO(ctx, whisperTone.detune, 0.3, 14);
+
+              applyLFO(ctx, whisper.gain, 0.24, 0.016);
+
+              const airyTone = ctx.createOscillator();
+              airyTone.type = 'triangle';
+              airyTone.frequency.value = 2080;
+              const airyGain = ctx.createGain();
+              airyGain.gain.value = 0.012;
+              airyTone.connect(airyGain);
+              airyGain.connect(zoneGain);
+              airyTone.start();
+              applyLFO(ctx, airyTone.detune, 0.42, 20);
+
+              const breathNoise = createLoopingNoise(ctx);
+              const breathFilter = ctx.createBiquadFilter();
+              breathFilter.type = 'bandpass';
+              breathFilter.frequency.value = 4600;
+              breathFilter.Q.value = 5.5;
+              const breathGain = ctx.createGain();
+              breathGain.gain.value = 0.013;
+              breathNoise.connect(breathFilter);
+              breathFilter.connect(breathGain);
+              breathGain.connect(zoneGain);
+            }
+          },
+          'about-garden': {
+            level: 1,
+            setup(ctx, zoneGain) {
+              const harmony = ctx.createGain();
+              harmony.gain.value = 0.06;
+              harmony.connect(zoneGain);
+
+              const baseTone = ctx.createOscillator();
+              baseTone.type = 'sine';
+              baseTone.frequency.value = 260;
+              baseTone.connect(harmony);
+              baseTone.start();
+              applyLFO(ctx, baseTone.detune, 0.12, 3.5);
+
+              const midTone = ctx.createOscillator();
+              midTone.type = 'sine';
+              midTone.frequency.value = 392;
+              const midGain = ctx.createGain();
+              midGain.gain.value = 0.045;
+              midTone.connect(midGain);
+              midGain.connect(zoneGain);
+              midTone.start();
+              applyLFO(ctx, midGain.gain, 0.1, 0.012);
+
+              const chime = ctx.createOscillator();
+              chime.type = 'triangle';
+              chime.frequency.value = 660;
+              const chimeGain = ctx.createGain();
+              chimeGain.gain.value = 0.012;
+              chime.connect(chimeGain);
+              chimeGain.connect(zoneGain);
+              chime.start();
+              applyLFO(ctx, chime.detune, 0.35, 9);
+
+              const hushNoise = createLoopingNoise(ctx);
+              const hushFilter = ctx.createBiquadFilter();
+              hushFilter.type = 'lowpass';
+              hushFilter.frequency.value = 900;
+              const hushGain = ctx.createGain();
+              hushGain.gain.value = 0.006;
+              hushNoise.connect(hushFilter);
+              hushFilter.connect(hushGain);
+              hushGain.connect(zoneGain);
+            }
+          },
+          'portal-garden': {
+            level: 1,
+            setup(ctx, zoneGain) {
+              const mix = ctx.createGain();
+              mix.gain.value = 0.07;
+              const portalFilter = ctx.createBiquadFilter();
+              portalFilter.type = 'bandpass';
+              portalFilter.frequency.value = 680;
+              portalFilter.Q.value = 2.1;
+              mix.connect(portalFilter);
+              portalFilter.connect(zoneGain);
+
+              const base = ctx.createOscillator();
+              base.type = 'sawtooth';
+              base.frequency.value = 180;
+              const baseGain = ctx.createGain();
+              baseGain.gain.value = 0.042;
+              base.connect(baseGain);
+              baseGain.connect(mix);
+              base.start();
+              applyLFO(ctx, base.detune, 0.15, 18);
+
+              const overtone = ctx.createOscillator();
+              overtone.type = 'sine';
+              overtone.frequency.value = 420;
+              const overtoneGain = ctx.createGain();
+              overtoneGain.gain.value = 0.024;
+              overtone.connect(overtoneGain);
+              overtoneGain.connect(mix);
+              overtone.start();
+              applyLFO(ctx, overtone.detune, 0.22, 32);
+
+              applyLFO(ctx, mix.gain, 0.17, 0.02);
+
+              const filterSweep = ctx.createOscillator();
+              filterSweep.type = 'sine';
+              filterSweep.frequency.value = 0.065;
+              const sweepDepth = ctx.createGain();
+              sweepDepth.gain.value = 420;
+              filterSweep.connect(sweepDepth);
+              sweepDepth.connect(portalFilter.frequency);
+              filterSweep.start();
+
+              const shimmerNoise = createLoopingNoise(ctx);
+              const shimmerFilter = ctx.createBiquadFilter();
+              shimmerFilter.type = 'bandpass';
+              shimmerFilter.frequency.value = 1500;
+              shimmerFilter.Q.value = 3.6;
+              const shimmerGain = ctx.createGain();
+              shimmerGain.gain.value = 0.011;
+              shimmerNoise.connect(shimmerFilter);
+              shimmerFilter.connect(shimmerGain);
+              shimmerGain.connect(zoneGain);
+            }
+          }
+        };
+
+        function ensureContext() {
+          if (context) {
+            return context;
+          }
+          context = new AudioContextClass();
+          masterGain = context.createGain();
+          masterGain.gain.value = 0;
+          masterGain.connect(context.destination);
+          zoneStates.clear();
+          Object.entries(zoneBlueprints).forEach(([key, config]) => {
+            const zoneGain = context.createGain();
+            zoneGain.gain.value = 0;
+            zoneGain.connect(masterGain);
+            config.setup(context, zoneGain);
+            zoneStates.set(key, { gain: zoneGain, level: config.level });
+          });
+          return context;
+        }
+
+        function rampParam(param, target, duration) {
+          const ctx = ensureContext();
+          if (!ctx) {
+            return;
+          }
+          const now = ctx.currentTime;
+          param.cancelScheduledValues(now);
+          param.setValueAtTime(param.value, now);
+          param.linearRampToValueAtTime(target, now + duration);
+        }
+
+        function applyZone(zoneKey) {
+          currentZoneKey = zoneKey;
+          if (!context) {
+            return;
+          }
+          const now = context.currentTime;
+          zoneStates.forEach(({ gain, level }, key) => {
+            const target = zoneKey && key === zoneKey ? level : 0;
+            gain.gain.cancelScheduledValues(now);
+            gain.gain.setValueAtTime(gain.gain.value, now);
+            gain.gain.linearRampToValueAtTime(target, now + fadeSeconds);
+          });
+        }
+
+        function enable() {
+          const ctx = ensureContext();
+          if (!ctx) {
+            return false;
+          }
+          if (ctx.state === 'suspended') {
+            ctx.resume().catch(() => {});
+          }
+          if (suspendTimer) {
+            clearTimeout(suspendTimer);
+            suspendTimer = null;
+          }
+          rampParam(masterGain.gain, 0.6, fadeSeconds);
+          applyZone(currentZoneKey);
+          return true;
+        }
+
+        function disable() {
+          if (!context) {
+            return;
+          }
+          rampParam(masterGain.gain, 0, 0.6);
+          const now = context.currentTime;
+          zoneStates.forEach(({ gain }) => {
+            gain.gain.cancelScheduledValues(now);
+            gain.gain.setValueAtTime(gain.gain.value, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.6);
+          });
+          if (suspendTimer) {
+            clearTimeout(suspendTimer);
+          }
+          suspendTimer = setTimeout(() => {
+            if (context && context.state === 'running') {
+              context.suspend().catch(() => {});
+            }
+          }, 900);
+        }
+
+        function refresh() {
+          if (!context || context.state === 'closed') {
+            return;
+          }
+          applyZone(currentZoneKey);
+        }
+
+        return {
+          isSupported: true,
+          enable,
+          disable,
+          setZone(zoneKey) {
+            if (zoneKey === currentZoneKey) {
+              return;
+            }
+            applyZone(zoneKey);
+          },
+          refresh
+        };
+      }
+
       let lastTime = performance.now();
 
       function update(time) {
@@ -2768,6 +3305,7 @@
             return;
           }
           const isHovered = hoveredZone && hoveredZone.name === zone.name;
+          const glowColor = zone.colors.glow || '255, 255, 255';
           const hoverBoost = isHovered ? 0.12 : 0;
           const fillRadius = pulsedRadius + amplitude * (0.15 + hoverBoost);
           const glowRadius = fillRadius + amplitude * (0.35 + hoverBoost * 1.2);
@@ -2791,15 +3329,35 @@
             ctx.fill();
             ctx.globalAlpha = 1;
           }
-          const ringPulse = reduceMotion ? 0.3 : (Math.sin(time * 0.0012 + zone.x * 0.01 + zone.y * 0.007) + 1) * 0.35;
-          const ringRadius = pulsedRadius + 12 + ringPulse * 10;
-          const ringAlpha = Math.min(1, 0.35 + ringPulse * 0.4 + (isHovered ? 0.35 : 0));
+          const pulseSpeed = zone.pulseSpeed || 0.0018;
+          const ringPulsePhase = reduceMotion ? 0 : Math.sin(time * pulseSpeed + zone.x * 0.004 + zone.y * 0.003);
+          const ringPulse = reduceMotion ? 0.4 : (ringPulsePhase + 1) * 0.5;
+          const ringRadius = pulsedRadius + 10 + ringPulse * 14;
+          const ringAlpha = Math.min(1, 0.24 + ringPulse * 0.32 + (isHovered ? 0.35 : 0));
           ctx.strokeStyle = zone.colors.stroke;
-          ctx.lineWidth = 2 + ringPulse * 2.4 + (isHovered ? 1.2 : 0);
+          ctx.lineWidth = 2 + ringPulse * 2.6 + (isHovered ? 1.2 : 0);
+          if (!reduceMotion) {
+            const shadowIntensity = 0.24 + ringPulse * 0.28 + (isHovered ? 0.12 : 0);
+            ctx.shadowBlur = 18 + ringPulse * 24;
+            ctx.shadowColor = 'rgba(' + glowColor + ', ' + shadowIntensity + ')';
+          }
           ctx.globalAlpha = ringAlpha;
           ctx.beginPath();
           ctx.arc(screen.x, screen.y, ringRadius, 0, Math.PI * 2);
           ctx.stroke();
+          if (!reduceMotion) {
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0)';
+            const auraRadius = ringRadius + 22 + ringPulse * 18;
+            const auraGradient = ctx.createRadialGradient(screen.x, screen.y, ringRadius * 0.95, screen.x, screen.y, auraRadius);
+            auraGradient.addColorStop(0, 'rgba(' + glowColor + ', ' + (0.08 + ringPulse * 0.16) + ')');
+            auraGradient.addColorStop(1, 'rgba(' + glowColor + ', 0)');
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = auraGradient;
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, auraRadius, 0, Math.PI * 2);
+            ctx.fill();
+          }
           if (isHovered) {
             ctx.globalAlpha = 0.45;
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
@@ -2939,6 +3497,11 @@
           const dy = player.y - zone.y;
           return Math.hypot(dx, dy) <= zone.radius;
         }) || null;
+        const newZoneKey = activeZone ? activeZone.key : null;
+        if (currentAudioZoneKey !== newZoneKey) {
+          currentAudioZoneKey = newZoneKey;
+          audioManager.setZone(newZoneKey);
+        }
 
         if (activeZone) {
           if (lastZoneName !== activeZone.name) {
