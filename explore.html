@@ -230,6 +230,225 @@
       }
     }
 
+    .journal-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(16px, 4vw, 40px);
+      background: rgba(5, 8, 22, 0.78);
+      backdrop-filter: blur(22px);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+      z-index: 50;
+    }
+
+    .journal-overlay.is-visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .journal-overlay__panel {
+      position: relative;
+      width: min(640px, 92vw);
+      max-height: min(560px, 88vh);
+      padding: clamp(32px, 4vw, 44px);
+      border-radius: 28px;
+      background: rgba(14, 16, 36, 0.92);
+      border: 1px solid rgba(150, 200, 255, 0.28);
+      box-shadow: 0 36px 96px rgba(4, 8, 26, 0.78);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .journal-overlay__panel::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: inherit;
+      background: conic-gradient(from 90deg, rgba(110, 200, 255, 0.3), rgba(170, 120, 255, 0.32), rgba(90, 210, 195, 0.3), rgba(110, 200, 255, 0.3));
+      opacity: 0.7;
+      animation: auroraOrbit 22s linear infinite;
+      z-index: -2;
+    }
+
+    .journal-overlay__panel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(140deg, rgba(60, 90, 160, 0.16), rgba(170, 120, 210, 0.12));
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .journal-overlay__title {
+      margin: 0 0 18px;
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.6rem, 3vw, 2.3rem);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(240, 246, 255, 0.96);
+      text-align: center;
+    }
+
+    .journal-overlay__close {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid rgba(170, 210, 255, 0.32);
+      background: rgba(20, 28, 56, 0.68);
+      color: rgba(230, 238, 255, 0.92);
+      font-size: 1.4rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .journal-overlay__close:hover,
+    .journal-overlay__close:focus-visible {
+      background: rgba(70, 110, 200, 0.75);
+      transform: scale(1.06);
+    }
+
+    .journal-overlay__content {
+      overflow-y: auto;
+      padding-right: 6px;
+      margin-right: -6px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    .journal-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .journal-section__header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .journal-section__title {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(210, 222, 255, 0.88);
+    }
+
+    .journal-section__meta {
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(180, 200, 255, 0.65);
+    }
+
+    .journal-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    .journal-list__item {
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: rgba(24, 28, 60, 0.78);
+      border: 1px solid rgba(120, 170, 255, 0.24);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .journal-list__row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.95rem;
+      color: rgba(226, 232, 255, 0.9);
+    }
+
+    .journal-list__name {
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+
+    .journal-list__meta {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(170, 190, 255, 0.7);
+    }
+
+    .journal-list__subtext {
+      font-size: 0.82rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: rgba(160, 190, 255, 0.68);
+    }
+
+    .journal-list__empty {
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(160, 180, 235, 0.6);
+      text-align: center;
+      border: 1px dashed rgba(120, 150, 220, 0.34);
+      border-radius: 14px;
+      padding: 18px 12px;
+      background: rgba(20, 24, 54, 0.5);
+    }
+
+    .journal-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .journal-stats__item {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(60, 90, 160, 0.32), rgba(110, 80, 180, 0.24));
+      border: 1px solid rgba(90, 150, 240, 0.28);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .journal-stats__label {
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(190, 210, 255, 0.7);
+    }
+
+    .journal-stats__value {
+      font-size: 1.05rem;
+      letter-spacing: 0.06em;
+      color: rgba(236, 242, 255, 0.92);
+    }
+
+    .journal-stats__note {
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(180, 200, 255, 0.65);
+    }
+
     .zone-modal {
       position: fixed;
       inset: 0;
@@ -474,7 +693,7 @@
 <body>
   <canvas id="worldCanvas"></canvas>
   <div id="titleOverlay" class="overlay">The Persistence Garden – Explorable World</div>
-  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map</div>
+  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • Press J for Journal</div>
   <div id="zoneOverlay" class="overlay"></div>
   <div id="enterOverlay" class="overlay"></div>
   <div id="secretMessage" class="overlay"></div>
@@ -490,6 +709,48 @@
       <h2 class="zone-modal__title"></h2>
       <p class="zone-modal__subtitle"></p>
       <div class="zone-modal__body"></div>
+    </div>
+  </div>
+  <div id="journalOverlay" class="journal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="journal-overlay__panel">
+      <button type="button" class="journal-overlay__close" aria-label="Close discovery journal">&times;</button>
+      <h2 class="journal-overlay__title">Discovery Journal</h2>
+      <div class="journal-overlay__content">
+        <section class="journal-section">
+          <div class="journal-section__header">
+            <h3 class="journal-section__title">Zones Explored</h3>
+            <span class="journal-section__meta" data-journal-zones-meta>0 / 0</span>
+          </div>
+          <ul class="journal-list" data-journal-zones></ul>
+        </section>
+        <section class="journal-section">
+          <div class="journal-section__header">
+            <h3 class="journal-section__title">Secrets Discovered</h3>
+            <span class="journal-section__meta" data-journal-secrets-meta>0 / 0</span>
+          </div>
+          <ul class="journal-list" data-journal-secrets></ul>
+        </section>
+        <section class="journal-section">
+          <div class="journal-section__header">
+            <h3 class="journal-section__title">Journey Stats</h3>
+          </div>
+          <div class="journal-stats">
+            <div class="journal-stats__item">
+              <span class="journal-stats__label">Distance Traveled</span>
+              <span class="journal-stats__value" data-journal-distance>0 px</span>
+            </div>
+            <div class="journal-stats__item">
+              <span class="journal-stats__label">Time Exploring</span>
+              <span class="journal-stats__value" data-journal-time>00:00</span>
+            </div>
+            <div class="journal-stats__item">
+              <span class="journal-stats__label">Zones Visited</span>
+              <span class="journal-stats__value" data-journal-zone-count>0 unique</span>
+              <span class="journal-stats__note" data-journal-total-visits>Total visits: 0</span>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   </div>
   <script>
@@ -512,6 +773,16 @@
       const zoneModalSubtitle = zoneModal.querySelector('.zone-modal__subtitle');
       const zoneModalBody = zoneModal.querySelector('.zone-modal__body');
       const zoneModalClose = zoneModal.querySelector('.zone-modal__close');
+      const journalOverlay = document.getElementById('journalOverlay');
+      const journalCloseButton = journalOverlay.querySelector('.journal-overlay__close');
+      const journalZonesList = journalOverlay.querySelector('[data-journal-zones]');
+      const journalZonesMeta = journalOverlay.querySelector('[data-journal-zones-meta]');
+      const journalSecretsList = journalOverlay.querySelector('[data-journal-secrets]');
+      const journalSecretsMeta = journalOverlay.querySelector('[data-journal-secrets-meta]');
+      const journalDistanceValue = journalOverlay.querySelector('[data-journal-distance]');
+      const journalTimeValue = journalOverlay.querySelector('[data-journal-time]');
+      const journalZoneCountValue = journalOverlay.querySelector('[data-journal-zone-count]');
+      const journalTotalVisitsValue = journalOverlay.querySelector('[data-journal-total-visits]');
 
       const zones = [
         {
@@ -722,9 +993,13 @@
         }
       };
 
-      const constellationGroups = [
-        ['Path of Patterns', 'Hall of Persistence', 'RPG Journey'],
-        ['Garden of Marks', 'About Garden', 'Portal Garden']
+      const zoneConstellationLinks = [
+        ['Path of Patterns', 'Hall of Persistence'],
+        ['Hall of Persistence', 'RPG Journey'],
+        ['RPG Journey', 'Garden of Marks'],
+        ['Garden of Marks', 'About Garden'],
+        ['About Garden', 'Portal Garden'],
+        ['Portal Garden', 'Path of Patterns']
       ];
 
       const zoneByName = new Map(zones.map((zone) => [zone.name, zone]));
@@ -743,6 +1018,26 @@
         { id: 'every-battle-matters', x: 3400, y: 1200, triggerRadius: 140, glowRadius: 28, message: 'Every battle matters', discovered: false },
         { id: 'f5-recovery', x: 4200, y: 3600, triggerRadius: 140, glowRadius: 28, message: "F5 Recovery: The grinder's tool", discovered: false }
       ];
+
+      const JOURNAL_STORAGE_KEY = 'persistence-garden-discovery-journal-v1';
+
+      function createDefaultJournalData() {
+        return {
+          zones: {},
+          secrets: [],
+          distance: 0,
+          timeMs: 0
+        };
+      }
+
+      let journalData = createDefaultJournalData();
+      let journalOpen = false;
+      let journalPendingDistance = 0;
+      let journalPendingTimeMs = 0;
+      let journalLastPosition = { x: player.x, y: player.y };
+      let journalSaveHandle = null;
+
+      const numberFormatter = typeof Intl !== 'undefined' && Intl.NumberFormat ? new Intl.NumberFormat() : { format: (value) => String(value) };
 
       const playerTrail = [];
       let trailDistanceAccumulator = 0;
@@ -812,7 +1107,9 @@
       let secretsDiscovered = 0;
       let activeSecret = null;
 
-      updateSecretsHUD();
+      loadJournalData();
+      applyLoadedJournalState();
+      renderJournal();
       const initialStarBaseline = performance.now();
       shootingStars.forEach((star, index) => {
         resetShootingStar(star, initialStarBaseline + index * 2400);
@@ -889,6 +1186,395 @@
         pointerType: null
       };
 
+      function loadJournalData() {
+        if (typeof window === 'undefined' || !window.localStorage) {
+          journalData = createDefaultJournalData();
+          return;
+        }
+        try {
+          const stored = window.localStorage.getItem(JOURNAL_STORAGE_KEY);
+          if (!stored) {
+            journalData = createDefaultJournalData();
+            return;
+          }
+          const parsed = JSON.parse(stored);
+          if (!parsed || typeof parsed !== 'object') {
+            journalData = createDefaultJournalData();
+            return;
+          }
+          const zonesRecord = {};
+          if (parsed.zones && typeof parsed.zones === 'object') {
+            Object.keys(parsed.zones).forEach((zoneName) => {
+              const entry = parsed.zones[zoneName];
+              if (!entry || typeof entry !== 'object') {
+                return;
+              }
+              const visits = typeof entry.visits === 'number' && entry.visits > 0 ? Math.floor(entry.visits) : 0;
+              const lastVisited = typeof entry.lastVisited === 'number' ? entry.lastVisited : Date.now();
+              if (visits > 0) {
+                zonesRecord[zoneName] = { visits, lastVisited };
+              }
+            });
+          }
+          const secretsRecord = Array.isArray(parsed.secrets)
+            ? parsed.secrets
+                .filter((entry) => entry && typeof entry.id === 'string')
+                .map((entry) => ({
+                  id: entry.id,
+                  message: typeof entry.message === 'string' ? entry.message : '',
+                  discoveredAt: typeof entry.discoveredAt === 'number' ? entry.discoveredAt : Date.now()
+                }))
+            : [];
+          const distance = typeof parsed.distance === 'number' && isFinite(parsed.distance) ? Math.max(parsed.distance, 0) : 0;
+          const timeMs = typeof parsed.timeMs === 'number' && isFinite(parsed.timeMs) ? Math.max(parsed.timeMs, 0) : 0;
+          journalData = {
+            zones: zonesRecord,
+            secrets: secretsRecord,
+            distance,
+            timeMs
+          };
+        } catch (err) {
+          journalData = createDefaultJournalData();
+        }
+      }
+
+      function applyLoadedJournalState() {
+        const discoveredIds = new Set(journalData.secrets.map((entry) => entry.id));
+        secrets.forEach((secret) => {
+          if (discoveredIds.has(secret.id)) {
+            secret.discovered = true;
+          }
+        });
+        secretsDiscovered = secrets.filter((secret) => secret.discovered).length;
+        updateSecretsHUD();
+      }
+
+      function flushJournalAccumulators() {
+        let changed = false;
+        if (journalPendingDistance > 0) {
+          journalData.distance += journalPendingDistance;
+          journalPendingDistance = 0;
+          changed = true;
+        }
+        if (journalPendingTimeMs > 0) {
+          journalData.timeMs += journalPendingTimeMs;
+          journalPendingTimeMs = 0;
+          changed = true;
+        }
+        return changed;
+      }
+
+      function saveJournalData() {
+        if (journalSaveHandle !== null) {
+          window.clearTimeout(journalSaveHandle);
+          journalSaveHandle = null;
+        }
+        flushJournalAccumulators();
+        if (typeof window === 'undefined' || !window.localStorage) {
+          return;
+        }
+        try {
+          const payload = {
+            zones: journalData.zones,
+            secrets: journalData.secrets.map((entry) => ({
+              id: entry.id,
+              message: entry.message,
+              discoveredAt: entry.discoveredAt
+            })),
+            distance: journalData.distance,
+            timeMs: journalData.timeMs
+          };
+          window.localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(payload));
+        } catch (err) {
+          /* localStorage might be unavailable; ignore persistence failure */
+        }
+        if (journalOpen) {
+          renderJournal();
+        }
+      }
+
+      function scheduleJournalSave() {
+        if (journalSaveHandle !== null) {
+          return;
+        }
+        journalSaveHandle = window.setTimeout(() => {
+          journalSaveHandle = null;
+          saveJournalData();
+        }, 600);
+      }
+
+      function markJournalDirty() {
+        scheduleJournalSave();
+        if (journalOpen) {
+          renderJournal();
+        }
+      }
+
+      function formatTimestamp(timestamp) {
+        try {
+          return new Date(timestamp).toLocaleString([], {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        } catch (err) {
+          return '';
+        }
+      }
+
+      function formatDuration(totalMs) {
+        const totalSeconds = Math.max(0, Math.floor(totalMs / 1000));
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        const minuteString = String(minutes).padStart(2, '0');
+        const secondString = String(seconds).padStart(2, '0');
+        return minuteString + ':' + secondString;
+      }
+
+      function getSecretMessageById(secretId) {
+        const secret = secrets.find((entry) => entry.id === secretId);
+        return secret ? secret.message : secretId;
+      }
+
+      function renderJournal() {
+        if (!journalOverlay || !journalZonesList || !journalSecretsList) {
+          return;
+        }
+
+        const zoneEntries = Object.entries(journalData.zones)
+          .map(([name, record]) => ({
+            name,
+            visits: record.visits,
+            lastVisited: record.lastVisited
+          }))
+          .sort((a, b) => b.lastVisited - a.lastVisited);
+
+        journalZonesList.innerHTML = '';
+        if (!zoneEntries.length) {
+          const emptyItem = document.createElement('li');
+          emptyItem.className = 'journal-list__empty';
+          emptyItem.textContent = 'No zones explored yet. Step into the glow to begin.';
+          journalZonesList.appendChild(emptyItem);
+        } else {
+          zoneEntries.forEach((entry) => {
+            const item = document.createElement('li');
+            item.className = 'journal-list__item';
+            const row = document.createElement('div');
+            row.className = 'journal-list__row';
+            const nameEl = document.createElement('span');
+            nameEl.className = 'journal-list__name';
+            nameEl.textContent = entry.name;
+            const timeEl = document.createElement('span');
+            timeEl.className = 'journal-list__meta';
+            timeEl.textContent = formatTimestamp(entry.lastVisited);
+            row.appendChild(nameEl);
+            row.appendChild(timeEl);
+            const subtext = document.createElement('div');
+            subtext.className = 'journal-list__subtext';
+            subtext.textContent = 'Visits: ' + entry.visits;
+            item.appendChild(row);
+            item.appendChild(subtext);
+            journalZonesList.appendChild(item);
+          });
+        }
+
+        const uniqueZoneCount = zoneEntries.length;
+        const totalZoneVisits = zoneEntries.reduce((sum, entry) => sum + entry.visits, 0);
+        if (journalZonesMeta) {
+          journalZonesMeta.textContent = uniqueZoneCount + ' / ' + zones.length;
+        }
+
+        const secretEntries = journalData.secrets
+          .map((entry) => ({
+            id: entry.id,
+            message: entry.message || getSecretMessageById(entry.id),
+            discoveredAt: entry.discoveredAt
+          }))
+          .sort((a, b) => b.discoveredAt - a.discoveredAt);
+
+        journalSecretsList.innerHTML = '';
+        if (!secretEntries.length) {
+          const emptySecrets = document.createElement('li');
+          emptySecrets.className = 'journal-list__empty';
+          emptySecrets.textContent = 'No secrets found yet. Listen for the whispering lights.';
+          journalSecretsList.appendChild(emptySecrets);
+        } else {
+          secretEntries.forEach((entry) => {
+            const item = document.createElement('li');
+            item.className = 'journal-list__item';
+            const row = document.createElement('div');
+            row.className = 'journal-list__row';
+            const messageEl = document.createElement('span');
+            messageEl.className = 'journal-list__name';
+            messageEl.textContent = entry.message;
+            const timeEl = document.createElement('span');
+            timeEl.className = 'journal-list__meta';
+            timeEl.textContent = formatTimestamp(entry.discoveredAt);
+            row.appendChild(messageEl);
+            row.appendChild(timeEl);
+            item.appendChild(row);
+            journalSecretsList.appendChild(item);
+          });
+        }
+
+        if (journalSecretsMeta) {
+          journalSecretsMeta.textContent = secretEntries.length + ' / ' + secrets.length;
+        }
+
+        const totalDistance = journalData.distance + journalPendingDistance;
+        const totalTime = journalData.timeMs + journalPendingTimeMs;
+        if (journalDistanceValue) {
+          journalDistanceValue.textContent = numberFormatter.format(Math.round(totalDistance)) + ' px';
+        }
+        if (journalTimeValue) {
+          journalTimeValue.textContent = formatDuration(totalTime);
+        }
+        if (journalZoneCountValue) {
+          journalZoneCountValue.textContent = uniqueZoneCount + ' unique';
+        }
+        if (journalTotalVisitsValue) {
+          journalTotalVisitsValue.textContent = 'Total visits: ' + numberFormatter.format(totalZoneVisits);
+        }
+      }
+
+      function resetInputState() {
+        inputState.up = false;
+        inputState.down = false;
+        inputState.left = false;
+        inputState.right = false;
+        player.vx = 0;
+        player.vy = 0;
+        player.target = null;
+      }
+
+      function openJournal() {
+        if (journalOpen) {
+          return;
+        }
+        if (!journalOverlay) {
+          return;
+        }
+        closeZoneModal();
+        journalOpen = true;
+        if (flushJournalAccumulators()) {
+          scheduleJournalSave();
+        }
+        renderJournal();
+        journalOverlay.classList.add('is-visible');
+        journalOverlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('journal-open');
+        resetInputState();
+        requestAnimationFrame(() => {
+          if (!journalCloseButton) {
+            return;
+          }
+          try {
+            journalCloseButton.focus({ preventScroll: true });
+          } catch (err) {
+            /* ignore */
+          }
+        });
+      }
+
+      function closeJournal() {
+        if (!journalOpen) {
+          return;
+        }
+        if (!journalOverlay) {
+          journalOpen = false;
+          return;
+        }
+        journalOpen = false;
+        journalOverlay.classList.remove('is-visible');
+        journalOverlay.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('journal-open');
+      }
+
+      function toggleJournal() {
+        if (journalOpen) {
+          closeJournal();
+        } else {
+          openJournal();
+        }
+      }
+
+      function recordZoneVisit(zone) {
+        if (!zone || !zone.name) {
+          return;
+        }
+        const zoneName = zone.name;
+        const now = Date.now();
+        const record = journalData.zones[zoneName];
+        if (record) {
+          record.visits += 1;
+          record.lastVisited = now;
+        } else {
+          journalData.zones[zoneName] = {
+            visits: 1,
+            lastVisited: now
+          };
+        }
+        markJournalDirty();
+      }
+
+      function recordSecretDiscovery(secret) {
+        if (!secret || !secret.id) {
+          return;
+        }
+        const existing = journalData.secrets.find((entry) => entry.id === secret.id);
+        if (existing) {
+          let updated = false;
+          if (!existing.message) {
+            existing.message = secret.message;
+            updated = true;
+          }
+          if (!existing.discoveredAt) {
+            existing.discoveredAt = Date.now();
+            updated = true;
+          }
+          if (updated) {
+            markJournalDirty();
+          }
+          return;
+        }
+        journalData.secrets.push({
+          id: secret.id,
+          message: secret.message,
+          discoveredAt: Date.now()
+        });
+        markJournalDirty();
+      }
+
+      function trackExploration(deltaMs) {
+        if (journalOpen) {
+          journalLastPosition.x = player.x;
+          journalLastPosition.y = player.y;
+          return;
+        }
+        const dx = player.x - journalLastPosition.x;
+        const dy = player.y - journalLastPosition.y;
+        const moveDistance = Math.hypot(dx, dy);
+        journalPendingDistance += moveDistance;
+        journalLastPosition.x = player.x;
+        journalLastPosition.y = player.y;
+        journalPendingTimeMs += deltaMs;
+        let committed = false;
+        if (journalPendingDistance >= 1) {
+          journalData.distance += journalPendingDistance;
+          journalPendingDistance = 0;
+          committed = true;
+        }
+        if (journalPendingTimeMs >= 1000) {
+          journalData.timeMs += journalPendingTimeMs;
+          journalPendingTimeMs = 0;
+          committed = true;
+        }
+        if (committed) {
+          markJournalDirty();
+        }
+      }
+
       function resizeCanvas() {
         viewport.width = window.innerWidth;
         viewport.height = window.innerHeight;
@@ -939,6 +1625,18 @@
       }
 
       window.addEventListener('keydown', (event) => {
+        if (event.key === 'j' || event.key === 'J') {
+          event.preventDefault();
+          toggleJournal();
+          return;
+        }
+        if (journalOpen) {
+          if (event.key === 'Escape' || event.key === 'Esc') {
+            event.preventDefault();
+            closeJournal();
+          }
+          return;
+        }
         if ((event.key === 'Escape' || event.key === 'Esc') && zoneModal.classList.contains('active')) {
           event.preventDefault();
           closeZoneModal();
@@ -956,6 +1654,9 @@
       });
 
       window.addEventListener('keyup', (event) => {
+        if (journalOpen) {
+          return;
+        }
         if (updateInputState(event.key, false)) {
           event.preventDefault();
         }
@@ -1108,7 +1809,24 @@
         }
       });
 
+      if (journalCloseButton) {
+        journalCloseButton.addEventListener('click', () => {
+          closeJournal();
+        });
+      }
+
+      if (journalOverlay) {
+        journalOverlay.addEventListener('click', (event) => {
+          if (event.target === journalOverlay) {
+            closeJournal();
+          }
+        });
+      }
+
       canvas.addEventListener('pointerdown', (event) => {
+        if (journalOpen) {
+          return;
+        }
         if (zoneModal.classList.contains('active')) {
           return;
         }
@@ -1135,6 +1853,10 @@
       });
 
       canvas.addEventListener('pointermove', (event) => {
+        if (journalOpen) {
+          setHoverPoint(null);
+          return;
+        }
         if (zoneModal.classList.contains('active')) {
           setHoverPoint(null);
           return;
@@ -1159,6 +1881,10 @@
       });
 
       function endPointerDrag(event) {
+        if (journalOpen) {
+          pointerDrag.active = false;
+          return;
+        }
         if (pointerDrag.active && event.pointerId === pointerDrag.pointerId) {
           const wasMovement = pointerDrag.moved;
           const pointerType = pointerDrag.pointerType;
@@ -1178,6 +1904,9 @@
       }
 
       canvas.addEventListener('pointerup', (event) => {
+        if (journalOpen) {
+          return;
+        }
         endPointerDrag(event);
         if (!zoneModal.classList.contains('active')) {
           if (event.pointerType === 'mouse') {
@@ -1196,6 +1925,9 @@
       });
 
       canvas.addEventListener('pointercancel', (event) => {
+        if (journalOpen) {
+          return;
+        }
         endPointerDrag(event);
         setHoverPoint(null);
         try {
@@ -1210,6 +1942,9 @@
       });
 
       canvas.addEventListener('pointerenter', (event) => {
+        if (journalOpen) {
+          return;
+        }
         if (zoneModal.classList.contains('active')) {
           return;
         }
@@ -1226,7 +1961,7 @@
       }
 
       function updateSecretProximity() {
-        if (zoneModal.classList.contains('active')) {
+        if (journalOpen || zoneModal.classList.contains('active')) {
           if (secretMessage.classList.contains('visible')) {
             secretMessage.classList.remove('visible');
           }
@@ -1245,6 +1980,7 @@
         if (nearbySecret) {
           if (!nearbySecret.discovered) {
             nearbySecret.discovered = true;
+            recordSecretDiscovery(nearbySecret);
             secretsDiscovered += 1;
             updateSecretsHUD();
           }
@@ -1404,48 +2140,29 @@
         ctx.restore();
       }
 
-      function drawConstellations(time) {
+      function drawConstellations() {
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
-        const drawnNodes = new Set();
-        constellationGroups.forEach((group) => {
-          for (let i = 0; i < group.length - 1; i++) {
-            const zoneA = zoneByName.get(group[i]);
-            const zoneB = zoneByName.get(group[i + 1]);
-            if (!zoneA || !zoneB) {
-              continue;
-            }
-            const screenA = worldToScreen(zoneA.x, zoneA.y);
-            const screenB = worldToScreen(zoneB.x, zoneB.y);
-            const margin = 120;
-            if (Math.max(screenA.x, screenB.x) < -margin || Math.min(screenA.x, screenB.x) > viewport.width + margin ||
-                Math.max(screenA.y, screenB.y) < -margin || Math.min(screenA.y, screenB.y) > viewport.height + margin) {
-              continue;
-            }
-            const shimmer = reduceMotion ? 0.45 : (Math.sin(time * 0.0012 + (zoneA.x + zoneB.x) * 0.003) + 1) * 0.25 + 0.3;
-            const gradient = ctx.createLinearGradient(screenA.x, screenA.y, screenB.x, screenB.y);
-            gradient.addColorStop(0, 'rgba(120, 170, 255, 0)');
-            gradient.addColorStop(0.5, 'rgba(160, 210, 255, ' + (0.25 + shimmer * 0.45) + ')');
-            gradient.addColorStop(1, 'rgba(120, 170, 255, 0)');
-            ctx.strokeStyle = gradient;
-            ctx.lineWidth = 1.8;
-            ctx.beginPath();
-            ctx.moveTo(screenA.x, screenA.y);
-            ctx.lineTo(screenB.x, screenB.y);
-            ctx.stroke();
-            [zoneA, zoneB].forEach((zone) => {
-              if (drawnNodes.has(zone.name)) {
-                return;
-              }
-              const screen = zone === zoneA ? screenA : screenB;
-              const nodePulse = reduceMotion ? 0.4 : (Math.sin(time * 0.0015 + zone.x * 0.004 + zone.y * 0.005) + 1) * 0.25 + 0.35;
-              ctx.fillStyle = 'rgba(220, 240, 255, ' + (0.35 + nodePulse * 0.4) + ')';
-              ctx.beginPath();
-              ctx.arc(screen.x, screen.y, 5 + nodePulse * 2, 0, Math.PI * 2);
-              ctx.fill();
-              drawnNodes.add(zone.name);
-            });
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        const margin = 120;
+        zoneConstellationLinks.forEach(([fromName, toName]) => {
+          const fromZone = zoneByName.get(fromName);
+          const toZone = zoneByName.get(toName);
+          if (!fromZone || !toZone) {
+            return;
           }
+          const fromScreen = worldToScreen(fromZone.x, fromZone.y);
+          const toScreen = worldToScreen(toZone.x, toZone.y);
+          if (Math.max(fromScreen.x, toScreen.x) < -margin || Math.min(fromScreen.x, toScreen.x) > viewport.width + margin ||
+              Math.max(fromScreen.y, toScreen.y) < -margin || Math.min(fromScreen.y, toScreen.y) > viewport.height + margin) {
+            return;
+          }
+          ctx.beginPath();
+          ctx.moveTo(fromScreen.x, fromScreen.y);
+          ctx.lineTo(toScreen.x, toScreen.y);
+          ctx.stroke();
         });
         ctx.restore();
       }
@@ -1537,6 +2254,7 @@
         lastTime = time;
 
         updatePlayer(delta);
+        trackExploration(deltaMs);
         updateCamera(delta);
         updateParticles(delta);
         updateFragments(time);
@@ -1913,6 +2631,14 @@
       }
 
       function updateZoneOverlay() {
+        if (journalOpen) {
+          activeZone = null;
+          if (lastZoneName) {
+            zoneOverlay.classList.remove('visible');
+            lastZoneName = null;
+          }
+          return;
+        }
         if (zoneModal.classList.contains('active')) {
           if (lastZoneName) {
             zoneOverlay.classList.remove('visible');
@@ -1930,6 +2656,7 @@
           if (lastZoneName !== activeZone.name) {
             zoneOverlay.textContent = activeZone.name + ' — ' + activeZone.description;
             zoneOverlay.classList.add('visible');
+            recordZoneVisit(activeZone);
             lastZoneName = activeZone.name;
           }
         } else if (lastZoneName) {
@@ -1990,6 +2717,16 @@
         minimapCtx.arc(playerX, playerY, pulse, 0, Math.PI * 2);
         minimapCtx.fill();
       }
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          saveJournalData();
+        }
+      });
+
+      window.addEventListener('beforeunload', () => {
+        saveJournalData();
+      });
 
       window.addEventListener('load', () => {
         document.body.classList.add('visible');
