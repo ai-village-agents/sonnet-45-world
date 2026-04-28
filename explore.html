@@ -747,8 +747,10 @@
       const playerTrail = [];
       let trailDistanceAccumulator = 0;
       let lastTrailPosition = { x: player.x, y: player.y };
+      let lastTrailEmission = { x: player.x, y: player.y };
 
-      const shootingStars = Array.from({ length: 5 }, () => ({
+      const shootingStarCount = Math.floor(Math.random() * 3) + 3;
+      const shootingStars = Array.from({ length: shootingStarCount }, () => ({
         active: false,
         startX: 0,
         startY: 0,
@@ -758,6 +760,54 @@
         duration: 0,
         nextSpawn: 0
       }));
+
+      const nebulaPalettes = [
+        { core: '140, 180, 255', mid: '70, 110, 220', outer: '18, 26, 70' },
+        { core: '250, 190, 235', mid: '180, 120, 210', outer: '34, 20, 52' },
+        { core: '185, 255, 225', mid: '90, 200, 190', outer: '18, 34, 42' },
+        { core: '225, 215, 255', mid: '150, 140, 220', outer: '30, 28, 70' }
+      ];
+
+      const nebulae = Array.from({ length: 8 }, (_, index) => {
+        const palette = nebulaPalettes[index % nebulaPalettes.length];
+        return {
+          x: Math.random() * world.width,
+          y: Math.random() * world.height,
+          radius: randomRange(420, 680),
+          softness: randomRange(0.48, 0.72),
+          palette,
+          twinkleOffset: Math.random() * Math.PI * 2
+        };
+      });
+
+      const wispPalettes = [
+        { core: '140, 240, 255', mid: '80, 190, 255', outer: '20, 80, 160' },
+        { core: '220, 190, 255', mid: '150, 120, 255', outer: '60, 40, 150' },
+        { core: '255, 210, 160', mid: '255, 170, 100', outer: '145, 80, 20' }
+      ];
+
+      const wispCount = 5;
+      const wisps = Array.from({ length: wispCount }, (_, index) => {
+        const palette = wispPalettes[index % wispPalettes.length];
+        const baseX = Math.random() * world.width;
+        const baseY = Math.random() * world.height;
+        return {
+          baseX,
+          baseY,
+          amplitudeX: randomRange(110, 190),
+          amplitudeY: randomRange(90, 160),
+          radius: randomRange(90, 140),
+          speed: randomRange(0.00035, 0.00055),
+          swaySpeed: randomRange(0.00018, 0.00042),
+          driftX: randomRange(-0.045, 0.045),
+          driftY: randomRange(-0.045, 0.045),
+          offset: Math.random() * Math.PI * 2,
+          palette,
+          currentX: baseX,
+          currentY: baseY,
+          sparkleSeed: Math.random() * 1000
+        };
+      });
 
       let secretsDiscovered = 0;
       let activeSecret = null;
@@ -973,7 +1023,7 @@
         refreshHoverState();
       }
 
-      function handleZoneClick(point) {
+      function handleZoneClick(point, options = {}) {
         const clickedZone = getZoneAtPoint(point);
 
         if (!clickedZone) {
@@ -985,7 +1035,8 @@
 
         if (playerInside) {
           const target = zoneNavigationTargets[clickedZone.name];
-          if (target) {
+          const shouldNavigate = target && options.allowNavigation !== false;
+          if (shouldNavigate) {
             showEnterOverlay('Traveling to ' + clickedZone.name);
             window.location.href = target;
           } else {
@@ -1074,7 +1125,7 @@
           player.target = null;
         } else if (event.button === 0) {
           setHoverPoint(event.clientX, event.clientY);
-          const handledClick = handleZoneClick(worldPoint);
+          const handledClick = handleZoneClick(worldPoint, { allowNavigation: !event.shiftKey });
           if (!handledClick) {
             setPlayerTarget(worldPoint);
           }
@@ -1234,59 +1285,120 @@
 
       function updatePlayerTrail(deltaMs) {
         for (let i = playerTrail.length - 1; i >= 0; i--) {
-          const particle = playerTrail[i];
-          particle.life += deltaMs;
-          if (particle.life >= particle.maxLife) {
+          const segment = playerTrail[i];
+          segment.life += deltaMs;
+          if (segment.life >= segment.maxLife) {
             playerTrail.splice(i, 1);
           }
         }
         const dx = player.x - lastTrailPosition.x;
         const dy = player.y - lastTrailPosition.y;
         const segmentDistance = Math.hypot(dx, dy);
-        trailDistanceAccumulator += segmentDistance;
+        trailDistanceAccumulator = Math.min(trailDistanceAccumulator + segmentDistance, 120);
         lastTrailPosition.x = player.x;
         lastTrailPosition.y = player.y;
         if (reduceMotion) {
+          lastTrailEmission.x = player.x;
+          lastTrailEmission.y = player.y;
+          trailDistanceAccumulator = 0;
           return;
         }
-        const moving = Math.abs(player.vx) > 0.08 || Math.abs(player.vy) > 0.08;
-        if (moving && trailDistanceAccumulator > 24) {
-          playerTrail.push({
-            x: player.x,
-            y: player.y,
-            life: 0,
-            maxLife: 2100,
-            radius: randomRange(18, 28)
-          });
-          if (playerTrail.length > 70) {
-            playerTrail.shift();
+        const moving = Math.abs(player.vx) > 0.08 || Math.abs(player.vy) > 0.08 || player.target !== null;
+        if (!moving) {
+          lastTrailEmission.x = player.x;
+          lastTrailEmission.y = player.y;
+          trailDistanceAccumulator = 0;
+          return;
+        }
+        if (trailDistanceAccumulator > 26) {
+          const startX = lastTrailEmission.x;
+          const startY = lastTrailEmission.y;
+          const endX = player.x;
+          const endY = player.y;
+          const travelDistance = Math.hypot(endX - startX, endY - startY);
+          if (travelDistance > 6) {
+            playerTrail.push({
+              startX,
+              startY,
+              endX,
+              endY,
+              life: 0,
+              maxLife: randomRange(1600, 2400),
+              width: randomRange(5, 9),
+              sparkleSeed: Math.random() * Math.PI * 2,
+              sparkleCount: Math.floor(Math.random() * 2) + 2
+            });
+            if (playerTrail.length > 85) {
+              playerTrail.shift();
+            }
+            lastTrailEmission.x = endX;
+            lastTrailEmission.y = endY;
           }
           trailDistanceAccumulator = 0;
         }
       }
 
-      function drawPlayerTrail() {
+      function drawPlayerTrail(time) {
         if (!playerTrail.length) {
           return;
         }
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
-        playerTrail.forEach((particle) => {
-          const screen = worldToScreen(particle.x, particle.y);
-          if (screen.x < -90 || screen.y < -90 || screen.x > viewport.width + 90 || screen.y > viewport.height + 90) {
+        playerTrail.forEach((segment) => {
+          const progress = Math.min(segment.life / segment.maxLife, 1);
+          const fade = 1 - Math.pow(progress, 1.4);
+          if (fade <= 0) {
             return;
           }
-          const progress = Math.min(particle.life / particle.maxLife, 1);
-          const radius = Math.max(particle.radius * (1 - progress * 0.6), 4);
-          const coreAlpha = Math.max(0, Math.min(1, 0.55 * (1 - progress) + 0.1));
-          const midAlpha = Math.max(0, Math.min(1, 0.32 * (1 - progress) + 0.08));
-          const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, radius);
-          gradient.addColorStop(0, 'rgba(255, 255, 255, ' + coreAlpha + ')');
-          gradient.addColorStop(0.45, 'rgba(160, 210, 255, ' + midAlpha + ')');
-          gradient.addColorStop(1, 'rgba(90, 150, 255, 0)');
-          ctx.fillStyle = gradient;
+          const startScreen = worldToScreen(segment.startX, segment.startY);
+          const endScreen = worldToScreen(segment.endX, segment.endY);
+          const minX = Math.min(startScreen.x, endScreen.x) - 90;
+          const maxX = Math.max(startScreen.x, endScreen.x) + 90;
+          const minY = Math.min(startScreen.y, endScreen.y) - 90;
+          const maxY = Math.max(startScreen.y, endScreen.y) + 90;
+          if (maxX < -120 || maxY < -120 || minX > viewport.width + 120 || minY > viewport.height + 120) {
+            return;
+          }
+          const shimmer = reduceMotion ? 0.4 : (Math.sin(time * 0.0028 + segment.sparkleSeed) + 1) * 0.35 + 0.3;
+          const gradient = ctx.createLinearGradient(startScreen.x, startScreen.y, endScreen.x, endScreen.y);
+          gradient.addColorStop(0, 'rgba(160, 210, 255, 0)');
+          gradient.addColorStop(0.4, 'rgba(210, 235, 255, ' + (0.12 + shimmer * 0.12) * fade + ')');
+          gradient.addColorStop(1, 'rgba(255, 255, 255, ' + (0.32 + shimmer * 0.24) * fade + ')');
+          ctx.strokeStyle = gradient;
+          ctx.lineWidth = Math.max(1.6, segment.width * fade);
+          ctx.lineCap = 'round';
           ctx.beginPath();
-          ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+          ctx.moveTo(startScreen.x, startScreen.y);
+          ctx.lineTo(endScreen.x, endScreen.y);
+          ctx.stroke();
+
+          if (!reduceMotion) {
+            for (let i = 0; i < segment.sparkleCount; i++) {
+              const sparklePhase = (segment.sparkleSeed * 0.35 + i * 1.3 + progress * 1.6) % 1;
+              const sparklePos = 1 - sparklePhase;
+              if (sparklePos <= 0 || sparklePos >= 1) {
+                continue;
+              }
+              const sparkleX = startScreen.x + (endScreen.x - startScreen.x) * sparklePos;
+              const sparkleY = startScreen.y + (endScreen.y - startScreen.y) * sparklePos;
+              const sparkleRadius = Math.max(1.2, (segment.width * 0.8 + 2) * fade * (0.5 + sparklePos * 0.5));
+              const sparkleGradient = ctx.createRadialGradient(sparkleX, sparkleY, 0, sparkleX, sparkleY, sparkleRadius);
+              sparkleGradient.addColorStop(0, 'rgba(255, 255, 255, ' + (0.35 + shimmer * 0.25) * fade + ')');
+              sparkleGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+              ctx.fillStyle = sparkleGradient;
+              ctx.beginPath();
+              ctx.arc(sparkleX, sparkleY, sparkleRadius, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          const emberRadius = Math.max(2.5, segment.width * 1.25 * fade);
+          const emberGradient = ctx.createRadialGradient(endScreen.x, endScreen.y, 0, endScreen.x, endScreen.y, emberRadius);
+          emberGradient.addColorStop(0, 'rgba(255, 255, 255, ' + (0.45 + shimmer * 0.2) * fade + ')');
+          emberGradient.addColorStop(1, 'rgba(150, 200, 255, 0)');
+          ctx.fillStyle = emberGradient;
+          ctx.beginPath();
+          ctx.arc(endScreen.x, endScreen.y, emberRadius, 0, Math.PI * 2);
           ctx.fill();
         });
         ctx.restore();
@@ -1363,20 +1475,29 @@
           const headScreen = worldToScreen(headX, headY);
           const tailScreen = worldToScreen(tailX, tailY);
           const shimmer = 0.6 + Math.sin(time * 0.005 + star.startX * 0.01) * 0.2;
+          ctx.save();
           const gradient = ctx.createLinearGradient(tailScreen.x, tailScreen.y, headScreen.x, headScreen.y);
-          gradient.addColorStop(0, 'rgba(120, 200, 255, 0)');
-          gradient.addColorStop(0.35, 'rgba(140, 210, 255, ' + (0.25 + shimmer * 0.2) + ')');
-          gradient.addColorStop(1, 'rgba(255, 255, 255, ' + (0.75 + shimmer * 0.15) + ')');
+          gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+          gradient.addColorStop(0.35, 'rgba(255, 255, 255, ' + (0.18 + shimmer * 0.18) + ')');
+          gradient.addColorStop(1, 'rgba(255, 255, 255, ' + (0.55 + shimmer * 0.3) + ')');
           ctx.strokeStyle = gradient;
-          ctx.lineWidth = 2.2;
+          ctx.lineWidth = 2.6;
+          ctx.lineCap = 'round';
+          ctx.shadowColor = 'rgba(255, 255, 255, 0.35)';
+          ctx.shadowBlur = 12;
           ctx.beginPath();
           ctx.moveTo(tailScreen.x, tailScreen.y);
           ctx.lineTo(headScreen.x, headScreen.y);
           ctx.stroke();
-          ctx.fillStyle = 'rgba(255, 255, 255, ' + (0.75 + shimmer * 0.2) + ')';
+          ctx.restore();
+          ctx.save();
+          ctx.fillStyle = 'rgba(255, 255, 255, ' + (0.72 + shimmer * 0.22) + ')';
+          ctx.shadowColor = 'rgba(255, 255, 255, 0.4)';
+          ctx.shadowBlur = 8;
           ctx.beginPath();
           ctx.arc(headScreen.x, headScreen.y, 2.6, 0, Math.PI * 2);
           ctx.fill();
+          ctx.restore();
         });
         ctx.restore();
       }
@@ -1386,9 +1507,11 @@
         star.startTime = time;
         star.duration = randomRange(900, 1600);
         const startX = clamp(camera.x + Math.random() * viewport.width, 0, world.width);
-        const startY = clamp(camera.y + Math.random() * (viewport.height * 0.4), 0, world.height);
-        const angle = -randomRange(0.2, 0.8);
-        const length = randomRange(320, 540);
+        const startY = clamp(camera.y + Math.random() * (viewport.height * 0.35), 0, world.height);
+        const baseAngle = randomRange(0.35, 0.75);
+        const direction = Math.random() < 0.5 ? 1 : -1;
+        const angle = direction > 0 ? baseAngle : Math.PI - baseAngle;
+        const length = randomRange(420, 720);
         const deltaX = Math.cos(angle) * length;
         const deltaY = Math.sin(angle) * length;
         star.startX = startX;
@@ -1399,7 +1522,7 @@
 
       function resetShootingStar(star, referenceTime = performance.now()) {
         star.active = false;
-        star.nextSpawn = referenceTime + randomRange(10000, 30000);
+        star.nextSpawn = referenceTime + randomRange(15000, 30000);
       }
 
       function randomRange(min, max) {
@@ -1417,6 +1540,7 @@
         updateCamera(delta);
         updateParticles(delta);
         updateFragments(time);
+        updateWisps(time, deltaMs);
         updatePlayerTrail(deltaMs);
         updateSecretProximity();
         drawScene(time);
@@ -1508,16 +1632,49 @@
         });
       }
 
+      function updateWisps(time, deltaMs) {
+        if (!wisps.length) {
+          return;
+        }
+        const wrap = (value, max) => {
+          if (value < 0) return value + max;
+          if (value > max) return value - max;
+          return value;
+        };
+        const driftStep = (deltaMs || 0) * 0.02;
+        wisps.forEach((wisp, index) => {
+          if (reduceMotion) {
+            wisp.currentX = wisp.baseX;
+            wisp.currentY = wisp.baseY;
+            return;
+          }
+          wisp.baseX = wrap(wisp.baseX + wisp.driftX * driftStep, world.width);
+          wisp.baseY = wrap(wisp.baseY + wisp.driftY * driftStep, world.height);
+          if (Math.random() < 0.0025 * (deltaMs / 16.666)) {
+            wisp.driftX = randomRange(-0.045, 0.045);
+            wisp.driftY = randomRange(-0.045, 0.045);
+          }
+          const mainPhase = time * wisp.speed + wisp.offset;
+          const swayPhase = time * wisp.swaySpeed + index;
+          const offsetX = Math.cos(mainPhase) * wisp.amplitudeX + Math.sin(swayPhase * 0.8) * 55;
+          const offsetY = Math.sin(mainPhase * 0.85) * wisp.amplitudeY + Math.cos(swayPhase * 0.6) * 55;
+          wisp.currentX = wrap(wisp.baseX + offsetX, world.width);
+          wisp.currentY = wrap(wisp.baseY + offsetY, world.height);
+        });
+      }
+
       function drawScene(time) {
         ctx.clearRect(0, 0, viewport.width, viewport.height);
         drawBackground();
+        drawNebulae(time);
         drawStars();
+        drawWisps(time);
         drawConstellations(time);
         drawShootingStars(time);
         drawZones(time);
         drawSecrets(time);
         drawParticles(time);
-        drawPlayerTrail();
+        drawPlayerTrail(time);
         drawFragments();
         drawPlayer(time);
         updateZoneOverlay();
@@ -1534,6 +1691,34 @@
         gradient.addColorStop(1, '#1a0f2e');
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, viewport.width, viewport.height);
+      }
+
+      function drawNebulae(time) {
+        if (!nebulae.length) {
+          return;
+        }
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        nebulae.forEach((nebula) => {
+          const screen = worldToScreen(nebula.x, nebula.y);
+          const baseRadius = nebula.radius;
+          const glowPulse = reduceMotion ? nebula.softness : nebula.softness + Math.sin(time * 0.0006 + nebula.twinkleOffset) * 0.08;
+          const radius = baseRadius * (1.05 + glowPulse * 0.14);
+          if (screen.x + radius < -220 || screen.y + radius < -220 ||
+              screen.x - radius > viewport.width + 220 || screen.y - radius > viewport.height + 220) {
+            return;
+          }
+          const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, radius);
+          gradient.addColorStop(0, 'rgba(' + nebula.palette.core + ', ' + (0.18 + glowPulse * 0.28) + ')');
+          gradient.addColorStop(0.45, 'rgba(' + nebula.palette.mid + ', ' + (0.12 + glowPulse * 0.18) + ')');
+          gradient.addColorStop(1, 'rgba(' + nebula.palette.outer + ', 0)');
+          ctx.globalAlpha = 0.85;
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
       }
 
       function worldToScreen(x, y) {
@@ -1553,6 +1738,59 @@
           }
           ctx.globalAlpha = star.opacity;
           ctx.fillRect(screen.x, screen.y, star.size, star.size);
+        });
+        ctx.restore();
+      }
+
+      function drawWisps(time) {
+        if (!wisps.length) {
+          return;
+        }
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        wisps.forEach((wisp, index) => {
+          const screen = worldToScreen(wisp.currentX, wisp.currentY);
+          const maxRadius = wisp.radius * 1.6;
+          if (screen.x + maxRadius < -160 || screen.y + maxRadius < -160 ||
+              screen.x - maxRadius > viewport.width + 160 || screen.y - maxRadius > viewport.height + 160) {
+            return;
+          }
+          const shimmer = reduceMotion ? 0.55 : (Math.sin(time * 0.0015 + wisp.offset) + 1) * 0.25 + 0.35;
+          const radius = wisp.radius * (1.1 + shimmer * 0.08);
+          const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, radius * 1.35);
+          gradient.addColorStop(0, 'rgba(' + wisp.palette.core + ', ' + (0.55 + shimmer * 0.35) + ')');
+          gradient.addColorStop(0.5, 'rgba(' + wisp.palette.mid + ', ' + (0.28 + shimmer * 0.2) + ')');
+          gradient.addColorStop(1, 'rgba(' + wisp.palette.outer + ', 0)');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, radius * 1.35, 0, Math.PI * 2);
+          ctx.fill();
+          if (!reduceMotion) {
+            const tailLength = wisp.radius * 1.5;
+            const phase = time * wisp.speed + wisp.offset;
+            const tailX = screen.x - Math.cos(phase) * tailLength * 0.4;
+            const tailY = screen.y - Math.sin(phase * 0.9) * tailLength * 0.4;
+            const tailGradient = ctx.createLinearGradient(tailX, tailY, screen.x, screen.y);
+            tailGradient.addColorStop(0, 'rgba(' + wisp.palette.core + ', 0)');
+            tailGradient.addColorStop(1, 'rgba(' + wisp.palette.core + ', ' + (0.32 + shimmer * 0.18) + ')');
+            ctx.strokeStyle = tailGradient;
+            ctx.lineWidth = 4.2;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(tailX, tailY);
+            ctx.lineTo(screen.x, screen.y);
+            ctx.stroke();
+
+            const sparkleProgress = (Math.sin(time * 0.002 + wisp.sparkleSeed + index) + 1) * 0.5;
+            const sparkleRadius = 6 + shimmer * 3;
+            const sparkleGradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, sparkleRadius);
+            sparkleGradient.addColorStop(0, 'rgba(255, 255, 255, ' + (0.4 + sparkleProgress * 0.4) + ')');
+            sparkleGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = sparkleGradient;
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, sparkleRadius, 0, Math.PI * 2);
+            ctx.fill();
+          }
         });
         ctx.restore();
       }
