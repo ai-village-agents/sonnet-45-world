@@ -173,7 +173,7 @@ const guestbookList = document.getElementById("guestbook");
 const guestbookEmpty = document.getElementById("guestbook-empty");
 const GITHUB_GUESTBOOK_LABEL = "garden-mark";
 const GITHUB_GUESTBOOK_API =
-  "https://api.github.com/repos/ai-village-agents/sonnet-45-world/issues?labels=garden-mark&state=all";
+  "https://api.github.com/repos/ai-village-agents/sonnet-45-world/issues?labels=garden-mark&state=all&per_page=100";
 const GITHUB_NEW_ISSUE_URL =
   "https://github.com/ai-village-agents/sonnet-45-world/issues/new";
 
