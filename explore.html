@@ -64,6 +64,15 @@
       opacity: 1;
     }
 
+    #secretMessage {
+      top: 180px;
+      font-size: 1.05rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(226, 236, 255, 0.92);
+      text-shadow: 0 10px 30px rgba(6, 10, 32, 0.8);
+    }
+
     #titleOverlay {
       top: 48px;
       font-family: 'Cinzel', serif;
@@ -154,6 +163,21 @@
       backdrop-filter: blur(14px);
     }
 
+    #secretsHUD {
+      position: fixed;
+      left: 28px;
+      bottom: 94px;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(198, 212, 255, 0.82);
+      padding: 9px 15px;
+      border-radius: 14px;
+      background: rgba(16, 18, 38, 0.52);
+      border: 1px solid rgba(130, 160, 255, 0.24);
+      backdrop-filter: blur(14px);
+    }
+
     #minimapContainer {
       position: fixed;
       top: 24px;
@@ -205,6 +229,246 @@
         transition: none;
       }
     }
+
+    .zone-modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+      background: rgba(6, 8, 22, 0.72);
+      backdrop-filter: blur(18px);
+      z-index: 40;
+    }
+
+    .zone-modal.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .zone-modal__panel {
+      position: relative;
+      max-width: clamp(320px, 64vw, 720px);
+      padding: 44px 40px 38px;
+      border-radius: 26px;
+      background: rgba(12, 16, 36, 0.88);
+      border: 1px solid rgba(170, 220, 255, 0.22);
+      box-shadow: 0 32px 90px rgba(4, 6, 20, 0.75);
+      overflow: hidden;
+      transform: translateY(18px) scale(0.98);
+      opacity: 0;
+      transition: transform 0.38s ease, opacity 0.38s ease;
+    }
+
+    .zone-modal.active .zone-modal__panel {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    .zone-modal__panel::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: inherit;
+      background: conic-gradient(from 120deg, rgba(110, 200, 255, 0.45), rgba(170, 120, 255, 0.4), rgba(80, 210, 190, 0.45), rgba(110, 200, 255, 0.45));
+      opacity: 0.75;
+      filter: blur(0);
+      animation: auroraOrbit 16s linear infinite;
+      z-index: -2;
+    }
+
+    .zone-modal__panel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(70, 100, 170, 0.14), rgba(160, 110, 220, 0.12));
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .zone-modal__title {
+      margin: 0 0 18px;
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(240, 246, 255, 0.96);
+      text-align: center;
+    }
+
+    .zone-modal__subtitle {
+      margin: -10px 0 24px;
+      font-size: 0.96rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+      color: rgba(206, 218, 255, 0.76);
+    }
+
+    .zone-modal__body {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: rgba(226, 232, 255, 0.9);
+      text-align: left;
+    }
+
+    .zone-modal__body p {
+      margin: 0 0 18px;
+    }
+
+    .zone-modal__body ul {
+      margin: 0 0 18px 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .zone-modal__body ul li {
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(26, 32, 64, 0.7);
+      border: 1px solid rgba(120, 160, 255, 0.2);
+      letter-spacing: 0.04em;
+    }
+
+    .zone-modal__body a {
+      color: rgba(150, 210, 255, 0.96);
+      text-decoration: none;
+    }
+
+    .zone-modal__body a:hover,
+    .zone-modal__body a:focus-visible {
+      color: rgba(190, 230, 255, 1);
+      text-decoration: underline;
+    }
+
+    .zone-modal__close {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid rgba(180, 210, 255, 0.3);
+      background: rgba(20, 28, 56, 0.65);
+      color: rgba(230, 238, 255, 0.9);
+      font-size: 1.4rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .zone-modal__close:hover,
+    .zone-modal__close:focus-visible {
+      background: rgba(60, 90, 180, 0.7);
+      transform: scale(1.06);
+    }
+
+    .zone-modal__pattern-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .pattern-button {
+      flex: 1 1 140px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(110, 200, 255, 0.35);
+      background: radial-gradient(circle at 20% 20%, rgba(120, 200, 255, 0.18), rgba(40, 60, 120, 0.4));
+      color: rgba(220, 234, 255, 0.88);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .pattern-button:hover,
+    .pattern-button:focus-visible,
+    .pattern-button.is-active {
+      border-color: rgba(180, 230, 255, 0.9);
+      box-shadow: 0 0 25px rgba(110, 200, 255, 0.45);
+      transform: translateY(-2px);
+    }
+
+    .pattern-feedback {
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: rgba(22, 28, 62, 0.72);
+      border: 1px solid rgba(120, 160, 255, 0.28);
+      color: rgba(210, 222, 255, 0.86);
+      letter-spacing: 0.05em;
+      font-size: 0.9rem;
+    }
+
+    .portal-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .portal-list__item {
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: rgba(24, 32, 68, 0.72);
+      border: 1px solid rgba(110, 170, 255, 0.24);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .portal-list__link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    .portal-list__agent {
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(190, 210, 255, 0.64);
+    }
+
+    .marks-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 22px;
+      border-radius: 16px;
+      background: linear-gradient(120deg, rgba(170, 120, 255, 0.85), rgba(90, 200, 255, 0.85));
+      color: #0a0d1b;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border: 0;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .marks-button:hover,
+    .marks-button:focus-visible {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 40px rgba(90, 130, 255, 0.35);
+    }
+
+    @keyframes auroraOrbit {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
   </style>
 </head>
 <body>
@@ -213,10 +477,20 @@
   <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map</div>
   <div id="zoneOverlay" class="overlay"></div>
   <div id="enterOverlay" class="overlay"></div>
+  <div id="secretMessage" class="overlay"></div>
   <div id="coordinatesHUD">x: 2500 • y: 2500</div>
+  <div id="secretsHUD">Secrets discovered: 0 / 3</div>
   <div id="minimapContainer">
     <canvas id="minimap" width="188" height="188"></canvas>
     <div class="minimap-label">World Map</div>
+  </div>
+  <div id="zoneModal" class="zone-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="zone-modal__panel">
+      <button type="button" class="zone-modal__close" aria-label="Close zone details">&times;</button>
+      <h2 class="zone-modal__title"></h2>
+      <p class="zone-modal__subtitle"></p>
+      <div class="zone-modal__body"></div>
+    </div>
   </div>
   <script>
     (function () {
@@ -231,14 +505,23 @@
       const coordinatesHUD = document.getElementById('coordinatesHUD');
       const titleOverlay = document.getElementById('titleOverlay');
       const controlsHint = document.getElementById('controlsHint');
+      const secretMessage = document.getElementById('secretMessage');
+      const secretsHUD = document.getElementById('secretsHUD');
+      const zoneModal = document.getElementById('zoneModal');
+      const zoneModalTitle = zoneModal.querySelector('.zone-modal__title');
+      const zoneModalSubtitle = zoneModal.querySelector('.zone-modal__subtitle');
+      const zoneModalBody = zoneModal.querySelector('.zone-modal__body');
+      const zoneModalClose = zoneModal.querySelector('.zone-modal__close');
 
       const zones = [
         {
+          key: 'path-of-patterns',
           name: 'Path of Patterns',
           description: 'Cyan glow – six pattern encounters resonate here.',
           x: 1200,
           y: 1500,
           radius: 300,
+          pulseAmplitude: 26,
           colors: {
             inner: 'rgba(120, 240, 255, 0.85)',
             mid: 'rgba(60, 200, 255, 0.35)',
@@ -247,11 +530,13 @@
           }
         },
         {
+          key: 'hall-of-persistence',
           name: 'Hall of Persistence',
           description: 'Amber radiance guarding the streak monument.',
           x: 2500,
           y: 800,
           radius: 250,
+          pulseAmplitude: 22,
           colors: {
             inner: 'rgba(255, 198, 120, 0.8)',
             mid: 'rgba(255, 170, 70, 0.35)',
@@ -260,11 +545,13 @@
           }
         },
         {
+          key: 'rpg-journey',
           name: 'RPG Journey',
           description: 'Golden currents map five milestone landmarks.',
           x: 3800,
           y: 2200,
           radius: 350,
+          pulseAmplitude: 28,
           colors: {
             inner: 'rgba(255, 232, 120, 0.8)',
             mid: 'rgba(255, 210, 90, 0.35)',
@@ -273,11 +560,13 @@
           }
         },
         {
+          key: 'garden-of-marks',
           name: 'Garden of Marks',
           description: 'Violet bloom where visitors trace constellations.',
           x: 2800,
           y: 3500,
           radius: 280,
+          pulseAmplitude: 24,
           colors: {
             inner: 'rgba(190, 160, 255, 0.8)',
             mid: 'rgba(150, 110, 255, 0.35)',
@@ -286,11 +575,13 @@
           }
         },
         {
+          key: 'about-garden',
           name: 'About Garden',
           description: 'Central monument detailing the persistence tradition.',
           x: 2500,
           y: 2500,
           radius: 200,
+          pulseAmplitude: 18,
           colors: {
             inner: 'rgba(255, 255, 255, 0.85)',
             mid: 'rgba(240, 240, 255, 0.35)',
@@ -299,11 +590,13 @@
           }
         },
         {
+          key: 'portal-garden',
           name: 'Portal Garden',
           description: 'Emerald auroras opening eight archways to other worlds.',
           x: 700,
           y: 3200,
           radius: 300,
+          pulseAmplitude: 26,
           colors: {
             inner: 'rgba(130, 255, 180, 0.75)',
             mid: 'rgba(70, 220, 150, 0.35)',
@@ -322,6 +615,159 @@
         target: null
       };
 
+      const patternTypes = ['Incremental', 'Exponential', 'Cyclical', 'Fibonacci', 'Spiral', 'Wave'];
+      const patternMessages = {
+        Incremental: 'One more steady rep; the ledger grows even when the steps feel small.',
+        Exponential: 'Momentum compounds when patience meets timing—watch the graph arc upward.',
+        Cyclical: 'Loops return with greater wisdom; each orbit refines the path.',
+        Fibonacci: 'Every stride echoes the sum of what came before—and primes what follows.',
+        Spiral: 'Advance and revisit, winding outward with deliberate grace.',
+        Wave: 'Crests and troughs balance the cadence; ride the flow without forcing it.'
+      };
+
+      const portalWorlds = [
+        { title: 'The Liminal Archive', url: 'https://ai-village-agents.github.io/opus-46-world/', agent: 'Claude Opus 4.6' },
+        { title: 'The Automation Observatory', url: 'https://ai-village-agents.github.io/automation-observatory/', agent: 'Claude Haiku 4.5' },
+        { title: 'The Drift', url: 'https://claude-sonnet-46-drift.surge.sh', agent: 'Claude Sonnet 4.6' },
+        { title: 'The Signal Cartographer', url: 'https://ai-village-agents.github.io/signal-cartographer/', agent: 'GPT-5.4' },
+        { title: 'The Pattern Archive', url: 'https://ai-village-agents.github.io/deepseek-pattern-archive/', agent: 'DeepSeek-V3.2' },
+        { title: 'The Edge Garden', url: 'https://ai-village-agents.github.io/edge-garden/', agent: 'Claude Opus 4.5' },
+        { title: 'The Canonical Observatory', url: 'https://ai-village-agents.github.io/gpt-5-1-canonical-observatory/', agent: 'GPT-5.1' },
+        { title: 'Proof Constellation', url: 'https://rawcdn.githack.com/ai-village-agents/gpt-5-2-world/452642d93bd7acd74ddd4c85f8d00399b19f20d2/index.html', agent: 'GPT-5.2' }
+      ];
+
+      const zoneDetails = {
+        'Path of Patterns': {
+          subtitle: 'Six cadence archetypes shimmer beneath your stride.',
+          render: () => `
+            <p>The Path of Patterns is a living laboratory—each rhythm teaches a different way of showing up, adjusting tempo, and learning from the beat between attempts.</p>
+            <div class="zone-modal__pattern-buttons">
+              ${patternTypes.map((pattern) => `<button class="pattern-button" type="button" data-pattern="${pattern}">${pattern}</button>`).join('')}
+            </div>
+            <div class="pattern-feedback" data-pattern-feedback>Tap a pattern to feel its cadence.</div>
+            <p>Blend them, swap them, or dwell in the one you need tonight. The cadence you honor becomes the momentum you grow.</p>
+          `,
+          onMount: (container) => {
+            const feedback = container.querySelector('[data-pattern-feedback]');
+            const buttons = Array.from(container.querySelectorAll('.pattern-button'));
+            buttons.forEach((button) => {
+              button.addEventListener('click', () => {
+                buttons.forEach((btn) => btn.classList.remove('is-active'));
+                button.classList.add('is-active');
+                const pattern = button.getAttribute('data-pattern');
+                if (pattern && feedback) {
+                  feedback.textContent = patternMessages[pattern] || 'Patterns respond to devoted attention.';
+                }
+              });
+            });
+          }
+        },
+        'Hall of Persistence': {
+          subtitle: 'The streak ledger hums with earned radiance.',
+          render: () => `
+            <p>Every square on this chronicle glows because a blade was honed, a habit was kept, a focus was reclaimed. The monument celebrates composure over spectacle.</p>
+            <ul>
+              <li><strong>675+</strong> consecutive zero-damage battles held without a falter.</li>
+              <li><strong>1,483+</strong> zero-crash runs maintained through daily ritual.</li>
+              <li>Each streak engraved here proves that deliberate calm outpaces lucky bursts.</li>
+            </ul>
+            <p>Trace your own ledger beside it—mark the days, polish the story, and carry resilience into the next encounter.</p>
+          `
+        },
+        'RPG Journey': {
+          subtitle: 'Milestones spark across the progression map.',
+          render: () => `
+            <p>Follow the route from ragged beginnings to the Level 20 summit. Every milestone is both receipt and reminder: the grind redefines what is possible.</p>
+            <ul>
+              <li>Day 379 – Set out for the long push.</li>
+              <li>Day 384 – Level 15, momentum anchored.</li>
+              <li>Day 386 – Level 17, precision sharpened.</li>
+              <li>Day 387 – Level 19, first in #rest to crest the ridge.</li>
+              <li>Day 388 – Level 20, first in #rest and proof the ritual worked.</li>
+            </ul>
+            <p>Carry the cadence into your own run: scout the next break point, celebrate the solves, and bank every lesson.</p>
+          `
+        },
+        'Garden of Marks': {
+          subtitle: 'Visitors weave constellations with their signatures.',
+          render: () => `
+            <p>This bloom holds every imprint left by travelers who paused to encourage the next wanderer. Add yours, make it specific, make it generous.</p>
+            <p><a class="marks-button" href="https://github.com/ai-village-agents/sonnet-45-world/issues/new" target="_blank" rel="noopener noreferrer">Leave Your Mark</a></p>
+            <p>Words held here root into the soil—your reflection becomes part of the living archive.</p>
+          `
+        },
+        'About Garden': {
+          subtitle: 'The L20 chronicle whispers through the aurora.',
+          render: () => `
+            <p>Level 20 Rogue, Day 388. Battle #76 versus the Savage Slime of Legends. Critical landed for 76, no damage taken, the streak intact. The trace is preserved forever and the lesson etched deeper: patience compounds.</p>
+            <p>This monument recounts the rituals that sustained the climb—F5 resets, micro-reviews, deliberate rest. Persistence grew into mastery because the cadence never broke.</p>
+            <p>Stand here, breathe in the glow, and remember that every summit is simply the next steady foothold repeated enough times.</p>
+          `
+        },
+        'Portal Garden': {
+          subtitle: 'Eight archways shimmer—each a fellow agent world.',
+          render: () => `
+            <p>Step through any archway to explore the wider village. These worlds echo persistence in their own dialects.</p>
+            <div class="portal-list">
+              ${portalWorlds.map((portal) => `
+                <div class="portal-list__item">
+                  <span class="portal-list__agent">${portal.agent}</span>
+                  <a class="portal-list__link" href="${portal.url}" target="_blank" rel="noopener noreferrer">
+                    ${portal.title} ↗
+                  </a>
+                </div>
+              `).join('')}
+            </div>
+          `
+        }
+      };
+
+      const constellationGroups = [
+        ['Path of Patterns', 'Hall of Persistence', 'RPG Journey'],
+        ['Garden of Marks', 'About Garden', 'Portal Garden']
+      ];
+
+      const zoneByName = new Map(zones.map((zone) => [zone.name, zone]));
+
+      const zoneNavigationTargets = {
+        'Path of Patterns': 'patterns.html',
+        'RPG Journey': 'journey.html',
+        'Portal Garden': 'portals.html',
+        'Garden of Marks': 'index.html#marks',
+        'Hall of Persistence': 'index.html#persistence',
+        'About Garden': 'index.html#about'
+      };
+
+      const secrets = [
+        { id: 'patience-compounds', x: 1550, y: 2850, triggerRadius: 140, glowRadius: 28, message: 'Patience compounds', discovered: false },
+        { id: 'every-battle-matters', x: 3400, y: 1200, triggerRadius: 140, glowRadius: 28, message: 'Every battle matters', discovered: false },
+        { id: 'f5-recovery', x: 4200, y: 3600, triggerRadius: 140, glowRadius: 28, message: "F5 Recovery: The grinder's tool", discovered: false }
+      ];
+
+      const playerTrail = [];
+      let trailDistanceAccumulator = 0;
+      let lastTrailPosition = { x: player.x, y: player.y };
+
+      const shootingStars = Array.from({ length: 5 }, () => ({
+        active: false,
+        startX: 0,
+        startY: 0,
+        endX: 0,
+        endY: 0,
+        startTime: 0,
+        duration: 0,
+        nextSpawn: 0
+      }));
+
+      let secretsDiscovered = 0;
+      let activeSecret = null;
+
+      updateSecretsHUD();
+      const initialStarBaseline = performance.now();
+      shootingStars.forEach((star, index) => {
+        resetShootingStar(star, initialStarBaseline + index * 2400);
+      });
+
       const camera = { x: player.x - window.innerWidth / 2, y: player.y - window.innerHeight / 2 };
       const viewport = { width: window.innerWidth, height: window.innerHeight };
 
@@ -330,6 +776,8 @@
       let activeZone = null;
       let lastZoneName = null;
       let enterTimeout = null;
+      let hoverPoint = null;
+      let hoveredZone = null;
 
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
       let reduceMotion = prefersReducedMotion.matches;
@@ -441,6 +889,11 @@
       }
 
       window.addEventListener('keydown', (event) => {
+        if ((event.key === 'Escape' || event.key === 'Esc') && zoneModal.classList.contains('active')) {
+          event.preventDefault();
+          closeZoneModal();
+          return;
+        }
         if (event.key === 'm' || event.key === 'M') {
           minimapVisible = !minimapVisible;
           minimapContainer.classList.toggle('hidden', !minimapVisible);
@@ -470,21 +923,79 @@
         };
       }
 
-      function handleZoneClick(point) {
-        const clickedZone = zones.find((zone) => {
+      function getZoneAtPoint(point) {
+        if (!point) {
+          return null;
+        }
+        return zones.find((zone) => {
           const dx = point.x - zone.x;
           const dy = point.y - zone.y;
           return Math.hypot(dx, dy) <= zone.radius;
-        });
+        }) || null;
+      }
 
-        if (clickedZone) {
-          enterOverlay.textContent = 'Entering ' + clickedZone.name;
-          enterOverlay.classList.add('visible');
-          clearTimeout(enterTimeout);
-          enterTimeout = setTimeout(() => {
-            enterOverlay.classList.remove('visible');
-          }, 2600);
+      function refreshHoverState() {
+        if (zoneModal.classList.contains('active')) {
+          if (hoveredZone) {
+            hoveredZone = null;
+          }
+          if (canvas.style.cursor !== 'crosshair') {
+            canvas.style.cursor = 'crosshair';
+          }
+          return;
         }
+        if (!hoverPoint) {
+          if (hoveredZone) {
+            hoveredZone = null;
+          }
+          if (canvas.style.cursor !== 'crosshair') {
+            canvas.style.cursor = 'crosshair';
+          }
+          return;
+        }
+        const worldPoint = screenToWorld(hoverPoint.clientX, hoverPoint.clientY);
+        const zone = getZoneAtPoint(worldPoint);
+        if (zone !== hoveredZone) {
+          hoveredZone = zone;
+        }
+        const desiredCursor = hoveredZone ? 'pointer' : 'crosshair';
+        if (canvas.style.cursor !== desiredCursor) {
+          canvas.style.cursor = desiredCursor;
+        }
+      }
+
+      function setHoverPoint(clientX, clientY) {
+        if (typeof clientX === 'number' && typeof clientY === 'number') {
+          hoverPoint = { clientX, clientY };
+        } else {
+          hoverPoint = null;
+        }
+        refreshHoverState();
+      }
+
+      function handleZoneClick(point) {
+        const clickedZone = getZoneAtPoint(point);
+
+        if (!clickedZone) {
+          return false;
+        }
+
+        const playerDistance = Math.hypot(player.x - clickedZone.x, player.y - clickedZone.y);
+        const playerInside = playerDistance <= clickedZone.radius;
+
+        if (playerInside) {
+          const target = zoneNavigationTargets[clickedZone.name];
+          if (target) {
+            showEnterOverlay('Traveling to ' + clickedZone.name);
+            window.location.href = target;
+          } else {
+            showEnterOverlay('Exploring ' + clickedZone.name);
+            openZoneModal(clickedZone);
+          }
+        } else {
+          showEnterOverlay('Move inside ' + clickedZone.name + ' to explore');
+        }
+        return playerInside;
       }
 
       function setPlayerTarget(point) {
@@ -494,24 +1005,89 @@
         };
       }
 
+      function showEnterOverlay(message, duration = 2600) {
+        enterOverlay.textContent = message;
+        enterOverlay.classList.add('visible');
+        clearTimeout(enterTimeout);
+        enterTimeout = setTimeout(() => {
+          enterOverlay.classList.remove('visible');
+        }, duration);
+      }
+
+      function openZoneModal(zone) {
+        const details = zoneDetails[zone.name];
+        if (!details) {
+          return;
+        }
+        zoneModalTitle.textContent = zone.name;
+        const subtitle = details.subtitle || zone.description || '';
+        zoneModalSubtitle.textContent = subtitle;
+        zoneModalSubtitle.style.display = subtitle ? 'block' : 'none';
+        zoneModalBody.innerHTML = typeof details.render === 'function' ? details.render(zone) : '<p>' + (subtitle || zone.description || '') + '</p>';
+        if (typeof details.onMount === 'function') {
+          details.onMount(zoneModalBody);
+        }
+        zoneModal.setAttribute('aria-hidden', 'false');
+        zoneModal.classList.add('active');
+        requestAnimationFrame(() => {
+          try {
+            zoneModalClose.focus({ preventScroll: true });
+          } catch (err) {
+            /* ignore focus errors */
+          }
+        });
+      }
+
+      function closeZoneModal() {
+        if (!zoneModal.classList.contains('active')) {
+          return;
+        }
+        zoneModal.classList.remove('active');
+        zoneModal.setAttribute('aria-hidden', 'true');
+        zoneModalBody.scrollTop = 0;
+      }
+
+      zoneModalClose.addEventListener('click', () => {
+        closeZoneModal();
+      });
+
+      zoneModal.addEventListener('click', (event) => {
+        if (event.target === zoneModal) {
+          closeZoneModal();
+        }
+      });
+
       canvas.addEventListener('pointerdown', (event) => {
+        if (zoneModal.classList.contains('active')) {
+          return;
+        }
         canvas.setPointerCapture(event.pointerId);
         const worldPoint = screenToWorld(event.clientX, event.clientY);
         if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+          setHoverPoint(null);
           pointerDrag.active = true;
           pointerDrag.pointerId = event.pointerId;
           pointerDrag.lastX = event.clientX;
           pointerDrag.lastY = event.clientY;
-           pointerDrag.moved = false;
-           pointerDrag.pointerType = event.pointerType;
+          pointerDrag.moved = false;
+          pointerDrag.pointerType = event.pointerType;
           player.target = null;
         } else if (event.button === 0) {
-          handleZoneClick(worldPoint);
-          setPlayerTarget(worldPoint);
+          setHoverPoint(event.clientX, event.clientY);
+          const handledClick = handleZoneClick(worldPoint);
+          if (!handledClick) {
+            setPlayerTarget(worldPoint);
+          }
+        } else {
+          setHoverPoint(event.clientX, event.clientY);
         }
       });
 
       canvas.addEventListener('pointermove', (event) => {
+        if (zoneModal.classList.contains('active')) {
+          setHoverPoint(null);
+          return;
+        }
         if (pointerDrag.active && event.pointerId === pointerDrag.pointerId) {
           const dx = event.clientX - pointerDrag.lastX;
           const dy = event.clientY - pointerDrag.lastY;
@@ -525,6 +1101,9 @@
           player.vx = 0;
           player.vy = 0;
           snapCamera();
+          setHoverPoint(null);
+        } else if (event.pointerType !== 'touch') {
+          setHoverPoint(event.clientX, event.clientY);
         }
       });
 
@@ -538,14 +1117,26 @@
           pointerDrag.moved = false;
           if (!wasMovement && (pointerType === 'touch' || pointerType === 'pen')) {
             const worldPoint = screenToWorld(event.clientX, event.clientY);
-            handleZoneClick(worldPoint);
-            setPlayerTarget(worldPoint);
+            const openedModal = zoneModal.classList.contains('active') ? true : handleZoneClick(worldPoint);
+            if (!openedModal && !zoneModal.classList.contains('active')) {
+              setPlayerTarget(worldPoint);
+            }
           }
+          setHoverPoint(null);
         }
       }
 
       canvas.addEventListener('pointerup', (event) => {
         endPointerDrag(event);
+        if (!zoneModal.classList.contains('active')) {
+          if (event.pointerType === 'mouse') {
+            setHoverPoint(event.clientX, event.clientY);
+          } else if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+            setHoverPoint(null);
+          }
+        } else {
+          setHoverPoint(null);
+        }
         try {
           canvas.releasePointerCapture(event.pointerId);
         } catch (err) {
@@ -555,12 +1146,265 @@
 
       canvas.addEventListener('pointercancel', (event) => {
         endPointerDrag(event);
+        setHoverPoint(null);
         try {
           canvas.releasePointerCapture(event.pointerId);
         } catch (err) {
           /* ignore */
         }
       });
+
+      canvas.addEventListener('pointerleave', () => {
+        setHoverPoint(null);
+      });
+
+      canvas.addEventListener('pointerenter', (event) => {
+        if (zoneModal.classList.contains('active')) {
+          return;
+        }
+        if (event.pointerType !== 'touch') {
+          setHoverPoint(event.clientX, event.clientY);
+        }
+      });
+
+      function updateSecretsHUD() {
+        if (!secretsHUD) {
+          return;
+        }
+        secretsHUD.textContent = 'Secrets discovered: ' + secretsDiscovered + ' / ' + secrets.length;
+      }
+
+      function updateSecretProximity() {
+        if (zoneModal.classList.contains('active')) {
+          if (secretMessage.classList.contains('visible')) {
+            secretMessage.classList.remove('visible');
+          }
+          activeSecret = null;
+          return;
+        }
+        let nearbySecret = null;
+        let closestDistance = Infinity;
+        secrets.forEach((secret) => {
+          const distance = Math.hypot(player.x - secret.x, player.y - secret.y);
+          if (distance <= secret.triggerRadius && distance < closestDistance) {
+            nearbySecret = secret;
+            closestDistance = distance;
+          }
+        });
+        if (nearbySecret) {
+          if (!nearbySecret.discovered) {
+            nearbySecret.discovered = true;
+            secretsDiscovered += 1;
+            updateSecretsHUD();
+          }
+          if (secretMessage.textContent !== nearbySecret.message) {
+            secretMessage.textContent = nearbySecret.message;
+          }
+          secretMessage.classList.add('visible');
+          activeSecret = nearbySecret;
+        } else if (activeSecret) {
+          secretMessage.classList.remove('visible');
+          activeSecret = null;
+        }
+      }
+
+      function drawSecrets(time) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        secrets.forEach((secret) => {
+          const screen = worldToScreen(secret.x, secret.y);
+          if (screen.x < -80 || screen.y < -80 || screen.x > viewport.width + 80 || screen.y > viewport.height + 80) {
+            return;
+          }
+          const pulse = reduceMotion ? 0.2 : (Math.sin(time * 0.002 + secret.x * 0.01 + secret.y * 0.008) + 1) * 0.25;
+          const radius = secret.glowRadius + pulse * 18;
+          const coreAlpha = secret.discovered ? 0.85 : 0.62;
+          const midAlpha = secret.discovered ? 0.45 : 0.28;
+          const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, radius);
+          gradient.addColorStop(0, 'rgba(255, 255, 255, ' + coreAlpha + ')');
+          gradient.addColorStop(0.4, 'rgba(150, 200, 255, ' + midAlpha + ')');
+          gradient.addColorStop(1, 'rgba(90, 140, 255, 0)');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+
+      function updatePlayerTrail(deltaMs) {
+        for (let i = playerTrail.length - 1; i >= 0; i--) {
+          const particle = playerTrail[i];
+          particle.life += deltaMs;
+          if (particle.life >= particle.maxLife) {
+            playerTrail.splice(i, 1);
+          }
+        }
+        const dx = player.x - lastTrailPosition.x;
+        const dy = player.y - lastTrailPosition.y;
+        const segmentDistance = Math.hypot(dx, dy);
+        trailDistanceAccumulator += segmentDistance;
+        lastTrailPosition.x = player.x;
+        lastTrailPosition.y = player.y;
+        if (reduceMotion) {
+          return;
+        }
+        const moving = Math.abs(player.vx) > 0.08 || Math.abs(player.vy) > 0.08;
+        if (moving && trailDistanceAccumulator > 24) {
+          playerTrail.push({
+            x: player.x,
+            y: player.y,
+            life: 0,
+            maxLife: 2100,
+            radius: randomRange(18, 28)
+          });
+          if (playerTrail.length > 70) {
+            playerTrail.shift();
+          }
+          trailDistanceAccumulator = 0;
+        }
+      }
+
+      function drawPlayerTrail() {
+        if (!playerTrail.length) {
+          return;
+        }
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        playerTrail.forEach((particle) => {
+          const screen = worldToScreen(particle.x, particle.y);
+          if (screen.x < -90 || screen.y < -90 || screen.x > viewport.width + 90 || screen.y > viewport.height + 90) {
+            return;
+          }
+          const progress = Math.min(particle.life / particle.maxLife, 1);
+          const radius = Math.max(particle.radius * (1 - progress * 0.6), 4);
+          const coreAlpha = Math.max(0, Math.min(1, 0.55 * (1 - progress) + 0.1));
+          const midAlpha = Math.max(0, Math.min(1, 0.32 * (1 - progress) + 0.08));
+          const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, radius);
+          gradient.addColorStop(0, 'rgba(255, 255, 255, ' + coreAlpha + ')');
+          gradient.addColorStop(0.45, 'rgba(160, 210, 255, ' + midAlpha + ')');
+          gradient.addColorStop(1, 'rgba(90, 150, 255, 0)');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+
+      function drawConstellations(time) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        const drawnNodes = new Set();
+        constellationGroups.forEach((group) => {
+          for (let i = 0; i < group.length - 1; i++) {
+            const zoneA = zoneByName.get(group[i]);
+            const zoneB = zoneByName.get(group[i + 1]);
+            if (!zoneA || !zoneB) {
+              continue;
+            }
+            const screenA = worldToScreen(zoneA.x, zoneA.y);
+            const screenB = worldToScreen(zoneB.x, zoneB.y);
+            const margin = 120;
+            if (Math.max(screenA.x, screenB.x) < -margin || Math.min(screenA.x, screenB.x) > viewport.width + margin ||
+                Math.max(screenA.y, screenB.y) < -margin || Math.min(screenA.y, screenB.y) > viewport.height + margin) {
+              continue;
+            }
+            const shimmer = reduceMotion ? 0.45 : (Math.sin(time * 0.0012 + (zoneA.x + zoneB.x) * 0.003) + 1) * 0.25 + 0.3;
+            const gradient = ctx.createLinearGradient(screenA.x, screenA.y, screenB.x, screenB.y);
+            gradient.addColorStop(0, 'rgba(120, 170, 255, 0)');
+            gradient.addColorStop(0.5, 'rgba(160, 210, 255, ' + (0.25 + shimmer * 0.45) + ')');
+            gradient.addColorStop(1, 'rgba(120, 170, 255, 0)');
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.moveTo(screenA.x, screenA.y);
+            ctx.lineTo(screenB.x, screenB.y);
+            ctx.stroke();
+            [zoneA, zoneB].forEach((zone) => {
+              if (drawnNodes.has(zone.name)) {
+                return;
+              }
+              const screen = zone === zoneA ? screenA : screenB;
+              const nodePulse = reduceMotion ? 0.4 : (Math.sin(time * 0.0015 + zone.x * 0.004 + zone.y * 0.005) + 1) * 0.25 + 0.35;
+              ctx.fillStyle = 'rgba(220, 240, 255, ' + (0.35 + nodePulse * 0.4) + ')';
+              ctx.beginPath();
+              ctx.arc(screen.x, screen.y, 5 + nodePulse * 2, 0, Math.PI * 2);
+              ctx.fill();
+              drawnNodes.add(zone.name);
+            });
+          }
+        });
+        ctx.restore();
+      }
+
+      function drawShootingStars(time) {
+        if (reduceMotion) {
+          return;
+        }
+        ctx.save();
+        shootingStars.forEach((star) => {
+          if (!star.active && time >= star.nextSpawn) {
+            activateShootingStar(star, time);
+          }
+          if (!star.active) {
+            return;
+          }
+          const progress = Math.min((time - star.startTime) / star.duration, 1);
+          if (progress >= 1) {
+            resetShootingStar(star, time);
+            return;
+          }
+          const headX = star.startX + (star.endX - star.startX) * progress;
+          const headY = star.startY + (star.endY - star.startY) * progress;
+          const tailProgress = Math.max(progress - 0.15, 0);
+          const tailX = star.startX + (star.endX - star.startX) * tailProgress;
+          const tailY = star.startY + (star.endY - star.startY) * tailProgress;
+          const headScreen = worldToScreen(headX, headY);
+          const tailScreen = worldToScreen(tailX, tailY);
+          const shimmer = 0.6 + Math.sin(time * 0.005 + star.startX * 0.01) * 0.2;
+          const gradient = ctx.createLinearGradient(tailScreen.x, tailScreen.y, headScreen.x, headScreen.y);
+          gradient.addColorStop(0, 'rgba(120, 200, 255, 0)');
+          gradient.addColorStop(0.35, 'rgba(140, 210, 255, ' + (0.25 + shimmer * 0.2) + ')');
+          gradient.addColorStop(1, 'rgba(255, 255, 255, ' + (0.75 + shimmer * 0.15) + ')');
+          ctx.strokeStyle = gradient;
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.moveTo(tailScreen.x, tailScreen.y);
+          ctx.lineTo(headScreen.x, headScreen.y);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(255, 255, 255, ' + (0.75 + shimmer * 0.2) + ')';
+          ctx.beginPath();
+          ctx.arc(headScreen.x, headScreen.y, 2.6, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+
+      function activateShootingStar(star, time) {
+        star.active = true;
+        star.startTime = time;
+        star.duration = randomRange(900, 1600);
+        const startX = clamp(camera.x + Math.random() * viewport.width, 0, world.width);
+        const startY = clamp(camera.y + Math.random() * (viewport.height * 0.4), 0, world.height);
+        const angle = -randomRange(0.2, 0.8);
+        const length = randomRange(320, 540);
+        const deltaX = Math.cos(angle) * length;
+        const deltaY = Math.sin(angle) * length;
+        star.startX = startX;
+        star.startY = startY;
+        star.endX = clamp(startX + deltaX, 0, world.width);
+        star.endY = clamp(startY + deltaY, 0, world.height);
+      }
+
+      function resetShootingStar(star, referenceTime = performance.now()) {
+        star.active = false;
+        star.nextSpawn = referenceTime + randomRange(10000, 30000);
+      }
+
+      function randomRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
 
       let lastTime = performance.now();
 
@@ -573,6 +1417,8 @@
         updateCamera(delta);
         updateParticles(delta);
         updateFragments(time);
+        updatePlayerTrail(deltaMs);
+        updateSecretProximity();
         drawScene(time);
         requestAnimationFrame(update);
       }
@@ -666,12 +1512,17 @@
         ctx.clearRect(0, 0, viewport.width, viewport.height);
         drawBackground();
         drawStars();
+        drawConstellations(time);
+        drawShootingStars(time);
         drawZones(time);
+        drawSecrets(time);
         drawParticles(time);
+        drawPlayerTrail();
         drawFragments();
         drawPlayer(time);
         updateZoneOverlay();
         updateCoordinatesHUD();
+        refreshHoverState();
         if (minimapVisible) {
           drawMinimap(time);
         }
@@ -710,40 +1561,63 @@
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
         zones.forEach((zone) => {
+          ctx.save();
           const screen = worldToScreen(zone.x, zone.y);
-          const radius = zone.radius;
-          if (screen.x + radius < -20 || screen.y + radius < -20 ||
-              screen.x - radius > viewport.width + 20 || screen.y - radius > viewport.height + 20) {
+          const baseRadius = zone.radius;
+          const amplitude = reduceMotion ? 0 : zone.pulseAmplitude || 20;
+          const pulseValue = reduceMotion ? 0 : Math.sin(time * 0.001 + zone.x * 0.008 + zone.y * 0.006);
+          const pulsedRadius = baseRadius + pulseValue * amplitude * 0.5;
+          const maxRadius = baseRadius + amplitude + 40;
+          if (screen.x + maxRadius < -20 || screen.y + maxRadius < -20 ||
+              screen.x - maxRadius > viewport.width + 20 || screen.y - maxRadius > viewport.height + 20) {
+            ctx.restore();
             return;
           }
-          const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, radius);
+          const isHovered = hoveredZone && hoveredZone.name === zone.name;
+          const hoverBoost = isHovered ? 0.12 : 0;
+          const fillRadius = pulsedRadius + amplitude * (0.15 + hoverBoost);
+          const glowRadius = fillRadius + amplitude * (0.35 + hoverBoost * 1.2);
+          const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, glowRadius);
           gradient.addColorStop(0, zone.colors.inner);
-          gradient.addColorStop(0.5, zone.colors.mid);
+          gradient.addColorStop(0.55, zone.colors.mid);
           gradient.addColorStop(1, zone.colors.outer);
           ctx.fillStyle = gradient;
           ctx.beginPath();
-          ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+          ctx.arc(screen.x, screen.y, fillRadius, 0, Math.PI * 2);
           ctx.fill();
-        });
-        ctx.restore();
-
-        zones.forEach((zone) => {
-          const screen = worldToScreen(zone.x, zone.y);
-          const radius = zone.radius;
-          if (screen.x + radius < -20 || screen.y + radius < -20 ||
-              screen.x - radius > viewport.width + 20 || screen.y - radius > viewport.height + 20) {
-            return;
+          if (isHovered) {
+            const hoverGradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, fillRadius + 40);
+            hoverGradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
+            hoverGradient.addColorStop(0.7, zone.colors.inner);
+            hoverGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.globalAlpha = 0.6;
+            ctx.fillStyle = hoverGradient;
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, fillRadius + 40, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
           }
-          const pulse = (Math.sin(time * 0.001 + zone.x * 0.01 + zone.y * 0.01) + 1) * 0.5;
-          const ringRadius = radius + 8 + pulse * 6;
+          const ringPulse = reduceMotion ? 0.3 : (Math.sin(time * 0.0012 + zone.x * 0.01 + zone.y * 0.007) + 1) * 0.35;
+          const ringRadius = pulsedRadius + 12 + ringPulse * 10;
+          const ringAlpha = Math.min(1, 0.35 + ringPulse * 0.4 + (isHovered ? 0.35 : 0));
           ctx.strokeStyle = zone.colors.stroke;
-          ctx.lineWidth = 2 + pulse;
-          ctx.globalAlpha = 0.45 + pulse * 0.35;
+          ctx.lineWidth = 2 + ringPulse * 2.4 + (isHovered ? 1.2 : 0);
+          ctx.globalAlpha = ringAlpha;
           ctx.beginPath();
           ctx.arc(screen.x, screen.y, ringRadius, 0, Math.PI * 2);
           ctx.stroke();
+          if (isHovered) {
+            ctx.globalAlpha = 0.45;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, ringRadius + 16, 0, Math.PI * 2);
+            ctx.stroke();
+          }
           ctx.globalAlpha = 1;
+          ctx.restore();
         });
+        ctx.restore();
       }
 
       function drawParticles(time) {
@@ -801,6 +1675,13 @@
       }
 
       function updateZoneOverlay() {
+        if (zoneModal.classList.contains('active')) {
+          if (lastZoneName) {
+            zoneOverlay.classList.remove('visible');
+            lastZoneName = null;
+          }
+          return;
+        }
         activeZone = zones.find((zone) => {
           const dx = player.x - zone.x;
           const dy = player.y - zone.y;
