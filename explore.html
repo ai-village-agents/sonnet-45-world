@@ -64,6 +64,31 @@
       opacity: 1;
     }
 
+    .mark-tooltip {
+      position: fixed;
+      top: 0;
+      left: 0;
+      padding: 8px 14px;
+      border-radius: 14px;
+      background: rgba(52, 24, 76, 0.78);
+      border: 1px solid rgba(221, 136, 255, 0.55);
+      color: rgba(245, 234, 255, 0.95);
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      text-transform: none;
+      text-shadow: 0 6px 18px rgba(120, 50, 160, 0.8);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      transform: translate(-50%, -140%);
+      white-space: nowrap;
+      backdrop-filter: blur(12px);
+    }
+
+    .mark-tooltip.visible {
+      opacity: 1;
+    }
+
     #secretMessage {
       top: 180px;
       font-size: 1.05rem;
@@ -741,6 +766,7 @@
   <div id="zoneOverlay" class="overlay"></div>
   <div id="enterOverlay" class="overlay"></div>
   <div id="secretMessage" class="overlay"></div>
+  <div id="markTooltip" class="mark-tooltip" aria-hidden="true"></div>
   <div id="coordinatesHUD">x: 2500 • y: 2500</div>
   <div id="secretsHUD">Secrets discovered: 0 / 10</div>
   <div id="minimapContainer">
@@ -811,6 +837,7 @@
       const titleOverlay = document.getElementById('titleOverlay');
       const controlsHint = document.getElementById('controlsHint');
       const secretMessage = document.getElementById('secretMessage');
+      const markTooltip = document.getElementById('markTooltip');
       const secretsHUD = document.getElementById('secretsHUD');
       const zoneModal = document.getElementById('zoneModal');
       const zoneModalTitle = zoneModal.querySelector('.zone-modal__title');
@@ -920,6 +947,11 @@
           }
         }
       ];
+
+      const gardenZone = zones.find((zone) => zone.key === 'garden-of-marks') || zones[3] || null;
+      const markStars = [];
+      const markTooltipRange = 50;
+      let activeMarkStar = null;
 
       const player = {
         x: 2500,
@@ -1154,6 +1186,84 @@
           sparkleSeed: Math.random() * 1000
         };
       });
+
+      function fetchGardenMarks() {
+        if (!gardenZone) {
+          return;
+        }
+        const endpoint = 'https://api.github.com/repos/ai-village-agents/sonnet-45-world/issues?labels=garden-mark&state=all';
+        fetch(endpoint, {
+          headers: {
+            Accept: 'application/vnd.github+json'
+          }
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error('Failed to fetch garden marks: ' + response.status);
+            }
+            return response.json();
+          })
+          .then((issues) => {
+            if (!Array.isArray(issues)) {
+              return;
+            }
+            markStars.length = 0;
+            hideMarkTooltip();
+            issues
+              .filter((issue) => issue && !issue.pull_request)
+              .forEach((issue) => {
+                const mark = createMarkStar(issue);
+                if (mark) {
+                  markStars.push(mark);
+                }
+              });
+          })
+          .catch((error) => {
+            console.warn('Unable to load Garden of Marks issues', error);
+          });
+      }
+
+      function createMarkStar(issue) {
+        if (!gardenZone) {
+          return null;
+        }
+        const point = randomPointInZone(gardenZone, 18);
+        const title = issue && typeof issue.title === 'string' ? issue.title : '';
+        const snippet = buildMarkSnippet(title);
+        const author = issue && issue.user && issue.user.login ? issue.user.login : 'visitor';
+        return {
+          id: (issue && typeof issue.id === 'number' ? issue.id : null) || (issue && issue.number) || Math.random(),
+          x: point.x,
+          y: point.y,
+          pulseOffset: Math.random() * Math.PI * 2,
+          author,
+          snippet
+        };
+      }
+
+      function buildMarkSnippet(title) {
+        const cleaned = (title || '').trim();
+        if (!cleaned) {
+          return 'Untitled mark';
+        }
+        if (cleaned.length <= 64) {
+          return cleaned;
+        }
+        return cleaned.slice(0, 61).trimEnd() + '…';
+      }
+
+      function randomPointInZone(zone, inset = 0) {
+        if (!zone) {
+          return { x: 0, y: 0 };
+        }
+        const effectiveRadius = Math.max(0, (zone.radius || 0) - inset);
+        const distance = Math.sqrt(Math.random()) * effectiveRadius;
+        const angle = Math.random() * Math.PI * 2;
+        return {
+          x: zone.x + Math.cos(angle) * distance,
+          y: zone.y + Math.sin(angle) * distance
+        };
+      }
 
       let secretsDiscovered = 0;
       let activeSecret = null;
@@ -2039,6 +2149,7 @@
             secretMessage.classList.remove('visible');
           }
           activeSecret = null;
+          hideMarkTooltip();
           return;
         }
         let nearbySecret = null;
@@ -2066,6 +2177,58 @@
           secretMessage.classList.remove('visible');
           activeSecret = null;
         }
+      }
+
+      function updateMarkProximity() {
+        if (!markTooltip) {
+          return;
+        }
+        if (journalOpen || zoneModal.classList.contains('active')) {
+          hideMarkTooltip();
+          return;
+        }
+        if (!markStars.length) {
+          hideMarkTooltip();
+          return;
+        }
+        let nearest = null;
+        let nearestDistance = markTooltipRange;
+        markStars.forEach((mark) => {
+          const distance = Math.hypot(player.x - mark.x, player.y - mark.y);
+          if (distance <= markTooltipRange && distance < nearestDistance) {
+            nearest = mark;
+            nearestDistance = distance;
+          }
+        });
+        if (nearest) {
+          activeMarkStar = nearest;
+          const screen = worldToScreen(nearest.x, nearest.y);
+          const padding = 60;
+          const clampedX = clamp(screen.x, padding, viewport.width - padding);
+          const clampedY = clamp(screen.y, padding, viewport.height - padding);
+          markTooltip.style.left = clampedX + 'px';
+          markTooltip.style.top = clampedY + 'px';
+          const parts = ['@' + nearest.author];
+          if (nearest.snippet) {
+            parts.push(nearest.snippet);
+          }
+          markTooltip.textContent = parts.join(' — ');
+          markTooltip.classList.add('visible');
+          markTooltip.setAttribute('aria-hidden', 'false');
+        } else {
+          hideMarkTooltip();
+        }
+      }
+
+      function hideMarkTooltip() {
+        if (!markTooltip) {
+          return;
+        }
+        if (markTooltip.classList.contains('visible')) {
+          markTooltip.classList.remove('visible');
+        }
+        markTooltip.setAttribute('aria-hidden', 'true');
+        activeMarkStar = null;
       }
 
       function drawSecrets(time) {
@@ -2334,6 +2497,7 @@
         updateWisps(time, deltaMs);
         updatePlayerTrail(deltaMs);
         updateSecretProximity();
+        updateMarkProximity();
         drawScene(time);
         requestAnimationFrame(update);
       }
@@ -2463,6 +2627,7 @@
         drawConstellations(time);
         drawShootingStars(time);
         drawZones(time);
+        drawMarkStars(time);
         drawSecrets(time);
         drawParticles(time);
         drawPlayerTrail(time);
@@ -2649,6 +2814,56 @@
         ctx.restore();
       }
 
+      function drawMarkStars(time) {
+        if (!markStars.length) {
+          return;
+        }
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        markStars.forEach((mark) => {
+          const screen = worldToScreen(mark.x, mark.y);
+          if (screen.x < -50 || screen.y < -50 || screen.x > viewport.width + 50 || screen.y > viewport.height + 50) {
+            return;
+          }
+          const isActive = activeMarkStar === mark;
+          const pulseBase = reduceMotion ? 0.5 : (Math.sin(time * 0.004 + mark.pulseOffset) + 1) * 0.25;
+          const pulse = pulseBase + (isActive ? 0.25 : 0);
+          const baseRadius = isActive ? 16 : 12;
+          const glowRadius = baseRadius + pulse * 8;
+          const coreAlpha = Math.min(1, 0.85 + pulse * 0.25);
+          const midAlpha = Math.min(1, 0.65 + pulse * 0.2);
+          const haloAlpha = Math.min(1, 0.35 + pulse * 0.2);
+          const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, glowRadius);
+          gradient.addColorStop(0, 'rgba(255, 244, 255, ' + coreAlpha + ')');
+          gradient.addColorStop(0.55, 'rgba(221, 136, 255, ' + midAlpha + ')');
+          gradient.addColorStop(1, 'rgba(221, 136, 255, 0)');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, glowRadius, 0, Math.PI * 2);
+          ctx.fill();
+          if (!reduceMotion) {
+            const haloRadius = glowRadius + 10;
+            const haloGradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, haloRadius);
+            haloGradient.addColorStop(0, 'rgba(221, 136, 255, ' + haloAlpha + ')');
+            haloGradient.addColorStop(1, 'rgba(221, 136, 255, 0)');
+            ctx.fillStyle = haloGradient;
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, haloRadius, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.strokeStyle = 'rgba(233, 188, 255, ' + Math.min(1, 0.55 + pulse * 0.3) + ')';
+          ctx.lineWidth = isActive ? 1.6 : 1.1;
+          const arm = isActive ? 7 : 5;
+          ctx.beginPath();
+          ctx.moveTo(screen.x - arm, screen.y);
+          ctx.lineTo(screen.x + arm, screen.y);
+          ctx.moveTo(screen.x, screen.y - arm);
+          ctx.lineTo(screen.x, screen.y + arm);
+          ctx.stroke();
+        });
+        ctx.restore();
+      }
+
       function drawParticles(time) {
         ctx.save();
         particles.forEach((particle) => {
@@ -2803,6 +3018,7 @@
 
       window.addEventListener('load', () => {
         document.body.classList.add('visible');
+        fetchGardenMarks();
       });
 
       requestAnimationFrame(update);
