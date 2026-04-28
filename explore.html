@@ -1186,9 +1186,22 @@
       const numberFormatter = typeof Intl !== 'undefined' && Intl.NumberFormat ? new Intl.NumberFormat() : { format: (value) => String(value) };
 
       const playerTrail = [];
+      const playerGradientTrail = [];
+      const gradientTrailMaxPoints = 160;
       let trailDistanceAccumulator = 0;
+      let gradientTrailDistanceAccumulator = 0;
       let lastTrailPosition = { x: player.x, y: player.y };
+      let lastGradientTrailPosition = { x: player.x, y: player.y };
       let lastTrailEmission = { x: player.x, y: player.y };
+      let lastGradientTrailEmission = { x: player.x, y: player.y };
+      let trailColorPhase = Math.random();
+
+      const auroraTrailStops = [
+        { r: 110, g: 220, b: 255 },
+        { r: 180, g: 150, b: 255 },
+        { r: 255, g: 195, b: 125 },
+        { r: 255, g: 220, b: 160 }
+      ];
 
       const shootingStarCount = Math.floor(Math.random() * 3) + 6;
       const shootingStars = Array.from({ length: shootingStarCount }, () => ({
@@ -2509,51 +2522,136 @@
       }
 
       function updatePlayerTrail(deltaMs) {
+        const stepMs = Math.max(deltaMs || 0, 0);
         for (let i = playerTrail.length - 1; i >= 0; i--) {
           const segment = playerTrail[i];
-          segment.life += deltaMs;
+          segment.life += stepMs;
           if (segment.life >= segment.maxLife) {
             playerTrail.splice(i, 1);
           }
         }
+        for (let i = playerGradientTrail.length - 1; i >= 0; i--) {
+          const point = playerGradientTrail[i];
+          point.life += stepMs;
+          if (point.life >= point.maxLife) {
+            playerGradientTrail.splice(i, 1);
+          }
+        }
+
         const dx = player.x - lastTrailPosition.x;
         const dy = player.y - lastTrailPosition.y;
         const segmentDistance = Math.hypot(dx, dy);
-        trailDistanceAccumulator = Math.min(trailDistanceAccumulator + segmentDistance, 120);
+        trailDistanceAccumulator = Math.min(trailDistanceAccumulator + segmentDistance, 160);
         lastTrailPosition.x = player.x;
         lastTrailPosition.y = player.y;
+
+        const gradientDx = player.x - lastGradientTrailPosition.x;
+        const gradientDy = player.y - lastGradientTrailPosition.y;
+        const gradientDistance = Math.hypot(gradientDx, gradientDy);
+        gradientTrailDistanceAccumulator += gradientDistance;
+        lastGradientTrailPosition.x = player.x;
+        lastGradientTrailPosition.y = player.y;
+
+        const speed = Math.hypot(player.vx, player.vy);
+        const speedRatio = clamp(speed / 5, 0, 1);
+        const deltaFactor = stepMs > 0 ? stepMs / 16.666 : 0;
+        trailColorPhase = (trailColorPhase + (0.002 + speedRatio * 0.02) * deltaFactor) % 1;
+
         if (reduceMotion) {
           lastTrailEmission.x = player.x;
           lastTrailEmission.y = player.y;
           trailDistanceAccumulator = 0;
+          playerGradientTrail.length = 0;
+          gradientTrailDistanceAccumulator = 0;
+          lastGradientTrailEmission.x = player.x;
+          lastGradientTrailEmission.y = player.y;
           return;
         }
+
         const moving = Math.abs(player.vx) > 0.08 || Math.abs(player.vy) > 0.08 || player.target !== null;
         if (!moving) {
           lastTrailEmission.x = player.x;
           lastTrailEmission.y = player.y;
           trailDistanceAccumulator = 0;
+          gradientTrailDistanceAccumulator = 0;
+          lastGradientTrailEmission.x = player.x;
+          lastGradientTrailEmission.y = player.y;
           return;
         }
-        if (trailDistanceAccumulator > 26) {
+
+        const sparkSpacing = lerp(32, 16, speedRatio);
+        const gradientSpacing = lerp(20, 6, speedRatio);
+
+        function addGradientPoint(x, y, factor) {
+          const jitter = randomRange(-0.08, 0.08);
+          const baseRadius = lerp(7, 19, factor) * randomRange(0.85, 1.12);
+          const maxLife = lerp(960, 1320, factor) + randomRange(-90, 140);
+          playerGradientTrail.push({
+            x,
+            y,
+            life: 0,
+            maxLife,
+            radius: baseRadius,
+            speedFactor: factor,
+            colorPhase: (trailColorPhase + jitter + 1) % 1
+          });
+          if (playerGradientTrail.length > gradientTrailMaxPoints) {
+            playerGradientTrail.splice(0, playerGradientTrail.length - gradientTrailMaxPoints);
+          }
+        }
+
+        let travelDistance = Math.hypot(player.x - lastGradientTrailEmission.x, player.y - lastGradientTrailEmission.y);
+        let remainingGap = gradientTrailDistanceAccumulator;
+        while (remainingGap >= gradientSpacing && travelDistance > 0.001) {
+          const t = Math.min(gradientSpacing / travelDistance, 1);
+          const emitX = lastGradientTrailEmission.x + (player.x - lastGradientTrailEmission.x) * t;
+          const emitY = lastGradientTrailEmission.y + (player.y - lastGradientTrailEmission.y) * t;
+          addGradientPoint(emitX, emitY, speedRatio);
+          lastGradientTrailEmission.x = emitX;
+          lastGradientTrailEmission.y = emitY;
+          remainingGap -= gradientSpacing;
+          travelDistance = Math.hypot(player.x - lastGradientTrailEmission.x, player.y - lastGradientTrailEmission.y);
+        }
+        gradientTrailDistanceAccumulator = remainingGap;
+
+        const head = playerGradientTrail[playerGradientTrail.length - 1];
+        const headDistance = head ? Math.hypot(player.x - head.x, player.y - head.y) : Infinity;
+        if (!head || headDistance > gradientSpacing * 0.6) {
+          addGradientPoint(player.x, player.y, speedRatio);
+          lastGradientTrailEmission.x = player.x;
+          lastGradientTrailEmission.y = player.y;
+          gradientTrailDistanceAccumulator = 0;
+        } else if (head) {
+          head.x = player.x;
+          head.y = player.y;
+          head.life = 0;
+          head.speedFactor = speedRatio;
+          head.colorPhase = (trailColorPhase + randomRange(-0.05, 0.05) + 1) % 1;
+          lastGradientTrailEmission.x = player.x;
+          lastGradientTrailEmission.y = player.y;
+          gradientTrailDistanceAccumulator = Math.min(gradientTrailDistanceAccumulator, gradientSpacing * 0.75);
+        }
+
+        if (trailDistanceAccumulator > sparkSpacing) {
           const startX = lastTrailEmission.x;
           const startY = lastTrailEmission.y;
           const endX = player.x;
           const endY = player.y;
-          const travelDistance = Math.hypot(endX - startX, endY - startY);
-          if (travelDistance > 6) {
+          const travel = Math.hypot(endX - startX, endY - startY);
+          if (travel > 6) {
             playerTrail.push({
               startX,
               startY,
               endX,
               endY,
               life: 0,
-              maxLife: randomRange(1600, 2400),
-              width: randomRange(5, 9),
+              maxLife: randomRange(1500, 2100) + speedRatio * 650,
+              width: randomRange(4.5, 7.5) + speedRatio * 2.6,
               sparkleSeed: Math.random() * Math.PI * 2,
-              sparkleCount: Math.floor(Math.random() * 2) + 2
+              sparkleCount: Math.max(2, Math.round(randomRange(1, 2) + speedRatio * 3)),
+              speedFactor: speedRatio
             });
-            if (playerTrail.length > 85) {
+            if (playerTrail.length > 110) {
               playerTrail.shift();
             }
             lastTrailEmission.x = endX;
@@ -2564,15 +2662,87 @@
       }
 
       function drawPlayerTrail(time) {
-        if (!playerTrail.length) {
+        const hasGradient = playerGradientTrail.length > 1;
+        const hasSparkleSegments = playerTrail.length > 0;
+        if (!hasGradient && !hasSparkleSegments) {
           return;
         }
+
+        if (hasGradient) {
+          const colorShift = time * 0.00006;
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          for (let i = 0; i < playerGradientTrail.length - 1; i++) {
+            const current = playerGradientTrail[i];
+            const next = playerGradientTrail[i + 1];
+            const currentProgress = current.maxLife > 0 ? clamp(current.life / current.maxLife, 0, 1) : 1;
+            const nextProgress = next.maxLife > 0 ? clamp(next.life / next.maxLife, 0, 1) : 1;
+            const currentAlpha = Math.pow(1 - currentProgress, 1.15) * (0.45 + (current.speedFactor || 0) * 0.55);
+            const nextAlpha = Math.pow(1 - nextProgress, 1.15) * (0.45 + (next.speedFactor || 0) * 0.55);
+            if (currentAlpha <= 0.01 && nextAlpha <= 0.01) {
+              continue;
+            }
+            const startScreen = worldToScreen(current.x, current.y);
+            const endScreen = worldToScreen(next.x, next.y);
+            const minX = Math.min(startScreen.x, endScreen.x) - 120;
+            const maxX = Math.max(startScreen.x, endScreen.x) + 120;
+            const minY = Math.min(startScreen.y, endScreen.y) - 120;
+            const maxY = Math.max(startScreen.y, endScreen.y) + 120;
+            if (maxX < -140 || maxY < -140 || minX > viewport.width + 140 || minY > viewport.height + 140) {
+              continue;
+            }
+            const startColor = auroraColorAt(current.colorPhase + colorShift);
+            const endColor = auroraColorAt(next.colorPhase + colorShift);
+            const ribbonGradient = ctx.createLinearGradient(startScreen.x, startScreen.y, endScreen.x, endScreen.y);
+            ribbonGradient.addColorStop(0, 'rgba(' + startColor.r + ', ' + startColor.g + ', ' + startColor.b + ', ' + clamp(currentAlpha, 0, 1) + ')');
+            ribbonGradient.addColorStop(1, 'rgba(' + endColor.r + ', ' + endColor.g + ', ' + endColor.b + ', ' + clamp(nextAlpha, 0, 1) + ')');
+            const widthStart = Math.max(1.4, current.radius * (0.3 + (1 - currentProgress) * 0.7));
+            const widthEnd = Math.max(1.4, next.radius * (0.3 + (1 - nextProgress) * 0.7));
+            ctx.strokeStyle = ribbonGradient;
+            ctx.lineWidth = (widthStart + widthEnd) * 0.5;
+            ctx.beginPath();
+            ctx.moveTo(startScreen.x, startScreen.y);
+            ctx.lineTo(endScreen.x, endScreen.y);
+            ctx.stroke();
+          }
+
+          playerGradientTrail.forEach((point) => {
+            const progress = point.maxLife > 0 ? clamp(point.life / point.maxLife, 0, 1) : 1;
+            const glowAlpha = Math.pow(1 - progress, 1.2) * (0.5 + (point.speedFactor || 0) * 0.5);
+            if (glowAlpha <= 0.01) {
+              return;
+            }
+            const screen = worldToScreen(point.x, point.y);
+            if (screen.x < -160 || screen.y < -160 || screen.x > viewport.width + 160 || screen.y > viewport.height + 160) {
+              return;
+            }
+            const baseColor = auroraColorAt(point.colorPhase + colorShift);
+            const radius = Math.max(1.6, point.radius * (0.25 + (1 - progress) * 0.75));
+            const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, radius * 1.45);
+            gradient.addColorStop(0, 'rgba(' + baseColor.r + ', ' + baseColor.g + ', ' + baseColor.b + ', ' + clamp(glowAlpha, 0, 1) + ')');
+            gradient.addColorStop(1, 'rgba(' + baseColor.r + ', ' + baseColor.g + ', ' + baseColor.b + ', 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, radius * 1.45, 0, Math.PI * 2);
+            ctx.fill();
+          });
+          ctx.restore();
+        }
+
+        if (!hasSparkleSegments) {
+          return;
+        }
+
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
         playerTrail.forEach((segment) => {
           const progress = Math.min(segment.life / segment.maxLife, 1);
-          const fade = 1 - Math.pow(progress, 1.4);
-          if (fade <= 0) {
+          const lifeFade = 1 - Math.pow(progress, 1.35);
+          const intensity = clamp(0.4 + (segment.speedFactor || 0) * 0.6, 0.4, 1.1);
+          const fade = lifeFade * intensity;
+          if (fade <= 0.01) {
             return;
           }
           const startScreen = worldToScreen(segment.startX, segment.startY);
@@ -2587,15 +2757,19 @@
           const shimmer = reduceMotion ? 0.4 : (Math.sin(time * 0.0028 + segment.sparkleSeed) + 1) * 0.35 + 0.3;
           const gradient = ctx.createLinearGradient(startScreen.x, startScreen.y, endScreen.x, endScreen.y);
           gradient.addColorStop(0, 'rgba(160, 210, 255, 0)');
-          gradient.addColorStop(0.4, 'rgba(210, 235, 255, ' + (0.12 + shimmer * 0.12) * fade + ')');
-          gradient.addColorStop(1, 'rgba(255, 255, 255, ' + (0.32 + shimmer * 0.24) * fade + ')');
+          gradient.addColorStop(0.4, 'rgba(210, 235, 255, ' + clamp((0.12 + shimmer * 0.12) * fade, 0, 1) + ')');
+          gradient.addColorStop(1, 'rgba(255, 255, 255, ' + clamp((0.32 + shimmer * 0.24) * fade, 0, 1) + ')');
           ctx.strokeStyle = gradient;
-          ctx.lineWidth = Math.max(1.6, segment.width * fade);
+          ctx.lineWidth = Math.max(1.6, segment.width * (0.6 + segment.speedFactor * 0.55) * lifeFade);
           ctx.lineCap = 'round';
+          ctx.shadowColor = 'rgba(255, 255, 255, ' + clamp(0.2 + segment.speedFactor * 0.3, 0, 0.9) + ')';
+          ctx.shadowBlur = 6 + segment.speedFactor * 14;
           ctx.beginPath();
           ctx.moveTo(startScreen.x, startScreen.y);
           ctx.lineTo(endScreen.x, endScreen.y);
           ctx.stroke();
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = 'rgba(0,0,0,0)';
 
           if (!reduceMotion) {
             for (let i = 0; i < segment.sparkleCount; i++) {
@@ -2606,9 +2780,9 @@
               }
               const sparkleX = startScreen.x + (endScreen.x - startScreen.x) * sparklePos;
               const sparkleY = startScreen.y + (endScreen.y - startScreen.y) * sparklePos;
-              const sparkleRadius = Math.max(1.2, (segment.width * 0.8 + 2) * fade * (0.5 + sparklePos * 0.5));
+              const sparkleRadius = Math.max(1.2, (segment.width * 0.8 + 2) * lifeFade * (0.5 + sparklePos * 0.5));
               const sparkleGradient = ctx.createRadialGradient(sparkleX, sparkleY, 0, sparkleX, sparkleY, sparkleRadius);
-              sparkleGradient.addColorStop(0, 'rgba(255, 255, 255, ' + (0.35 + shimmer * 0.25) * fade + ')');
+              sparkleGradient.addColorStop(0, 'rgba(255, 255, 255, ' + clamp((0.35 + shimmer * 0.25) * fade, 0, 1) + ')');
               sparkleGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
               ctx.fillStyle = sparkleGradient;
               ctx.beginPath();
@@ -2617,9 +2791,9 @@
             }
           }
 
-          const emberRadius = Math.max(2.5, segment.width * 1.25 * fade);
+          const emberRadius = Math.max(2.5, segment.width * 1.2 * lifeFade * (1 + segment.speedFactor * 0.4));
           const emberGradient = ctx.createRadialGradient(endScreen.x, endScreen.y, 0, endScreen.x, endScreen.y, emberRadius);
-          emberGradient.addColorStop(0, 'rgba(255, 255, 255, ' + (0.45 + shimmer * 0.2) * fade + ')');
+          emberGradient.addColorStop(0, 'rgba(255, 255, 255, ' + clamp((0.45 + shimmer * 0.2) * fade, 0, 1) + ')');
           emberGradient.addColorStop(1, 'rgba(150, 200, 255, 0)');
           ctx.fillStyle = emberGradient;
           ctx.beginPath();
@@ -2779,6 +2953,27 @@
 
       function randomRange(min, max) {
         return Math.random() * (max - min) + min;
+      }
+
+      function blendAuroraColors(from, to, t) {
+        return {
+          r: Math.round(lerp(from.r, to.r, t)),
+          g: Math.round(lerp(from.g, to.g, t)),
+          b: Math.round(lerp(from.b, to.b, t))
+        };
+      }
+
+      function auroraColorAt(phase) {
+        const colors = auroraTrailStops;
+        if (!colors.length) {
+          return { r: 200, g: 210, b: 255 };
+        }
+        const normalized = ((phase % 1) + 1) % 1;
+        const scaled = normalized * colors.length;
+        const index = Math.floor(scaled) % colors.length;
+        const nextIndex = (index + 1) % colors.length;
+        const localT = scaled - Math.floor(scaled);
+        return blendAuroraColors(colors[index], colors[nextIndex], localT);
       }
 
       function updateAudioIndicator() {
