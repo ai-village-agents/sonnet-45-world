@@ -1174,14 +1174,32 @@
         { core: '225, 215, 255', mid: '150, 140, 220', outer: '30, 28, 70' }
       ];
 
-      const nebulae = Array.from({ length: 8 }, (_, index) => {
-        const palette = nebulaPalettes[index % nebulaPalettes.length];
+      const nebulaConfigs = [
+        { x: 480, y: 560, radius: 640, softness: 0.64, paletteIndex: 0, pulseSpeed: 0.00048 },
+        { x: 1520, y: 4280, radius: 520, softness: 0.55, paletteIndex: 1, pulseSpeed: 0.00062 },
+        { x: 4180, y: 4160, radius: 680, softness: 0.6, paletteIndex: 2, pulseSpeed: 0.00052 },
+        { x: 3620, y: 680, radius: 450, softness: 0.5, paletteIndex: 3, pulseSpeed: 0.00074 },
+        { x: 940, y: 4020, radius: 470, softness: 0.53, paletteIndex: 0, pulseSpeed: 0.00058 },
+        { x: 1820, y: 320, radius: 630, softness: 0.66, paletteIndex: 1, pulseSpeed: 0.00045 },
+        { x: 3120, y: 4380, radius: 580, softness: 0.61, paletteIndex: 2, pulseSpeed: 0.00068 },
+        { x: 4460, y: 3080, radius: 540, softness: 0.52, paletteIndex: 3, pulseSpeed: 0.00056 },
+        { x: 620, y: 2180, radius: 600, softness: 0.63, paletteIndex: 0, pulseSpeed: 0.00066 },
+        { x: 3380, y: 4100, radius: 460, softness: 0.49, paletteIndex: 1, pulseSpeed: 0.0005 },
+        { x: 2080, y: 4340, radius: 640, softness: 0.67, paletteIndex: 2, pulseSpeed: 0.00072 },
+        { x: 4020, y: 1280, radius: 530, softness: 0.57, paletteIndex: 3, pulseSpeed: 0.00046 },
+        { x: 1640, y: 3320, radius: 480, softness: 0.51, paletteIndex: 0, pulseSpeed: 0.00064 },
+        { x: 4720, y: 2020, radius: 610, softness: 0.62, paletteIndex: 1, pulseSpeed: 0.00054 }
+      ];
+
+      const nebulae = nebulaConfigs.map((config, index) => {
+        const palette = nebulaPalettes[config.paletteIndex % nebulaPalettes.length];
         return {
-          x: Math.random() * world.width,
-          y: Math.random() * world.height,
-          radius: randomRange(420, 680),
-          softness: randomRange(0.48, 0.72),
+          x: config.x,
+          y: config.y,
+          radius: config.radius,
+          softness: config.softness,
           palette,
+          pulseSpeed: config.pulseSpeed,
           twinkleOffset: Math.random() * Math.PI * 2
         };
       });
@@ -3207,7 +3225,8 @@
         nebulae.forEach((nebula) => {
           const screen = worldToScreen(nebula.x, nebula.y);
           const baseRadius = nebula.radius;
-          const glowPulse = reduceMotion ? nebula.softness : nebula.softness + Math.sin(time * 0.0006 + nebula.twinkleOffset) * 0.08;
+          const pulseSpeed = typeof nebula.pulseSpeed === 'number' ? nebula.pulseSpeed : 0.0006;
+          const glowPulse = reduceMotion ? nebula.softness : nebula.softness + Math.sin(time * pulseSpeed + nebula.twinkleOffset) * 0.08;
           const radius = baseRadius * (1.05 + glowPulse * 0.14);
           if (screen.x + radius < -220 || screen.y + radius < -220 ||
               screen.x - radius > viewport.width + 220 || screen.y - radius > viewport.height + 220) {
