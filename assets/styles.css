@@ -44,6 +44,153 @@ body {
   overflow-x: hidden;
 }
 
+.explore-banner {
+  position: fixed;
+  top: clamp(0.9rem, 2vw, 1.4rem);
+  left: 50%;
+  transform: translate(-50%, 0);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.85rem 2.4rem;
+  font-family: "Cinzel", "Times New Roman", serif;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: clamp(0.75rem, 1.8vw, 0.9rem);
+  color: var(--text-primary);
+  text-decoration: none;
+  background: linear-gradient(
+      120deg,
+      rgba(122, 201, 255, 0.25),
+      rgba(176, 131, 255, 0.32),
+      rgba(104, 243, 212, 0.26)
+    ),
+    rgba(8, 15, 28, 0.75);
+  border: 1px solid rgba(122, 201, 255, 0.45);
+  border-radius: 999px;
+  box-shadow: 0 28px 50px -26px rgba(12, 26, 46, 0.82),
+    0 0 28px rgba(122, 201, 255, 0.45);
+  text-shadow: 0 0 12px rgba(122, 201, 255, 0.7);
+  backdrop-filter: blur(14px);
+  z-index: 1000;
+  overflow: hidden;
+  transition: transform 0.4s ease, box-shadow 0.4s ease, letter-spacing 0.3s ease;
+}
+
+.explore-banner::before {
+  content: "";
+  position: absolute;
+  inset: -60% -80%;
+  background: conic-gradient(
+    from 120deg,
+    hsla(200, 95%, 65%, 0.1),
+    hsla(270, 95%, 75%, 0.55),
+    hsla(160, 80%, 60%, 0.35),
+    hsla(200, 95%, 65%, 0.1)
+  );
+  filter: blur(60px);
+  opacity: 0.7;
+  animation: exploreBannerGlow 7.5s ease-in-out infinite alternate;
+  z-index: -2;
+}
+
+.explore-banner::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    rgba(10, 22, 38, 0.88),
+    rgba(13, 32, 52, 0.75),
+    rgba(16, 39, 58, 0.82)
+  );
+  box-shadow: inset 0 0 32px rgba(122, 201, 255, 0.18);
+  z-index: -1;
+  opacity: 0.95;
+}
+
+.explore-banner:hover,
+.explore-banner:focus-visible {
+  transform: translate(-50%, -4px) scale(1.02);
+  letter-spacing: 0.26em;
+  box-shadow: 0 32px 60px -28px rgba(12, 24, 46, 0.9),
+    0 0 34px rgba(122, 201, 255, 0.6);
+}
+
+.explore-banner:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(122, 201, 255, 0.3),
+    0 32px 60px -28px rgba(12, 24, 46, 0.9), 0 0 34px rgba(122, 201, 255, 0.6);
+}
+
+.explore-banner__icon,
+.explore-banner__arrow {
+  font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+}
+
+.explore-banner__icon {
+  color: rgba(176, 131, 255, 0.9);
+  text-shadow: 0 0 16px rgba(176, 131, 255, 0.6);
+}
+
+.explore-banner__arrow {
+  color: rgba(104, 243, 212, 0.9);
+  text-shadow: 0 0 18px rgba(104, 243, 212, 0.6);
+  transition: transform 0.4s ease;
+}
+
+.explore-banner:hover .explore-banner__arrow,
+.explore-banner:focus-visible .explore-banner__arrow {
+  transform: translateX(4px);
+}
+
+.explore-banner__text {
+  white-space: nowrap;
+}
+
+@keyframes exploreBannerGlow {
+  0% {
+    transform: rotate(0deg) scale(0.96);
+    opacity: 0.55;
+  }
+  50% {
+    transform: rotate(90deg) scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: rotate(180deg) scale(0.98);
+    opacity: 0.6;
+  }
+}
+
+@media (max-width: 720px) {
+  .explore-banner {
+    padding: 0.75rem 1.6rem;
+    letter-spacing: 0.18em;
+    gap: 0.65rem;
+    max-width: min(92vw, 540px);
+    text-align: center;
+  }
+
+  .explore-banner__text {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 520px) {
+  .explore-banner {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    gap: 0.5rem;
+  }
+
+  .explore-banner__icon {
+    display: none;
+  }
+}
+
 button {
   font: inherit;
   color: inherit;

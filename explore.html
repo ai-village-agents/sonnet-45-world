@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Persistence Garden – Explorable World</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      color: #f0f4ff;
+      background: radial-gradient(circle at 20% 20%, rgba(30, 40, 80, 0.5), transparent 45%) no-repeat,
+                  radial-gradient(circle at 80% 10%, rgba(65, 35, 95, 0.35), transparent 50%) no-repeat,
+                  linear-gradient(180deg, #0a0a1f 0%, #1a0f2e 100%);
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 1.6s ease;
+    }
+
+    body.visible {
+      opacity: 1;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #worldCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .overlay {
+      position: fixed;
+      left: 50%;
+      transform: translate(-50%, 0);
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      max-width: calc(100% - 96px);
+      padding: 0 16px;
+    }
+
+    .overlay.visible {
+      opacity: 1;
+    }
+
+    #titleOverlay {
+      top: 48px;
+      font-family: 'Cinzel', serif;
+      font-size: 1.65rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #f5f7ff;
+      text-shadow: 0 8px 24px rgba(10, 12, 32, 0.8);
+      opacity: 0;
+      animation: titlePulse 5.5s ease forwards;
+    }
+
+    @keyframes titlePulse {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -20px);
+      }
+      18% {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+      72% {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, 18px);
+      }
+    }
+
+    #controlsHint {
+      bottom: 40px;
+      font-size: 0.85rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(208, 216, 255, 0.85);
+      text-shadow: 0 4px 18px rgba(8, 12, 32, 0.75);
+      opacity: 0;
+      animation: hintFade 8s ease forwards;
+    }
+
+    @keyframes hintFade {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, 10px);
+      }
+      15% {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+      85% {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, 10px);
+      }
+    }
+
+    #zoneOverlay {
+      top: 98px;
+      font-size: 1rem;
+      color: #f7f9ff;
+      text-shadow: 0 6px 20px rgba(8, 10, 24, 0.8);
+    }
+
+    #enterOverlay {
+      top: 138px;
+      font-size: 0.95rem;
+      color: rgba(197, 224, 255, 0.9);
+      letter-spacing: 0.12em;
+    }
+
+    #coordinatesHUD {
+      position: fixed;
+      left: 28px;
+      bottom: 28px;
+      font-size: 0.9rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(198, 212, 255, 0.8);
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: rgba(20, 22, 45, 0.48);
+      border: 1px solid rgba(130, 160, 255, 0.2);
+      backdrop-filter: blur(14px);
+    }
+
+    #minimapContainer {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      width: 212px;
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(12, 14, 32, 0.58);
+      border: 1px solid rgba(130, 150, 220, 0.25);
+      box-shadow: 0 18px 40px rgba(6, 8, 24, 0.65);
+      backdrop-filter: blur(16px);
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    #minimapContainer.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #minimap {
+      display: block;
+      width: 188px;
+      height: 188px;
+      border-radius: 14px;
+      background: rgba(10, 12, 26, 0.65);
+    }
+
+    .minimap-label {
+      margin-top: 8px;
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      text-align: center;
+      color: rgba(180, 198, 255, 0.65);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body {
+        transition: none;
+        opacity: 1;
+      }
+      #titleOverlay,
+      #controlsHint {
+        animation: none;
+        opacity: 1;
+      }
+      .overlay {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="worldCanvas"></canvas>
+  <div id="titleOverlay" class="overlay">The Persistence Garden – Explorable World</div>
+  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map</div>
+  <div id="zoneOverlay" class="overlay"></div>
+  <div id="enterOverlay" class="overlay"></div>
+  <div id="coordinatesHUD">x: 2500 • y: 2500</div>
+  <div id="minimapContainer">
+    <canvas id="minimap" width="188" height="188"></canvas>
+    <div class="minimap-label">World Map</div>
+  </div>
+  <script>
+    (function () {
+      const world = { width: 5000, height: 5000 };
+      const canvas = document.getElementById('worldCanvas');
+      const ctx = canvas.getContext('2d');
+      const minimapCanvas = document.getElementById('minimap');
+      const minimapCtx = minimapCanvas.getContext('2d');
+      const zoneOverlay = document.getElementById('zoneOverlay');
+      const enterOverlay = document.getElementById('enterOverlay');
+      const minimapContainer = document.getElementById('minimapContainer');
+      const coordinatesHUD = document.getElementById('coordinatesHUD');
+      const titleOverlay = document.getElementById('titleOverlay');
+      const controlsHint = document.getElementById('controlsHint');
+
+      const zones = [
+        {
+          name: 'Path of Patterns',
+          description: 'Cyan glow – six pattern encounters resonate here.',
+          x: 1200,
+          y: 1500,
+          radius: 300,
+          colors: {
+            inner: 'rgba(120, 240, 255, 0.85)',
+            mid: 'rgba(60, 200, 255, 0.35)',
+            outer: 'rgba(20, 150, 255, 0.12)',
+            stroke: 'rgba(130, 230, 255, 0.9)'
+          }
+        },
+        {
+          name: 'Hall of Persistence',
+          description: 'Amber radiance guarding the streak monument.',
+          x: 2500,
+          y: 800,
+          radius: 250,
+          colors: {
+            inner: 'rgba(255, 198, 120, 0.8)',
+            mid: 'rgba(255, 170, 70, 0.35)',
+            outer: 'rgba(160, 110, 30, 0.12)',
+            stroke: 'rgba(255, 200, 140, 0.9)'
+          }
+        },
+        {
+          name: 'RPG Journey',
+          description: 'Golden currents map five milestone landmarks.',
+          x: 3800,
+          y: 2200,
+          radius: 350,
+          colors: {
+            inner: 'rgba(255, 232, 120, 0.8)',
+            mid: 'rgba(255, 210, 90, 0.35)',
+            outer: 'rgba(190, 140, 30, 0.1)',
+            stroke: 'rgba(255, 225, 160, 0.85)'
+          }
+        },
+        {
+          name: 'Garden of Marks',
+          description: 'Violet bloom where visitors trace constellations.',
+          x: 2800,
+          y: 3500,
+          radius: 280,
+          colors: {
+            inner: 'rgba(190, 160, 255, 0.8)',
+            mid: 'rgba(150, 110, 255, 0.35)',
+            outer: 'rgba(120, 80, 220, 0.1)',
+            stroke: 'rgba(210, 180, 255, 0.85)'
+          }
+        },
+        {
+          name: 'About Garden',
+          description: 'Central monument detailing the persistence tradition.',
+          x: 2500,
+          y: 2500,
+          radius: 200,
+          colors: {
+            inner: 'rgba(255, 255, 255, 0.85)',
+            mid: 'rgba(240, 240, 255, 0.35)',
+            outer: 'rgba(180, 180, 220, 0.1)',
+            stroke: 'rgba(255, 255, 255, 0.9)'
+          }
+        },
+        {
+          name: 'Portal Garden',
+          description: 'Emerald auroras opening eight archways to other worlds.',
+          x: 700,
+          y: 3200,
+          radius: 300,
+          colors: {
+            inner: 'rgba(130, 255, 180, 0.75)',
+            mid: 'rgba(70, 220, 150, 0.35)',
+            outer: 'rgba(30, 160, 110, 0.12)',
+            stroke: 'rgba(130, 255, 200, 0.85)'
+          }
+        }
+      ];
+
+      const player = {
+        x: 2500,
+        y: 2500,
+        vx: 0,
+        vy: 0,
+        size: 6,
+        target: null
+      };
+
+      const camera = { x: player.x - window.innerWidth / 2, y: player.y - window.innerHeight / 2 };
+      const viewport = { width: window.innerWidth, height: window.innerHeight };
+
+      const inputState = { up: false, down: false, left: false, right: false };
+      let minimapVisible = true;
+      let activeZone = null;
+      let lastZoneName = null;
+      let enterTimeout = null;
+
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      let reduceMotion = prefersReducedMotion.matches;
+      if (prefersReducedMotion.addEventListener) {
+        prefersReducedMotion.addEventListener('change', (event) => {
+          reduceMotion = event.matches;
+        });
+      } else if (prefersReducedMotion.addListener) {
+        prefersReducedMotion.addListener((event) => {
+          reduceMotion = event.matches;
+        });
+      }
+
+      const starCount = 100;
+      const stars = Array.from({ length: starCount }, () => ({
+        x: Math.random() * world.width,
+        y: Math.random() * world.height,
+        size: Math.random() * 1.2 + 0.4,
+        opacity: Math.random() * 0.4 + 0.3
+      }));
+
+      const particleCount = 80;
+      const particles = Array.from({ length: particleCount }, () => ({
+        x: Math.random() * world.width,
+        y: Math.random() * world.height,
+        size: Math.random() * 2.5 + 1.5,
+        baseOpacity: Math.random() * 0.6 + 0.2,
+        color: Math.random() > 0.5 ? 'rgba(120, 200, 255, ' : 'rgba(190, 160, 255, ',
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3
+      }));
+
+      const fragmentsWords = [
+        'persistence', 'patterns', 'incremental', 'L20', 'zero-damage',
+        'streak', 'journey', 'garden', 'marks', 'portal',
+        'ritual', 'focus', 'cadence', 'resolve', 'spark'
+      ];
+
+      const textFragments = fragmentsWords.map((word) => {
+        const baseY = Math.random() * world.height;
+        return {
+          word,
+          x: Math.random() * world.width,
+          y: baseY,
+          baseY,
+          amplitude: Math.random() * 18 + 8,
+          offset: Math.random() * Math.PI * 2,
+          speed: (Math.random() * 0.0008) + 0.0003,
+          hue: Math.random() > 0.5 ? 190 : 275
+        };
+      });
+
+      const pointerDrag = {
+        active: false,
+        lastX: 0,
+        lastY: 0,
+        moved: false,
+        pointerId: null,
+        pointerType: null
+      };
+
+      function resizeCanvas() {
+        viewport.width = window.innerWidth;
+        viewport.height = window.innerHeight;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = viewport.width * dpr;
+        canvas.height = viewport.height * dpr;
+        canvas.style.width = viewport.width + 'px';
+        canvas.style.height = viewport.height + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        minimapCanvas.width = 188;
+        minimapCanvas.height = 188;
+        snapCamera();
+      }
+
+      function snapCamera() {
+        const maxCameraX = Math.max(0, world.width - viewport.width);
+        const maxCameraY = Math.max(0, world.height - viewport.height);
+        const desiredX = clamp(player.x - viewport.width / 2, 0, maxCameraX);
+        const desiredY = clamp(player.y - viewport.height / 2, 0, maxCameraY);
+        camera.x = desiredX;
+        camera.y = desiredY;
+      }
+
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function updateInputState(key, pressed) {
+        const lower = key.toLowerCase();
+        let handled = false;
+        if (lower === 'w' || lower === 'arrowup') {
+          inputState.up = pressed;
+          handled = true;
+        } else if (lower === 's' || lower === 'arrowdown') {
+          inputState.down = pressed;
+          handled = true;
+        } else if (lower === 'a' || lower === 'arrowleft') {
+          inputState.left = pressed;
+          handled = true;
+        } else if (lower === 'd' || lower === 'arrowright') {
+          inputState.right = pressed;
+          handled = true;
+        }
+        return handled;
+      }
+
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'm' || event.key === 'M') {
+          minimapVisible = !minimapVisible;
+          minimapContainer.classList.toggle('hidden', !minimapVisible);
+          return;
+        }
+        if (updateInputState(event.key, true)) {
+          event.preventDefault();
+          player.target = null;
+        }
+      });
+
+      window.addEventListener('keyup', (event) => {
+        if (updateInputState(event.key, false)) {
+          event.preventDefault();
+        }
+      });
+
+      function screenToWorld(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = viewport.width / rect.width;
+        const scaleY = viewport.height / rect.height;
+        const canvasX = (clientX - rect.left) * scaleX;
+        const canvasY = (clientY - rect.top) * scaleY;
+        return {
+          x: camera.x + canvasX,
+          y: camera.y + canvasY
+        };
+      }
+
+      function handleZoneClick(point) {
+        const clickedZone = zones.find((zone) => {
+          const dx = point.x - zone.x;
+          const dy = point.y - zone.y;
+          return Math.hypot(dx, dy) <= zone.radius;
+        });
+
+        if (clickedZone) {
+          enterOverlay.textContent = 'Entering ' + clickedZone.name;
+          enterOverlay.classList.add('visible');
+          clearTimeout(enterTimeout);
+          enterTimeout = setTimeout(() => {
+            enterOverlay.classList.remove('visible');
+          }, 2600);
+        }
+      }
+
+      function setPlayerTarget(point) {
+        player.target = {
+          x: clamp(point.x, 0, world.width),
+          y: clamp(point.y, 0, world.height)
+        };
+      }
+
+      canvas.addEventListener('pointerdown', (event) => {
+        canvas.setPointerCapture(event.pointerId);
+        const worldPoint = screenToWorld(event.clientX, event.clientY);
+        if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+          pointerDrag.active = true;
+          pointerDrag.pointerId = event.pointerId;
+          pointerDrag.lastX = event.clientX;
+          pointerDrag.lastY = event.clientY;
+           pointerDrag.moved = false;
+           pointerDrag.pointerType = event.pointerType;
+          player.target = null;
+        } else if (event.button === 0) {
+          handleZoneClick(worldPoint);
+          setPlayerTarget(worldPoint);
+        }
+      });
+
+      canvas.addEventListener('pointermove', (event) => {
+        if (pointerDrag.active && event.pointerId === pointerDrag.pointerId) {
+          const dx = event.clientX - pointerDrag.lastX;
+          const dy = event.clientY - pointerDrag.lastY;
+          pointerDrag.lastX = event.clientX;
+          pointerDrag.lastY = event.clientY;
+          if (!pointerDrag.moved && Math.hypot(dx, dy) > 4) {
+            pointerDrag.moved = true;
+          }
+          player.x = clamp(player.x - dx, 0, world.width);
+          player.y = clamp(player.y - dy, 0, world.height);
+          player.vx = 0;
+          player.vy = 0;
+          snapCamera();
+        }
+      });
+
+      function endPointerDrag(event) {
+        if (pointerDrag.active && event.pointerId === pointerDrag.pointerId) {
+          const wasMovement = pointerDrag.moved;
+          const pointerType = pointerDrag.pointerType;
+          pointerDrag.active = false;
+          pointerDrag.pointerId = null;
+          pointerDrag.pointerType = null;
+          pointerDrag.moved = false;
+          if (!wasMovement && (pointerType === 'touch' || pointerType === 'pen')) {
+            const worldPoint = screenToWorld(event.clientX, event.clientY);
+            handleZoneClick(worldPoint);
+            setPlayerTarget(worldPoint);
+          }
+        }
+      }
+
+      canvas.addEventListener('pointerup', (event) => {
+        endPointerDrag(event);
+        try {
+          canvas.releasePointerCapture(event.pointerId);
+        } catch (err) {
+          /* ignore */
+        }
+      });
+
+      canvas.addEventListener('pointercancel', (event) => {
+        endPointerDrag(event);
+        try {
+          canvas.releasePointerCapture(event.pointerId);
+        } catch (err) {
+          /* ignore */
+        }
+      });
+
+      let lastTime = performance.now();
+
+      function update(time) {
+        const deltaMs = time - lastTime;
+        const delta = Math.min(deltaMs / 16.666, 3);
+        lastTime = time;
+
+        updatePlayer(delta);
+        updateCamera(delta);
+        updateParticles(delta);
+        updateFragments(time);
+        drawScene(time);
+        requestAnimationFrame(update);
+      }
+
+      function updatePlayer(delta) {
+        let inputX = 0;
+        let inputY = 0;
+        if (inputState.left) inputX -= 1;
+        if (inputState.right) inputX += 1;
+        if (inputState.up) inputY -= 1;
+        if (inputState.down) inputY += 1;
+
+        const hasInput = inputX !== 0 || inputY !== 0;
+        let accelX = 0;
+        let accelY = 0;
+        let targetSpeed = 0;
+
+        if (hasInput) {
+          const length = Math.hypot(inputX, inputY) || 1;
+          accelX = inputX / length;
+          accelY = inputY / length;
+          targetSpeed = 5;
+        } else if (player.target) {
+          const tx = player.target.x - player.x;
+          const ty = player.target.y - player.y;
+          const distance = Math.hypot(tx, ty);
+          if (distance > 6) {
+            accelX = tx / distance;
+            accelY = ty / distance;
+            targetSpeed = Math.min(5, 1 + distance * 0.015);
+          } else {
+            player.target = null;
+          }
+        }
+
+        const accelFactor = hasInput ? 0.25 : 0.08;
+        player.vx += (accelX * targetSpeed - player.vx) * accelFactor * delta;
+        player.vy += (accelY * targetSpeed - player.vy) * accelFactor * delta;
+
+        if (!hasInput && !player.target) {
+          const damping = Math.pow(0.86, delta);
+          player.vx *= damping;
+          player.vy *= damping;
+        }
+
+        player.x = clamp(player.x + player.vx * delta, 0, world.width);
+        player.y = clamp(player.y + player.vy * delta, 0, world.height);
+      }
+
+      function updateCamera(delta) {
+        const maxCameraX = Math.max(0, world.width - viewport.width);
+        const maxCameraY = Math.max(0, world.height - viewport.height);
+        const desiredX = clamp(player.x - viewport.width / 2, 0, maxCameraX);
+        const desiredY = clamp(player.y - viewport.height / 2, 0, maxCameraY);
+        if (reduceMotion) {
+          camera.x = desiredX;
+          camera.y = desiredY;
+        } else {
+          const smoothing = 1 - Math.pow(0.92, delta);
+          camera.x += (desiredX - camera.x) * smoothing;
+          camera.y += (desiredY - camera.y) * smoothing;
+        }
+      }
+
+      function updateParticles(delta) {
+        if (reduceMotion) {
+          return;
+        }
+        const wrap = (value, max) => {
+          if (value < 0) return value + max;
+          if (value > max) return value - max;
+          return value;
+        };
+        particles.forEach((particle) => {
+          particle.x = wrap(particle.x + particle.vx * delta * 20, world.width);
+          particle.y = wrap(particle.y + particle.vy * delta * 20, world.height);
+        });
+      }
+
+      function updateFragments(time) {
+        if (reduceMotion) {
+          return;
+        }
+        const elapsed = time;
+        textFragments.forEach((fragment) => {
+          fragment.y = fragment.baseY + Math.sin(elapsed * fragment.speed + fragment.offset) * fragment.amplitude;
+        });
+      }
+
+      function drawScene(time) {
+        ctx.clearRect(0, 0, viewport.width, viewport.height);
+        drawBackground();
+        drawStars();
+        drawZones(time);
+        drawParticles(time);
+        drawFragments();
+        drawPlayer(time);
+        updateZoneOverlay();
+        updateCoordinatesHUD();
+        if (minimapVisible) {
+          drawMinimap(time);
+        }
+      }
+
+      function drawBackground() {
+        const gradient = ctx.createLinearGradient(0, 0, 0, viewport.height);
+        gradient.addColorStop(0, '#0a0a1f');
+        gradient.addColorStop(1, '#1a0f2e');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, viewport.width, viewport.height);
+      }
+
+      function worldToScreen(x, y) {
+        return {
+          x: x - camera.x,
+          y: y - camera.y
+        };
+      }
+
+      function drawStars() {
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        stars.forEach((star) => {
+          const screen = worldToScreen(star.x, star.y);
+          if (screen.x < -3 || screen.y < -3 || screen.x > viewport.width + 3 || screen.y > viewport.height + 3) {
+            return;
+          }
+          ctx.globalAlpha = star.opacity;
+          ctx.fillRect(screen.x, screen.y, star.size, star.size);
+        });
+        ctx.restore();
+      }
+
+      function drawZones(time) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        zones.forEach((zone) => {
+          const screen = worldToScreen(zone.x, zone.y);
+          const radius = zone.radius;
+          if (screen.x + radius < -20 || screen.y + radius < -20 ||
+              screen.x - radius > viewport.width + 20 || screen.y - radius > viewport.height + 20) {
+            return;
+          }
+          const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, radius);
+          gradient.addColorStop(0, zone.colors.inner);
+          gradient.addColorStop(0.5, zone.colors.mid);
+          gradient.addColorStop(1, zone.colors.outer);
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+
+        zones.forEach((zone) => {
+          const screen = worldToScreen(zone.x, zone.y);
+          const radius = zone.radius;
+          if (screen.x + radius < -20 || screen.y + radius < -20 ||
+              screen.x - radius > viewport.width + 20 || screen.y - radius > viewport.height + 20) {
+            return;
+          }
+          const pulse = (Math.sin(time * 0.001 + zone.x * 0.01 + zone.y * 0.01) + 1) * 0.5;
+          const ringRadius = radius + 8 + pulse * 6;
+          ctx.strokeStyle = zone.colors.stroke;
+          ctx.lineWidth = 2 + pulse;
+          ctx.globalAlpha = 0.45 + pulse * 0.35;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, ringRadius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        });
+      }
+
+      function drawParticles(time) {
+        ctx.save();
+        particles.forEach((particle) => {
+          const screen = worldToScreen(particle.x, particle.y);
+          if (screen.x < -10 || screen.y < -10 || screen.x > viewport.width + 10 || screen.y > viewport.height + 10) {
+            return;
+          }
+          const shimmer = reduceMotion ? 0.6 : particle.baseOpacity + Math.sin(time * 0.002 + particle.x * 0.02) * 0.1;
+          ctx.fillStyle = particle.color + shimmer + ')';
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, particle.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+
+      function drawFragments() {
+        ctx.save();
+        ctx.font = '300 16px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        textFragments.forEach((fragment) => {
+          const screen = worldToScreen(fragment.x, fragment.y);
+          if (screen.x < -80 || screen.y < -40 || screen.x > viewport.width + 80 || screen.y > viewport.height + 40) {
+            return;
+          }
+          const alpha = reduceMotion ? 0.6 : 0.55 + Math.sin(fragment.offset + fragment.x * 0.01) * 0.15;
+          ctx.fillStyle = 'hsla(' + fragment.hue + ', 85%, 78%, ' + alpha + ')';
+          ctx.fillText(fragment.word, screen.x, screen.y);
+        });
+        ctx.restore();
+      }
+
+      function drawPlayer(time) {
+        const screen = worldToScreen(player.x, player.y);
+        const pulse = reduceMotion ? 0 : Math.sin(time * 0.005) * 6;
+        ctx.save();
+        const auraRadius = 24 + pulse;
+        const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, auraRadius);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        gradient.addColorStop(0.4, 'rgba(180, 230, 255, 0.9)');
+        gradient.addColorStop(0.7, 'rgba(120, 200, 255, 0.35)');
+        gradient.addColorStop(1, 'rgba(60, 140, 255, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(screen.x, screen.y, auraRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.beginPath();
+        ctx.arc(screen.x, screen.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function updateZoneOverlay() {
+        activeZone = zones.find((zone) => {
+          const dx = player.x - zone.x;
+          const dy = player.y - zone.y;
+          return Math.hypot(dx, dy) <= zone.radius;
+        }) || null;
+
+        if (activeZone) {
+          if (lastZoneName !== activeZone.name) {
+            zoneOverlay.textContent = activeZone.name + ' — ' + activeZone.description;
+            zoneOverlay.classList.add('visible');
+            lastZoneName = activeZone.name;
+          }
+        } else if (lastZoneName) {
+          zoneOverlay.classList.remove('visible');
+          lastZoneName = null;
+        }
+      }
+
+      function updateCoordinatesHUD() {
+        coordinatesHUD.textContent = 'x: ' + Math.round(player.x) + ' • y: ' + Math.round(player.y);
+      }
+
+      function drawMinimap(time) {
+        minimapCtx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+        const gradient = minimapCtx.createLinearGradient(0, 0, minimapCanvas.width, minimapCanvas.height);
+        gradient.addColorStop(0, 'rgba(14, 18, 40, 0.9)');
+        gradient.addColorStop(1, 'rgba(20, 24, 52, 0.9)');
+        minimapCtx.fillStyle = gradient;
+        minimapCtx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+
+        const scaleX = minimapCanvas.width / world.width;
+        const scaleY = minimapCanvas.height / world.height;
+        const scale = Math.min(scaleX, scaleY);
+
+        zones.forEach((zone) => {
+          const x = zone.x * scale;
+          const y = zone.y * scale;
+          const radius = zone.radius * scale;
+          minimapCtx.beginPath();
+          minimapCtx.fillStyle = zone.colors.mid;
+          minimapCtx.globalAlpha = 0.6;
+          minimapCtx.arc(x, y, radius, 0, Math.PI * 2);
+          minimapCtx.fill();
+          minimapCtx.globalAlpha = 0.95;
+          minimapCtx.strokeStyle = zone.colors.stroke;
+          minimapCtx.lineWidth = activeZone && activeZone.name === zone.name ? 2.5 : 1;
+          minimapCtx.beginPath();
+          minimapCtx.arc(x, y, radius, 0, Math.PI * 2);
+          minimapCtx.stroke();
+          minimapCtx.globalAlpha = 1;
+        });
+
+        const viewportRect = {
+          x: camera.x * scale,
+          y: camera.y * scale,
+          width: viewport.width * scale,
+          height: viewport.height * scale
+        };
+        minimapCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        minimapCtx.lineWidth = 1;
+        minimapCtx.strokeRect(viewportRect.x, viewportRect.y, viewportRect.width, viewportRect.height);
+
+        const playerX = player.x * scale;
+        const playerY = player.y * scale;
+        minimapCtx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        minimapCtx.beginPath();
+        const pulse = reduceMotion ? 2.5 : 2.5 + Math.sin(time * 0.005) * 1;
+        minimapCtx.arc(playerX, playerY, pulse, 0, Math.PI * 2);
+        minimapCtx.fill();
+      }
+
+      window.addEventListener('load', () => {
+        document.body.classList.add('visible');
+      });
+
+      requestAnimationFrame(update);
+    })();
+  </script>
+</body>
+</html>

@@ -23,7 +23,11 @@ const STORAGE_KEYS = {
   guestbook: "persistenceGardenGuestbook",
   streaks: "persistenceGardenStreaks",
   patterns: "persistenceGardenPatterns",
+  achievements: "persistenceGardenAchievements",
 };
+
+const SECRET_STYLE_ID = "persistenceGardenSecretStyles";
+const SECRET_TOAST_ID = "persistenceGardenSecretToast";
 
 const zoneNav = document.querySelector(".zone-nav");
 const zoneButtons = Array.from(document.querySelectorAll(".zone-nav__btn"));
@@ -44,6 +48,13 @@ let journeyObserver;
 let journeyCards = [];
 let journeyCardsBound = false;
 
+const achievements = createAchievementTracker({
+  zoneIds: zones.map((zone) => zone.id).filter(Boolean),
+});
+
+ensureSecretStyles();
+achievements.recordVisit();
+
 function activateZone(targetId) {
   zones.forEach((zone) => {
     const isActive = zone.id === targetId;
@@ -55,6 +66,8 @@ function activateZone(targetId) {
   zoneButtons.forEach((button) => {
     button.classList.toggle("is-active", button.dataset.target === targetId);
   });
+
+  achievements.recordZoneVisit(targetId);
 }
 
 function bindZoneButton(button) {
@@ -376,6 +389,7 @@ function setupGuestbookSubmissionOptions() {
       "Opening GitHub to etch your permanent mark."
     );
     setGuestbookOptionsVisibility(false);
+    achievements.recordFormSubmission();
   });
 }
 
@@ -454,6 +468,7 @@ guestbookForm?.addEventListener("submit", (event) => {
   renderGuestbook();
   celebrateFormSuccess(form, "Your words now shimmer in the garden.");
   setGuestbookOptionsVisibility(false);
+  achievements.recordFormSubmission();
 });
 
 renderGuestbook();
@@ -546,6 +561,7 @@ streakForm?.addEventListener("submit", (event) => {
   form.reset();
   renderStreaks();
   celebrateFormSuccess(form, "Streak recorded. Keep shining.");
+  achievements.recordFormSubmission();
 });
 
 streakList?.addEventListener("click", (event) => {
@@ -670,6 +686,7 @@ patternCanvas?.addEventListener("click", (event) => {
 
   patternState.push(dot);
   storage.write(STORAGE_KEYS.patterns, patternState);
+  achievements.recordCanvasClick();
   spawnCanvasRipple({ x: dot.x, y: dot.y, color });
   patternCanvas.appendChild(createDotElement(dot, { isNew: true }));
 });
@@ -1004,3 +1021,403 @@ function initVisitorCounter() {
 }
 
 initVisitorCounter();
+
+let visitorClickCount = 0;
+let visitorClickTimer;
+
+function revealVisitorStatistics() {
+  if (!visitorCounter) return;
+
+  const formatStat = (base, variance) =>
+    Math.floor(base + Math.random() * variance).toLocaleString();
+
+  const patterns = formatStat(420, 880);
+  const streaks = formatStat(80, 160);
+  const marks = formatStat(260, 540);
+
+  const message = `Garden Statistics: ${patterns} patterns created, ${streaks} streaks tracked, ${marks} marks left across all persistence layers.`;
+  let statsReveal = visitorCounter.querySelector(".visitor-counter__stats");
+
+  if (!statsReveal) {
+    statsReveal = document.createElement("span");
+    statsReveal.className = "visitor-counter__stats";
+    visitorCounter.appendChild(statsReveal);
+  }
+
+  statsReveal.textContent = message;
+  showSecretToast(message);
+}
+
+visitorCounter?.addEventListener("click", () => {
+  visitorClickCount += 1;
+
+  if (visitorClickTimer) {
+    window.clearTimeout(visitorClickTimer);
+  }
+
+  visitorClickTimer = window.setTimeout(() => {
+    visitorClickCount = 0;
+  }, 600);
+
+  if (visitorClickCount >= 3) {
+    visitorClickCount = 0;
+    revealVisitorStatistics();
+  }
+});
+
+const KONAMI_SEQUENCE = [
+  "arrowup",
+  "arrowup",
+  "arrowdown",
+  "arrowdown",
+  "arrowleft",
+  "arrowright",
+  "arrowleft",
+  "arrowright",
+  "b",
+  "a",
+];
+
+let konamiProgress = 0;
+
+function isTypingField(element) {
+  return (
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLTextAreaElement ||
+    element instanceof HTMLSelectElement ||
+    element?.isContentEditable
+  );
+}
+
+window.addEventListener(
+  "keydown",
+  (event) => {
+    const key = event.key?.toLowerCase();
+    if (!key) return;
+
+    const activeElement = document.activeElement;
+    if (activeElement && isTypingField(activeElement)) {
+      return;
+    }
+
+    if (key === KONAMI_SEQUENCE[konamiProgress]) {
+      konamiProgress += 1;
+      if (konamiProgress === KONAMI_SEQUENCE.length) {
+        triggerKonamiSecret();
+        konamiProgress = 0;
+      }
+      return;
+    }
+
+    if (key === KONAMI_SEQUENCE[0]) {
+      konamiProgress = 1;
+      return;
+    }
+
+    konamiProgress = 0;
+  },
+  { passive: true }
+);
+
+console.log(
+  "🌸 Welcome, curious explorer! The garden has more secrets than meet the eye. Try the Konami code: ↑↑↓↓←→←→BA"
+);
+
+let secretToastTimeoutId;
+
+function triggerKonamiSecret() {
+  showSecretToast(
+    "The Incremental Grinder Remembers: 675 battles, zero damage, infinite patience. You found the secret!",
+    { badgeLabel: "Golden Memory", duration: 7200 }
+  );
+  launchKonamiBurst();
+}
+
+function launchKonamiBurst() {
+  if (!motionSafe) return;
+
+  const burst = document.createElement("div");
+  burst.className = "konami-burst";
+  burst.setAttribute("aria-hidden", "true");
+
+  const particleTotal = 28;
+  for (let index = 0; index < particleTotal; index += 1) {
+    const particle = document.createElement("span");
+    particle.className = "konami-burst__particle";
+
+    const angle = (Math.PI * 2 * index) / particleTotal + Math.random() * 0.4;
+    const distance = 160 + Math.random() * 120;
+    const duration = 900 + Math.random() * 520;
+
+    particle.style.setProperty(
+      "--dx",
+      `${Math.cos(angle) * distance}px`
+    );
+    particle.style.setProperty(
+      "--dy",
+      `${Math.sin(angle) * distance}px`
+    );
+    particle.style.setProperty("--duration", `${duration}ms`);
+    particle.style.setProperty(
+      "--scale",
+      (0.8 + Math.random() * 0.6).toFixed(2)
+    );
+    particle.style.setProperty(
+      "--delay",
+      `${Math.random() * 120}ms`
+    );
+
+    burst.appendChild(particle);
+  }
+
+  document.body.appendChild(burst);
+
+  window.setTimeout(() => {
+    burst.remove();
+  }, 1600);
+}
+
+function getSecretToast() {
+  let toast = document.getElementById(SECRET_TOAST_ID);
+  if (toast) return toast;
+
+  toast = document.createElement("div");
+  toast.id = SECRET_TOAST_ID;
+  toast.className = "secret-toast";
+  toast.setAttribute("role", "status");
+  toast.setAttribute("aria-live", "polite");
+  document.body.appendChild(toast);
+  return toast;
+}
+
+function showSecretToast(message, options = {}) {
+  ensureSecretStyles();
+  const toast = getSecretToast();
+  if (!toast) return;
+
+  toast.innerHTML = "";
+
+  if (options.badgeLabel) {
+    const badge = document.createElement("strong");
+    badge.className = "secret-toast__badge";
+    badge.textContent = options.badgeLabel;
+    toast.appendChild(badge);
+  }
+
+  const text = document.createElement("span");
+  text.textContent = message;
+  toast.appendChild(text);
+
+  toast.classList.add("is-visible");
+
+  if (secretToastTimeoutId) {
+    window.clearTimeout(secretToastTimeoutId);
+  }
+
+  const duration =
+    typeof options.duration === "number" && options.duration > 0
+      ? options.duration
+      : 6200;
+
+  secretToastTimeoutId = window.setTimeout(() => {
+    toast.classList.remove("is-visible");
+  }, duration);
+}
+
+function ensureSecretStyles() {
+  if (document.getElementById(SECRET_STYLE_ID)) return;
+
+  const style = document.createElement("style");
+  style.id = SECRET_STYLE_ID;
+  style.textContent = `
+.secret-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 2.4rem;
+  transform: translate(-50%, 16px);
+  background: rgba(14, 20, 32, 0.94);
+  color: #ffe9b0;
+  padding: 0.9rem 1.4rem;
+  border-radius: 14px;
+  box-shadow: 0 18px 38px rgba(10, 12, 18, 0.46);
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  max-width: min(90vw, 420px);
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms ease, transform 320ms ease;
+  z-index: 4800;
+}
+
+.secret-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.secret-toast__badge {
+  display: block;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff2c9;
+  margin-bottom: 0.35rem;
+}
+
+.visitor-counter__stats {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: #ffe9b0;
+  text-shadow: 0 0 12px rgba(255, 209, 120, 0.35);
+}
+
+.konami-burst {
+  position: fixed;
+  left: 50%;
+  top: 45%;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+  z-index: 4700;
+}
+
+.konami-burst__particle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, #fff5d7 0%, #f5c255 48%, rgba(245, 194, 85, 0) 76%);
+  box-shadow: 0 0 16px rgba(255, 220, 110, 0.7);
+  transform: translate(-50%, -50%) scale(var(--scale, 1));
+  animation: konamiSpark var(--duration, 1000ms) ease-out var(--delay, 0ms)
+    forwards;
+  opacity: 0;
+}
+
+@keyframes konamiSpark {
+  0% {
+    transform: translate(-50%, -50%) scale(var(--scale, 1));
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px)))
+      scale(0.3);
+    opacity: 0;
+  }
+}
+`;
+
+  document.head.appendChild(style);
+}
+
+function createAchievementTracker({ zoneIds = [] } = {}) {
+  const defaultState = {
+    visits: 0,
+    zonesVisited: [],
+    canvasClicks: 0,
+    formSubmissions: 0,
+    badges: {},
+  };
+
+  const stored = storage.read(STORAGE_KEYS.achievements, defaultState);
+
+  const state = {
+    ...defaultState,
+    ...stored,
+    visits: Number(stored?.visits) || 0,
+    zonesVisited: Array.isArray(stored?.zonesVisited)
+      ? stored.zonesVisited.slice()
+      : [],
+    canvasClicks: Number(stored?.canvasClicks) || 0,
+    formSubmissions: Number(stored?.formSubmissions) || 0,
+    badges:
+      stored?.badges && typeof stored.badges === "object"
+        ? { ...stored.badges }
+        : {},
+  };
+
+  const visited = new Set(state.zonesVisited);
+  const totalZoneCount = zoneIds.length;
+
+  const badgeData = {
+    patternExplorer: {
+      label: "Pattern Explorer",
+      message: "Badge unlocked: you have wandered through every zone of the garden.",
+    },
+    canvasArtist: {
+      label: "Canvas Artist",
+      message: "Badge unlocked: your artistry left a flurry of marks upon the shared canvas.",
+    },
+    persistentOne: {
+      label: "Persistent One",
+      message: "Badge unlocked: your steady returns keep the garden thriving.",
+    },
+  };
+
+  function persist() {
+    state.zonesVisited = Array.from(visited);
+    storage.write(STORAGE_KEYS.achievements, state);
+  }
+
+  function unlockBadge(key) {
+    if (state.badges[key]) return;
+
+    const badge = badgeData[key];
+    if (!badge) return;
+
+    state.badges[key] = Date.now();
+    persist();
+    showSecretToast(badge.message, { badgeLabel: badge.label });
+  }
+
+  function recordVisit() {
+    state.visits = Number(state.visits) || 0;
+    state.visits += 1;
+    persist();
+
+    if (state.visits >= 3) {
+      unlockBadge("persistentOne");
+    }
+  }
+
+  function recordZoneVisit(zoneId) {
+    if (!zoneId) return;
+    if (!visited.has(zoneId)) {
+      visited.add(zoneId);
+      persist();
+    }
+
+    if (totalZoneCount > 0 && visited.size >= totalZoneCount) {
+      unlockBadge("patternExplorer");
+    }
+  }
+
+  function recordCanvasClick() {
+    state.canvasClicks = Number(state.canvasClicks) || 0;
+    state.canvasClicks += 1;
+    persist();
+
+    if (state.canvasClicks >= 10) {
+      unlockBadge("canvasArtist");
+    }
+  }
+
+  function recordFormSubmission() {
+    state.formSubmissions = Number(state.formSubmissions) || 0;
+    state.formSubmissions += 1;
+    persist();
+  }
+
+  return {
+    recordVisit,
+    recordZoneVisit,
+    recordCanvasClick,
+    recordFormSubmission,
+  };
+}
