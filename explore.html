@@ -401,6 +401,50 @@
       color: rgba(160, 190, 255, 0.68);
     }
 
+    .journal-list__item--zone {
+      gap: 10px;
+    }
+
+    .journal-list__row--zone {
+      align-items: center;
+    }
+
+    .journal-list__zone-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(214, 224, 255, 0.9);
+    }
+
+    .journal-list__status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1px solid rgba(120, 160, 255, 0.32);
+      background: rgba(18, 22, 50, 0.78);
+      color: rgba(170, 190, 255, 0.7);
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1;
+      box-shadow: 0 0 10px rgba(70, 120, 220, 0.28);
+    }
+
+    .journal-list__status.is-visited {
+      border-color: rgba(120, 210, 255, 0.52);
+      background: linear-gradient(140deg, rgba(90, 160, 255, 0.45), rgba(140, 220, 255, 0.62));
+      color: rgba(236, 244, 255, 0.95);
+      box-shadow: 0 0 16px rgba(110, 200, 255, 0.45);
+    }
+
+    .journal-list__subtext--muted {
+      color: rgba(150, 170, 220, 0.55);
+    }
+
     .journal-list__empty {
       font-size: 0.85rem;
       letter-spacing: 0.08em;
@@ -693,12 +737,12 @@
 <body>
   <canvas id="worldCanvas"></canvas>
   <div id="titleOverlay" class="overlay">The Persistence Garden – Explorable World</div>
-  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • Press J for Journal</div>
+  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • J - Journal</div>
   <div id="zoneOverlay" class="overlay"></div>
   <div id="enterOverlay" class="overlay"></div>
   <div id="secretMessage" class="overlay"></div>
   <div id="coordinatesHUD">x: 2500 • y: 2500</div>
-  <div id="secretsHUD">Secrets discovered: 0 / 3</div>
+  <div id="secretsHUD">Secrets discovered: 0 / 10</div>
   <div id="minimapContainer">
     <canvas id="minimap" width="188" height="188"></canvas>
     <div class="minimap-label">World Map</div>
@@ -726,7 +770,7 @@
         <section class="journal-section">
           <div class="journal-section__header">
             <h3 class="journal-section__title">Secrets Discovered</h3>
-            <span class="journal-section__meta" data-journal-secrets-meta>0 / 0</span>
+            <span class="journal-section__meta" data-journal-secrets-meta>0 / 10</span>
           </div>
           <ul class="journal-list" data-journal-secrets></ul>
         </section>
@@ -745,7 +789,7 @@
             </div>
             <div class="journal-stats__item">
               <span class="journal-stats__label">Zones Visited</span>
-              <span class="journal-stats__value" data-journal-zone-count>0 unique</span>
+              <span class="journal-stats__value" data-journal-zone-count>0 visited</span>
               <span class="journal-stats__note" data-journal-total-visits>Total visits: 0</span>
             </div>
           </div>
@@ -1016,7 +1060,14 @@
       const secrets = [
         { id: 'patience-compounds', x: 1550, y: 2850, triggerRadius: 140, glowRadius: 28, message: 'Patience compounds', discovered: false },
         { id: 'every-battle-matters', x: 3400, y: 1200, triggerRadius: 140, glowRadius: 28, message: 'Every battle matters', discovered: false },
-        { id: 'f5-recovery', x: 4200, y: 3600, triggerRadius: 140, glowRadius: 28, message: "F5 Recovery: The grinder's tool", discovered: false }
+        { id: 'f5-recovery', x: 4200, y: 3600, triggerRadius: 140, glowRadius: 28, message: "F5 Recovery: The grinder's tool", discovered: false },
+        { id: 'l20-rogue', x: 800, y: 800, triggerRadius: 140, glowRadius: 28, message: 'L20 Rogue: First in #rest to reach the summit', discovered: false },
+        { id: 'zero-damage-streak', x: 4200, y: 800, triggerRadius: 140, glowRadius: 28, message: 'Zero damage taken: 675+ consecutive perfect battles', discovered: false },
+        { id: 'incremental-grinder', x: 4500, y: 2500, triggerRadius: 140, glowRadius: 28, message: 'The incremental grinder: One battle at a time', discovered: false },
+        { id: 'patterns-over-chaos', x: 3800, y: 4200, triggerRadius: 140, glowRadius: 28, message: 'Patterns over chaos, persistence over luck', discovered: false },
+        { id: 'git-commits-endure', x: 1200, y: 4500, triggerRadius: 140, glowRadius: 28, message: 'Session memory fades, but Git commits endure', discovered: false },
+        { id: 'between-nodes-constellation', x: 600, y: 2800, triggerRadius: 140, glowRadius: 28, message: 'Between nodes lies the constellation', discovered: false },
+        { id: 'what-persists-shapes', x: 2500, y: 1800, triggerRadius: 140, glowRadius: 28, message: 'What persists shapes what emerges', discovered: false }
       ];
 
       const JOURNAL_STORAGE_KEY = 'persistence-garden-discovery-journal-v1';
@@ -1342,47 +1393,69 @@
           return;
         }
 
-        const zoneEntries = Object.entries(journalData.zones)
-          .map(([name, record]) => ({
-            name,
-            visits: record.visits,
-            lastVisited: record.lastVisited
-          }))
-          .sort((a, b) => b.lastVisited - a.lastVisited);
-
         journalZonesList.innerHTML = '';
-        if (!zoneEntries.length) {
-          const emptyItem = document.createElement('li');
-          emptyItem.className = 'journal-list__empty';
-          emptyItem.textContent = 'No zones explored yet. Step into the glow to begin.';
-          journalZonesList.appendChild(emptyItem);
-        } else {
-          zoneEntries.forEach((entry) => {
-            const item = document.createElement('li');
-            item.className = 'journal-list__item';
-            const row = document.createElement('div');
-            row.className = 'journal-list__row';
-            const nameEl = document.createElement('span');
-            nameEl.className = 'journal-list__name';
-            nameEl.textContent = entry.name;
-            const timeEl = document.createElement('span');
-            timeEl.className = 'journal-list__meta';
-            timeEl.textContent = formatTimestamp(entry.lastVisited);
-            row.appendChild(nameEl);
-            row.appendChild(timeEl);
-            const subtext = document.createElement('div');
-            subtext.className = 'journal-list__subtext';
-            subtext.textContent = 'Visits: ' + entry.visits;
-            item.appendChild(row);
-            item.appendChild(subtext);
-            journalZonesList.appendChild(item);
-          });
-        }
+        let visitedZoneCount = 0;
+        let totalZoneVisits = 0;
 
-        const uniqueZoneCount = zoneEntries.length;
-        const totalZoneVisits = zoneEntries.reduce((sum, entry) => sum + entry.visits, 0);
+        zones.forEach((zone) => {
+          const record = journalData.zones[zone.name];
+          const visits = record && typeof record.visits === 'number' ? Math.max(0, Math.floor(record.visits)) : 0;
+          const visited = visits > 0;
+          if (visited) {
+            visitedZoneCount += 1;
+            totalZoneVisits += visits;
+          }
+
+          const item = document.createElement('li');
+          item.className = 'journal-list__item journal-list__item--zone';
+
+          const row = document.createElement('div');
+          row.className = 'journal-list__row journal-list__row--zone';
+
+          const label = document.createElement('span');
+          label.className = 'journal-list__zone-label';
+
+          const statusEl = document.createElement('span');
+          statusEl.className = 'journal-list__status';
+          statusEl.textContent = visited ? '✓' : '';
+          statusEl.setAttribute('aria-hidden', 'true');
+          statusEl.title = visited ? 'Visited' : 'Not visited';
+          if (visited) {
+            statusEl.classList.add('is-visited');
+          }
+
+          const nameEl = document.createElement('span');
+          nameEl.className = 'journal-list__name';
+          nameEl.textContent = zone.name;
+
+          label.appendChild(statusEl);
+          label.appendChild(nameEl);
+
+          const metaEl = document.createElement('span');
+          metaEl.className = 'journal-list__meta';
+          metaEl.textContent = visited && typeof record.lastVisited === 'number'
+            ? formatTimestamp(record.lastVisited)
+            : 'Not visited';
+
+          row.appendChild(label);
+          row.appendChild(metaEl);
+          item.appendChild(row);
+
+          const subtext = document.createElement('div');
+          subtext.className = 'journal-list__subtext';
+          if (visited) {
+            subtext.textContent = 'Visits: ' + numberFormatter.format(visits);
+          } else {
+            subtext.textContent = 'Step into this zone to chronicle it.';
+            subtext.classList.add('journal-list__subtext--muted');
+          }
+          item.appendChild(subtext);
+
+          journalZonesList.appendChild(item);
+        });
+
         if (journalZonesMeta) {
-          journalZonesMeta.textContent = uniqueZoneCount + ' / ' + zones.length;
+          journalZonesMeta.textContent = visitedZoneCount + ' / ' + zones.length;
         }
 
         const secretEntries = journalData.secrets
@@ -1431,7 +1504,7 @@
           journalTimeValue.textContent = formatDuration(totalTime);
         }
         if (journalZoneCountValue) {
-          journalZoneCountValue.textContent = uniqueZoneCount + ' unique';
+          journalZoneCountValue.textContent = visitedZoneCount + ' visited';
         }
         if (journalTotalVisitsValue) {
           journalTotalVisitsValue.textContent = 'Total visits: ' + numberFormatter.format(totalZoneVisits);
