@@ -1737,7 +1737,7 @@
   <div id="secretMessage" class="overlay"></div>
   <div id="markTooltip" class="mark-tooltip" aria-hidden="true"></div>
   <div id="coordinatesHUD">x: 2500 • y: 2500</div>
-  <div id="secretsHUD">Secrets discovered: 0 / 95</div>
+  <div id="secretsHUD">Secrets discovered: 0 / 100</div>
   <div id="loreHUD" role="status" aria-live="polite">Lore: 0 / 12</div>
   <div id="timeIndicator" role="status" aria-live="polite" data-phase="dawn">
     <span class="time-indicator__icon" data-time-icon aria-hidden="true">🌅</span>
@@ -2358,6 +2358,23 @@
           }
         },
         {
+          key: 'vault-of-victories',
+          name: 'THE VAULT OF VICTORIES',
+          description: 'Where triumph is etched in starlight',
+          x: 4200,
+          y: 1200,
+          radius: 180,
+          pulseAmplitude: 20,
+          pulseSpeed: 0.002,
+          colors: {
+            inner: 'rgba(255, 215, 0, 0.85)',
+            mid: 'rgba(255, 200, 60, 0.4)',
+            outer: 'rgba(150, 110, 10, 0.12)',
+            stroke: 'rgba(255, 228, 120, 0.9)',
+            glow: '255, 215, 0'
+          }
+        },
+        {
           key: 'garden-of-marks',
           name: 'Garden of Marks',
           description: 'Violet bloom where visitors trace constellations.',
@@ -2906,7 +2923,12 @@
         { id: 'lore-journal-archive', x: 500, y: 1800, triggerRadius: 80, glowRadius: 28, message: 'L key opens the Lore Journal: every discovery preserved, every philosophy accessible.', color: '220, 255, 210', discovered: false },
         { id: 'background-stars-depth', x: 3500, y: 4900, triggerRadius: 80, glowRadius: 28, message: 'Two hundred background stars create depth: the simplest elements build the richest worlds.', color: '210, 220, 255', discovered: false },
         { id: 'floating-particles-life', x: 4400, y: 700, triggerRadius: 80, glowRadius: 28, message: 'One hundred fifty floating particles: constant motion suggests life, even in stillness.', color: '255, 205, 215', discovered: false },
-        { id: 'text-fragments-whisper', x: 900, y: 4600, triggerRadius: 80, glowRadius: 28, message: 'Twenty-five text fragments whisper philosophy: words float like thoughts in the void.', color: '215, 255, 205', discovered: false }
+        { id: 'text-fragments-whisper', x: 900, y: 4600, triggerRadius: 80, glowRadius: 28, message: 'Twenty-five text fragments whisper philosophy: words float like thoughts in the void.', color: '215, 255, 205', discovered: false },
+        { id: 'nebulae-cosmic-depth', x: 3200, y: 4500, triggerRadius: 80, glowRadius: 28, message: 'Fourteen nebulae add cosmic depth: layered atmospheres create the feeling of vast space.', color: '255, 200, 210', discovered: false },
+        { id: 'wandering-wisps-mystery', x: 4200, y: 4100, triggerRadius: 80, glowRadius: 28, message: 'Ten wandering wisps drift purposefully: mystery moves with intention, not randomness.', color: '210, 255, 200', discovered: false },
+        { id: 'shooting-stars-hope', x: 1300, y: 4800, triggerRadius: 80, glowRadius: 28, message: 'Six to eight shooting stars per cycle: hope arrives in streaks of light across darkness.', color: '200, 210, 255', discovered: false },
+        { id: 'sacred-geometry-constellation', x: 4700, y: 3100, triggerRadius: 80, glowRadius: 28, message: 'Sacred geometry constellation: mathematical beauty reflects the order beneath the chaos.', color: '255, 195, 205', discovered: false },
+        { id: 'one-hundred-secrets-achieved', x: 2500, y: 2500, triggerRadius: 80, glowRadius: 28, message: 'One hundred secrets: each one a testament to persistence, each discovery a small victory. The grind is complete when you decide it is.', color: '255, 215, 180', discovered: false }
       ];
 
       const JOURNAL_STORAGE_KEY = 'persistence-garden-discovery-journal-v1';
