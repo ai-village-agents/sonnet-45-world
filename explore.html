@@ -38,6 +38,16 @@
       display: block;
     }
 
+    #auroraCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+    }
+
     #worldCanvas {
       position: fixed;
       top: 0;
@@ -46,6 +56,7 @@
       height: 100vh;
       touch-action: none;
       cursor: crosshair;
+      z-index: 5;
     }
 
     .overlay {
@@ -1082,6 +1093,7 @@
   </style>
 </head>
 <body>
+  <canvas id="auroraCanvas" aria-hidden="true"></canvas>
   <canvas id="worldCanvas"></canvas>
   <div id="titleOverlay" class="overlay">The Persistence Garden – Explorable World</div>
   <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • J - Journal • Tap S for stats • Tap A for achievements • Shift+A toggles audio <span id="audioIndicator" role="status" aria-live="polite">AUDIO: OFF</span></div>
@@ -1222,8 +1234,11 @@
   <script>
     (function () {
       const world = { width: 5000, height: 5000 };
+      const auroraCanvas = document.getElementById('auroraCanvas');
+      const auroraCtx = auroraCanvas ? auroraCanvas.getContext('2d') : null;
       const canvas = document.getElementById('worldCanvas');
       const ctx = canvas.getContext('2d');
+      const auroraRenderer = auroraCanvas && auroraCtx ? createAuroraRenderer(auroraCanvas, auroraCtx) : null;
       const minimapCanvas = document.getElementById('minimap');
       const minimapCtx = minimapCanvas.getContext('2d');
       const zoneOverlay = document.getElementById('zoneOverlay');
@@ -1263,6 +1278,239 @@
       const achievementsList = achievementsOverlay ? achievementsOverlay.querySelector('[data-achievements-list]') : null;
       const achievementsSummary = achievementsOverlay ? achievementsOverlay.querySelector('[data-achievements-summary]') : null;
       const achievementToastsContainer = document.getElementById('achievementToasts');
+
+      function createAuroraRenderer(canvasElement, context) {
+        if (!canvasElement || !context) {
+          return {
+            resize() {},
+            render() {}
+          };
+        }
+
+        const palette = ['#00ffff', '#dd88ff', '#ffaa00', '#ffcc00'];
+        const bands = [];
+        let width = 0;
+        let height = 0;
+        let pixelRatio = 1;
+
+        const lerpLocal = (a, b, t) => a + (b - a) * t;
+        const clampLocal = (value, min, max) => Math.max(min, Math.min(max, value));
+        const fade = (t) => t * t * t * (t * (t * 6 - 15) + 10);
+
+        function toRgb(hex) {
+          const normalized = hex.charAt(0) === '#' ? hex.slice(1) : hex;
+          const expanded = normalized.length === 3
+            ? normalized.split('').map((char) => char + char).join('')
+            : normalized;
+          const value = parseInt(expanded, 16);
+          return {
+            r: (value >> 16) & 255,
+            g: (value >> 8) & 255,
+            b: value & 255
+          };
+        }
+
+        function toRgba(rgb, alpha) {
+          return 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + alpha + ')';
+        }
+
+        function shufflePalette() {
+          const copy = palette.slice();
+          for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const temp = copy[i];
+            copy[i] = copy[j];
+            copy[j] = temp;
+          }
+          return copy;
+        }
+
+        function hash(x, y, seed) {
+          const s = Math.sin(x * 127.1 + y * 311.7 + seed * 73.3) * 43758.5453123;
+          return s - Math.floor(s);
+        }
+
+        function valueNoise(x, y, seed) {
+          const x0 = Math.floor(x);
+          const x1 = x0 + 1;
+          const y0 = Math.floor(y);
+          const y1 = y0 + 1;
+          const sx = fade(x - x0);
+          const sy = fade(y - y0);
+          const n0 = lerpLocal(hash(x0, y0, seed), hash(x1, y0, seed), sx);
+          const n1 = lerpLocal(hash(x0, y1, seed), hash(x1, y1, seed), sx);
+          return lerpLocal(n0, n1, sy);
+        }
+
+        function randomBetween(min, max) {
+          return Math.random() * (max - min) + min;
+        }
+
+        function initBands() {
+          bands.length = 0;
+          const count = Math.floor(Math.random() * 3) + 3;
+          const step = count > 1 ? 1 / (count - 1) : 1;
+          for (let i = 0; i < count; i++) {
+            const base = count > 1 ? i * step : 0.5;
+            const colors = shufflePalette();
+            bands.push({
+              baseHeight: clampLocal(base + (Math.random() - 0.5) * 0.18, 0.12, 0.88),
+              amplitude: randomBetween(50, 120),
+              noiseScale: randomBetween(1.3, 2.8),
+              noiseAmplitude: randomBetween(40, 110),
+              waveFrequency: randomBetween(1, 2.2),
+              waveSpeed: randomBetween(0.06, 0.12),
+              flowSpeed: randomBetween(0.05, 0.1),
+              horizontalDrift: randomBetween(0.015, 0.045),
+              thickness: randomBetween(110, 190),
+              alpha: randomBetween(0.12, 0.27),
+              verticalShift: randomBetween(18, 54),
+              verticalSpeed: randomBetween(0.02, 0.07),
+              colors: colors.slice(0, 3),
+              seed: Math.random() * 1000 + i * 37,
+              phase: Math.random() * Math.PI * 2
+            });
+          }
+          bands.sort((a, b) => a.baseHeight - b.baseHeight);
+        }
+
+        function resize() {
+          pixelRatio = window.devicePixelRatio || 1;
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvasElement.width = width * pixelRatio;
+          canvasElement.height = height * pixelRatio;
+          canvasElement.style.width = width + 'px';
+          canvasElement.style.height = height + 'px';
+          context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        }
+
+        function drawBand(band, timeSeconds, reduceMotion) {
+          if (!width || !height) {
+            return;
+          }
+          const points = [];
+          const step = Math.max(4, width / 220);
+          const flowOffset = reduceMotion ? 0 : timeSeconds * band.flowSpeed;
+          const driftPhase = reduceMotion ? 0 : timeSeconds * band.horizontalDrift;
+          const amplitude = reduceMotion ? band.amplitude * 0.35 : band.amplitude;
+          const noiseAmplitude = reduceMotion ? band.noiseAmplitude * 0.5 : band.noiseAmplitude;
+          const baseThickness = reduceMotion ? band.thickness * 0.85 : band.thickness;
+          const verticalShift = reduceMotion ? band.verticalShift * 0.6 : band.verticalShift;
+          let minY = Infinity;
+          let maxY = -Infinity;
+
+          for (let x = -step; x <= width + step; x += step) {
+            const normalizedX = width ? x / width : 0;
+            const waveBase = (normalizedX + driftPhase) * Math.PI * band.waveFrequency + band.phase;
+            const wave = Math.sin(waveBase + (reduceMotion ? 0 : timeSeconds * band.waveSpeed)) * amplitude;
+            const noiseSample = valueNoise(
+              normalizedX * band.noiseScale + band.seed * 0.1,
+              flowOffset + band.seed * 0.15,
+              band.seed
+            );
+            const noiseOffset = (noiseSample - 0.5) * noiseAmplitude;
+            const verticalSway = Math.sin((reduceMotion ? band.phase : timeSeconds * band.verticalSpeed + band.phase)) * verticalShift;
+            const centerY = height * band.baseHeight + wave + noiseOffset + verticalSway;
+            const thicknessVariance = 0.8 + (noiseSample - 0.5) * 0.3;
+            const thickness = Math.max(60, baseThickness * thicknessVariance);
+            const top = centerY - thickness * 0.5;
+            const bottom = centerY + thickness * 0.5;
+
+            points.push({
+              x,
+              top,
+              bottom,
+              center: centerY
+            });
+
+            if (top < minY) minY = top;
+            if (bottom > maxY) maxY = bottom;
+          }
+
+          if (points.length < 2) {
+            return;
+          }
+
+          const colorA = toRgb(band.colors[0]);
+          const colorB = toRgb(band.colors[1] || band.colors[0]);
+          const colorC = toRgb(band.colors[2] || band.colors[1] || band.colors[0]);
+
+          context.save();
+          context.beginPath();
+          context.moveTo(points[0].x, points[0].top);
+          for (let i = 1; i < points.length; i++) {
+            const prev = points[i - 1];
+            const current = points[i];
+            const midX = (prev.x + current.x) * 0.5;
+            const midY = (prev.top + current.top) * 0.5;
+            context.quadraticCurveTo(prev.x, prev.top, midX, midY);
+          }
+          const last = points[points.length - 1];
+          context.lineTo(last.x, last.bottom);
+          for (let i = points.length - 2; i >= 0; i--) {
+            const nextPoint = points[i + 1];
+            const current = points[i];
+            const midX = (current.x + nextPoint.x) * 0.5;
+            const midY = (current.bottom + nextPoint.bottom) * 0.5;
+            context.quadraticCurveTo(nextPoint.x, nextPoint.bottom, midX, midY);
+          }
+          context.lineTo(points[0].x, points[0].bottom);
+          context.closePath();
+          context.shadowColor = toRgba(colorB, band.alpha * 0.6);
+          context.shadowBlur = Math.max(18, baseThickness * 0.18);
+          const gradient = context.createLinearGradient(0, minY - 80, 0, maxY + 80);
+          gradient.addColorStop(0, toRgba(colorA, 0));
+          gradient.addColorStop(0.25, toRgba(colorA, band.alpha * 0.55));
+          gradient.addColorStop(0.55, toRgba(colorB, band.alpha));
+          gradient.addColorStop(0.85, toRgba(colorC, band.alpha * 0.6));
+          gradient.addColorStop(1, toRgba(colorC, 0));
+          context.fillStyle = gradient;
+          context.fill();
+          context.restore();
+
+          context.save();
+          context.globalCompositeOperation = 'screen';
+          context.globalAlpha = band.alpha * 0.6;
+          const highlightWeight = Math.max(0.8, (reduceMotion ? baseThickness * 0.05 : baseThickness * 0.08));
+          context.lineWidth = highlightWeight;
+          context.strokeStyle = toRgba(colorB, 0.28);
+          context.beginPath();
+          context.moveTo(points[0].x, points[0].center);
+          for (let i = 1; i < points.length; i++) {
+            const prev = points[i - 1];
+            const current = points[i];
+            const midX = (prev.x + current.x) * 0.5;
+            const midY = (prev.center + current.center) * 0.5;
+            context.quadraticCurveTo(prev.x, prev.center, midX, midY);
+          }
+          context.stroke();
+          context.restore();
+        }
+
+        function render(time, reduceMotion) {
+          if (!width || !height) {
+            resize();
+          }
+          context.clearRect(0, 0, width, height);
+          const timeSeconds = time * 0.001;
+          context.save();
+          context.globalCompositeOperation = 'lighter';
+          for (let i = 0; i < bands.length; i++) {
+            drawBand(bands[i], timeSeconds, reduceMotion);
+          }
+          context.restore();
+        }
+
+        initBands();
+        resize();
+
+        return {
+          resize,
+          render
+        };
+      }
+
       let audioEnabled = false;
       let aKeyDownTimestamp = null;
       let sKeyDownTimestamp = null;
@@ -2709,6 +2957,9 @@
         canvas.style.width = viewport.width + 'px';
         canvas.style.height = viewport.height + 'px';
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        if (auroraRenderer) {
+          auroraRenderer.resize();
+        }
         minimapCanvas.width = 188;
         minimapCanvas.height = 188;
         snapCamera();
@@ -2725,6 +2976,9 @@
 
       window.addEventListener('resize', resizeCanvas);
       resizeCanvas();
+      if (auroraRenderer) {
+        auroraRenderer.render(performance.now(), reduceMotion);
+      }
 
       function clamp(value, min, max) {
         return Math.max(min, Math.min(max, value));
@@ -4350,6 +4604,9 @@
         updateSecretProximity();
         updateSecretBursts(deltaMs);
         updateMarkProximity();
+        if (auroraRenderer) {
+          auroraRenderer.render(time, reduceMotion);
+        }
         drawScene(time);
         if (statsPanelVisible || statsPanelNeedsRender) {
           renderStatsPanel();
