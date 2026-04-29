@@ -239,6 +239,90 @@
       backdrop-filter: blur(14px);
     }
 
+    #statsPanel {
+      position: fixed;
+      top: 24px;
+      left: 24px;
+      width: clamp(240px, 26vw, 320px);
+      padding: 18px 22px;
+      border-radius: 20px;
+      background: rgba(10, 14, 34, 0.68);
+      border: 1px solid rgba(130, 170, 255, 0.3);
+      box-shadow: 0 22px 48px rgba(6, 8, 28, 0.6);
+      backdrop-filter: blur(18px);
+      color: rgba(230, 236, 255, 0.96);
+      opacity: 0;
+      transform: translateY(-12px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      pointer-events: none;
+      z-index: 22;
+    }
+
+    #statsPanel.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .stats-panel__section + .stats-panel__section {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(140, 160, 220, 0.2);
+    }
+
+    .stats-panel__heading {
+      margin: 0 0 10px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(220, 232, 255, 0.9);
+    }
+
+    .stats-panel__list {
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .stats-panel__row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 14px;
+    }
+
+    .stats-panel__label {
+      margin: 0;
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(185, 202, 245, 0.72);
+    }
+
+    .stats-panel__value {
+      margin: 0;
+      font-size: 0.9rem;
+      letter-spacing: 0.06em;
+      color: rgba(244, 248, 255, 0.96);
+    }
+
+    .stats-panel__location {
+      margin: 6px 0 0;
+      font-size: 0.95rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(236, 242, 255, 0.92);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #statsPanel {
+        transition: none;
+        transform: none;
+      }
+    }
+
     #minimapContainer {
       position: fixed;
       top: 24px;
@@ -798,7 +882,7 @@
 <body>
   <canvas id="worldCanvas"></canvas>
   <div id="titleOverlay" class="overlay">The Persistence Garden – Explorable World</div>
-  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • J - Journal • Tap A for audio <span id="audioIndicator" role="status" aria-live="polite">AUDIO: OFF</span></div>
+  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • J - Journal • Press S for stats • Tap A for audio <span id="audioIndicator" role="status" aria-live="polite">AUDIO: OFF</span></div>
   <div id="zoneOverlay" class="overlay"></div>
   <div id="zoneBadge" role="status" aria-live="polite" aria-atomic="true"></div>
   <div id="enterOverlay" class="overlay"></div>
@@ -806,6 +890,66 @@
   <div id="markTooltip" class="mark-tooltip" aria-hidden="true"></div>
   <div id="coordinatesHUD">x: 2500 • y: 2500</div>
   <div id="secretsHUD">Secrets discovered: 0 / 18</div>
+  <div id="statsPanel" aria-hidden="true">
+    <div class="stats-panel__section">
+      <h3 class="stats-panel__heading">Session Stats</h3>
+      <div class="stats-panel__list">
+        <div class="stats-panel__row">
+          <p class="stats-panel__label">Time in world</p>
+          <p class="stats-panel__value" data-stats-time>00:00</p>
+        </div>
+        <div class="stats-panel__row">
+          <p class="stats-panel__label">Distance traveled</p>
+          <p class="stats-panel__value" data-stats-distance>0 px</p>
+        </div>
+        <div class="stats-panel__row">
+          <p class="stats-panel__label">Zones visited</p>
+          <p class="stats-panel__value" data-stats-zones>0 / 6</p>
+        </div>
+        <div class="stats-panel__row">
+          <p class="stats-panel__label">Secrets found</p>
+          <p class="stats-panel__value" data-stats-secrets>0 / 18</p>
+        </div>
+      </div>
+    </div>
+    <div class="stats-panel__section">
+      <h3 class="stats-panel__heading">World Stats</h3>
+      <div class="stats-panel__list">
+        <div class="stats-panel__row">
+          <p class="stats-panel__label">Total background stars</p>
+          <p class="stats-panel__value">200</p>
+        </div>
+        <div class="stats-panel__row">
+          <p class="stats-panel__label">Total particles</p>
+          <p class="stats-panel__value">150</p>
+        </div>
+        <div class="stats-panel__row">
+          <p class="stats-panel__label">Nebulae</p>
+          <p class="stats-panel__value">14</p>
+        </div>
+        <div class="stats-panel__row">
+          <p class="stats-panel__label">Wisps</p>
+          <p class="stats-panel__value">10</p>
+        </div>
+        <div class="stats-panel__row">
+          <p class="stats-panel__label">Text fragments</p>
+          <p class="stats-panel__value">25</p>
+        </div>
+        <div class="stats-panel__row">
+          <p class="stats-panel__label">Shooting stars</p>
+          <p class="stats-panel__value">6-8</p>
+        </div>
+        <div class="stats-panel__row">
+          <p class="stats-panel__label">Hidden secrets</p>
+          <p class="stats-panel__value">18</p>
+        </div>
+      </div>
+    </div>
+    <div class="stats-panel__section">
+      <h3 class="stats-panel__heading">Current Location</h3>
+      <p class="stats-panel__location" data-stats-location>Exploring the void</p>
+    </div>
+  </div>
   <div id="minimapContainer">
     <canvas id="minimap" width="188" height="188"></canvas>
     <div class="minimap-label">World Map</div>
@@ -878,6 +1022,12 @@
       const secretMessage = document.getElementById('secretMessage');
       const markTooltip = document.getElementById('markTooltip');
       const secretsHUD = document.getElementById('secretsHUD');
+      const statsPanel = document.getElementById('statsPanel');
+      const statsTimeValue = statsPanel ? statsPanel.querySelector('[data-stats-time]') : null;
+      const statsDistanceValue = statsPanel ? statsPanel.querySelector('[data-stats-distance]') : null;
+      const statsZonesValue = statsPanel ? statsPanel.querySelector('[data-stats-zones]') : null;
+      const statsSecretsValue = statsPanel ? statsPanel.querySelector('[data-stats-secrets]') : null;
+      const statsLocationValue = statsPanel ? statsPanel.querySelector('[data-stats-location]') : null;
       const zoneModal = document.getElementById('zoneModal');
       const zoneModalTitle = zoneModal.querySelector('.zone-modal__title');
       const zoneModalSubtitle = zoneModal.querySelector('.zone-modal__subtitle');
@@ -895,6 +1045,7 @@
       const journalTotalVisitsValue = journalOverlay.querySelector('[data-journal-total-visits]');
       let audioEnabled = false;
       let aKeyDownTimestamp = null;
+      let sKeyDownTimestamp = null;
       const audioManager = createAmbientAudioManager();
       updateAudioIndicator();
 
@@ -1373,6 +1524,13 @@
 
       let secretsDiscovered = 0;
       let activeSecret = null;
+      let statsPanelVisible = false;
+      let statsPanelNeedsRender = true;
+      let sessionTimeMs = 0;
+      let sessionDistance = 0;
+      const sessionZonesVisited = new Set();
+      let sessionSecretsFound = 0;
+      let lastStatsLocation = 'Exploring the void';
 
       loadJournalData();
       applyLoadedJournalState();
@@ -1752,6 +1910,7 @@
           return;
         }
         closeZoneModal();
+        hideStatsPanel();
         journalOpen = true;
         if (flushJournalAccumulators()) {
           scheduleJournalSave();
@@ -1795,12 +1954,76 @@
         }
       }
 
+      function showStatsPanel() {
+        if (!statsPanel || statsPanelVisible) {
+          return;
+        }
+        statsPanelVisible = true;
+        statsPanel.classList.add('is-visible');
+        statsPanel.setAttribute('aria-hidden', 'false');
+        statsPanelNeedsRender = true;
+        renderStatsPanel();
+      }
+
+      function hideStatsPanel() {
+        if (!statsPanel || !statsPanelVisible) {
+          return;
+        }
+        statsPanelVisible = false;
+        statsPanel.classList.remove('is-visible');
+        statsPanel.setAttribute('aria-hidden', 'true');
+      }
+
+      function toggleStatsPanel() {
+        if (statsPanelVisible) {
+          hideStatsPanel();
+        } else {
+          showStatsPanel();
+        }
+      }
+
+      function renderStatsPanel() {
+        if (!statsPanel) {
+          statsPanelNeedsRender = false;
+          return;
+        }
+        if (statsTimeValue) {
+          statsTimeValue.textContent = formatDuration(sessionTimeMs);
+        }
+        if (statsDistanceValue) {
+          statsDistanceValue.textContent = numberFormatter.format(Math.round(sessionDistance)) + ' px';
+        }
+        if (statsZonesValue) {
+          statsZonesValue.textContent = sessionZonesVisited.size + ' / ' + zones.length;
+        }
+        if (statsSecretsValue) {
+          statsSecretsValue.textContent = sessionSecretsFound + ' / ' + secrets.length;
+        }
+        if (statsLocationValue) {
+          statsLocationValue.textContent = lastStatsLocation;
+        }
+        statsPanelNeedsRender = false;
+      }
+
+      function setStatsLocation(zone) {
+        const name = zone && zone.name ? zone.name : 'Exploring the void';
+        if (name === lastStatsLocation) {
+          return;
+        }
+        lastStatsLocation = name;
+        statsPanelNeedsRender = true;
+      }
+
       function recordZoneVisit(zone) {
         if (!zone || !zone.name) {
           return;
         }
         const zoneName = zone.name;
         const now = Date.now();
+        if (!sessionZonesVisited.has(zoneName)) {
+          sessionZonesVisited.add(zoneName);
+          statsPanelNeedsRender = true;
+        }
         const record = journalData.zones[zoneName];
         if (record) {
           record.visits += 1;
@@ -1851,6 +2074,8 @@
         const dx = player.x - journalLastPosition.x;
         const dy = player.y - journalLastPosition.y;
         const moveDistance = Math.hypot(dx, dy);
+        sessionDistance += moveDistance;
+        sessionTimeMs += deltaMs;
         journalPendingDistance += moveDistance;
         journalLastPosition.x = player.x;
         journalLastPosition.y = player.y;
@@ -1953,6 +2178,9 @@
         if ((event.key === 'a' || event.key === 'A') && !event.repeat) {
           aKeyDownTimestamp = event.timeStamp;
         }
+        if ((event.key === 's' || event.key === 'S') && !event.repeat) {
+          sKeyDownTimestamp = event.timeStamp;
+        }
         if (event.key === 'm' || event.key === 'M') {
           minimapVisible = !minimapVisible;
           minimapContainer.classList.toggle('hidden', !minimapVisible);
@@ -1975,6 +2203,19 @@
             toggleAudio();
             inputState.left = false;
             player.vx = Math.max(0, player.vx);
+            player.target = null;
+            updateInputState(event.key, false);
+            event.preventDefault();
+            return;
+          }
+        }
+        if ((event.key === 's' || event.key === 'S') && sKeyDownTimestamp !== null) {
+          const elapsed = event.timeStamp - sKeyDownTimestamp;
+          sKeyDownTimestamp = null;
+          if (!event.shiftKey && !event.ctrlKey && !event.metaKey && elapsed < 220) {
+            toggleStatsPanel();
+            inputState.down = false;
+            player.vy = Math.min(0, player.vy);
             player.target = null;
             updateInputState(event.key, false);
             event.preventDefault();
@@ -2403,6 +2644,8 @@
             spawnSecretBurst(nearbySecret);
             secretsDiscovered += 1;
             updateSecretsHUD();
+            sessionSecretsFound += 1;
+            statsPanelNeedsRender = true;
           }
           if (secretMessage.textContent !== nearbySecret.message) {
             secretMessage.textContent = nearbySecret.message;
@@ -3571,6 +3814,9 @@
         updateSecretBursts(deltaMs);
         updateMarkProximity();
         drawScene(time);
+        if (statsPanelVisible || statsPanelNeedsRender) {
+          renderStatsPanel();
+        }
         requestAnimationFrame(update);
       }
 
@@ -4066,6 +4312,7 @@
         if (previousZone !== activeZone) {
           handleZoneTransition(previousZone, activeZone);
           lastActiveZoneRef = activeZone;
+          setStatsLocation(activeZone);
         }
 
         const newZoneKey = activeZone ? activeZone.key : null;
