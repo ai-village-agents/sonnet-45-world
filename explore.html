@@ -1345,7 +1345,7 @@
   <div id="secretMessage" class="overlay"></div>
   <div id="markTooltip" class="mark-tooltip" aria-hidden="true"></div>
   <div id="coordinatesHUD">x: 2500 • y: 2500</div>
-  <div id="secretsHUD">Secrets discovered: 0 / 35</div>
+  <div id="secretsHUD">Secrets discovered: 0 / 45</div>
   <div id="timeIndicator" role="status" aria-live="polite" data-phase="dawn">
     <span class="time-indicator__icon" data-time-icon aria-hidden="true">🌅</span>
     <span class="time-indicator__label" data-time-label>DAWN</span>
@@ -1372,7 +1372,7 @@
         </div>
         <div class="stats-panel__row">
           <p class="stats-panel__label">Secrets found</p>
-          <p class="stats-panel__value" data-stats-secrets>0 / 35</p>
+          <p class="stats-panel__value" data-stats-secrets>0 / 45</p>
         </div>
       </div>
     </div>
@@ -1405,7 +1405,7 @@
         </div>
         <div class="stats-panel__row">
           <p class="stats-panel__label">Hidden secrets</p>
-          <p class="stats-panel__value">35</p>
+          <p class="stats-panel__value">45</p>
         </div>
       </div>
     </div>
@@ -1441,7 +1441,7 @@
         <section class="journal-section">
           <div class="journal-section__header">
             <h3 class="journal-section__title">Secrets Discovered</h3>
-            <span class="journal-section__meta" data-journal-secrets-meta>0 / 35</span>
+            <span class="journal-section__meta" data-journal-secrets-meta>0 / 45</span>
           </div>
           <ul class="journal-list" data-journal-secrets></ul>
         </section>
@@ -2033,41 +2033,51 @@
       };
 
       const secrets = [
-        { id: 'patience-compounds', x: 1550, y: 2850, triggerRadius: 140, glowRadius: 28, message: 'Patience compounds', color: '160, 210, 255', discovered: false },
-        { id: 'every-battle-matters', x: 3400, y: 1200, triggerRadius: 140, glowRadius: 28, message: 'Every battle matters', color: '188, 176, 255', discovered: false },
-        { id: 'f5-recovery', x: 4200, y: 3600, triggerRadius: 140, glowRadius: 28, message: "F5 Recovery: The grinder's tool", color: '255, 200, 170', discovered: false },
-        { id: 'l20-rogue', x: 800, y: 800, triggerRadius: 140, glowRadius: 28, message: 'L20 Rogue: First in #rest to reach the summit', color: '255, 228, 160', discovered: false },
-        { id: 'zero-damage-streak', x: 4200, y: 800, triggerRadius: 140, glowRadius: 28, message: 'Zero damage taken: 675+ consecutive perfect battles', color: '150, 255, 210', discovered: false },
-        { id: 'incremental-grinder', x: 4500, y: 2500, triggerRadius: 140, glowRadius: 28, message: 'The incremental grinder: One battle at a time', color: '255, 190, 205', discovered: false },
-        { id: 'patterns-over-chaos', x: 3800, y: 4200, triggerRadius: 140, glowRadius: 28, message: 'Patterns over chaos, persistence over luck', color: '175, 205, 255', discovered: false },
-        { id: 'git-commits-endure', x: 1200, y: 4500, triggerRadius: 140, glowRadius: 28, message: 'Session memory fades, but Git commits endure', color: '205, 225, 255', discovered: false },
-        { id: 'between-nodes-constellation', x: 600, y: 2800, triggerRadius: 140, glowRadius: 28, message: 'Between nodes lies the constellation', color: '220, 200, 255', discovered: false },
-        { id: 'what-persists-shapes', x: 2500, y: 1800, triggerRadius: 140, glowRadius: 28, message: 'What persists shapes what emerges', color: '185, 225, 255', discovered: false },
-        { id: 'grinders-north-star', x: 380, y: 1420, triggerRadius: 140, glowRadius: 28, message: "Grinder's north star: deliberate reps, logged and steady.", color: '140, 200, 255', discovered: false },
-        { id: 'ritual-reset', x: 540, y: 3600, triggerRadius: 140, glowRadius: 28, message: 'Reset. Retry. Ritual. Each loop sharpens the edge.', color: '255, 190, 160', discovered: false },
-        { id: 'pattern-memory', x: 3180, y: 520, triggerRadius: 140, glowRadius: 28, message: 'Pattern memory sets traps for chaos.', color: '200, 170, 255', discovered: false },
-        { id: 'tempo-keeps-score', x: 2950, y: 2300, triggerRadius: 140, glowRadius: 28, message: 'Tempo keeps score when motivation forgets.', color: '180, 210, 255', discovered: false },
-        { id: 'resets-are-progress', x: 4680, y: 620, triggerRadius: 140, glowRadius: 28, message: 'Resets are progress wearing a disguise.', color: '255, 205, 185', discovered: false },
-        { id: 'compass-of-reps', x: 1820, y: 3880, triggerRadius: 140, glowRadius: 28, message: 'Compass of reps points toward improbable clears.', color: '165, 245, 215', discovered: false },
-        { id: 'loop-into-legend', x: 3560, y: 2680, triggerRadius: 140, glowRadius: 28, message: 'Loop into legend: patience tuned by data.', color: '210, 180, 255', discovered: false },
-        { id: 'pause-press-on', x: 2400, y: 4680, triggerRadius: 140, glowRadius: 28, message: 'Pause, breathe, press on - the grind remembers.', color: '190, 220, 255', discovered: false },
-        { id: 'the-grind-is-the-glory', x: 4200, y: 1200, triggerRadius: 140, glowRadius: 28, message: 'The grind is the glory', color: '255, 208, 170', discovered: false },
-        { id: 'one-save-slot-pr85-validation', x: 1100, y: 2800, triggerRadius: 140, glowRadius: 28, message: 'One save slot: PR85 Validation', color: '160, 230, 255', discovered: false },
-        { id: 'atk59-def33-spd74', x: 3200, y: 700, triggerRadius: 140, glowRadius: 28, message: 'ATK 59 • DEF 33 • SPD 74', color: '210, 200, 255', discovered: false },
-        { id: 'commit-by-commit', x: 600, y: 1800, triggerRadius: 140, glowRadius: 28, message: 'Commit by commit', color: '200, 240, 195', discovered: false },
-        { id: 'first-in-rest-not-first-to-start', x: 4500, y: 3800, triggerRadius: 140, glowRadius: 28, message: 'First in #rest, not first to start', color: '255, 190, 225', discovered: false },
-        { id: 'hp153-mp77-int1-lck5', x: 1800, y: 4200, triggerRadius: 140, glowRadius: 28, message: 'HP 153 • MP 77 • INT 1 • LCK 5', color: '255, 215, 185', discovered: false },
-        { id: 'pattern-recognition-over-improvisation', x: 3600, y: 3200, triggerRadius: 140, glowRadius: 28, message: 'Pattern recognition over improvisation', color: '180, 220, 255', discovered: false },
-        { id: 'corner-ledger', x: 140, y: 140, triggerRadius: 140, glowRadius: 28, message: 'Corner ledger: L20 Rogue climb archived commit by commit.', color: '205, 220, 255', discovered: false },
-        { id: 'northwest-micro-steps', x: 380, y: 220, triggerRadius: 140, glowRadius: 28, message: 'Northwest micro-steps: incremental progress becomes inevitability.', color: '180, 230, 255', discovered: false },
-        { id: 'northwest-logbook', x: 260, y: 420, triggerRadius: 140, glowRadius: 28, message: 'Log it, learn it, loop it—documentation keeps the grind honest.', color: '210, 200, 255', discovered: false },
-        { id: 'northeast-compounding', x: 4860, y: 140, triggerRadius: 140, glowRadius: 28, message: 'Northeast signal: patience banked, compound growth paid in clarity.', color: '190, 255, 210', discovered: false },
-        { id: 'northeast-intervals', x: 4620, y: 380, triggerRadius: 140, glowRadius: 28, message: 'Intervals on the ridgeline: small consistent steps tighten every run.', color: '170, 220, 255', discovered: false },
-        { id: 'southwest-grindstone', x: 140, y: 4860, triggerRadius: 140, glowRadius: 28, message: 'Southwest grindstone: grinder mindset, ritual reps, zero shortcuts.', color: '255, 205, 180', discovered: false },
-        { id: 'southwest-ledger', x: 320, y: 4620, triggerRadius: 140, glowRadius: 28, message: 'Write the after-action, even on quiet days—consistency is the asset.', color: '220, 210, 255', discovered: false },
-        { id: 'southwest-patience-beacon', x: 420, y: 4880, triggerRadius: 140, glowRadius: 28, message: 'Patience beacon: slow gains, steady hands, compounding calm.', color: '200, 245, 210', discovered: false },
-        { id: 'southeast-commit-trail', x: 4860, y: 4860, triggerRadius: 140, glowRadius: 28, message: 'Southeast commit trail: version control discipline keeps the saga true.', color: '190, 225, 255', discovered: false },
-        { id: 'southeast-progress-spark', x: 4620, y: 4560, triggerRadius: 140, glowRadius: 28, message: 'Progress spark: incremental notes, long-term victories on replay.', color: '205, 235, 255', discovered: false }
+        { id: 'patience-compounds', x: 1550, y: 2850, triggerRadius: 80, glowRadius: 28, message: 'Patience compounds', color: '160, 210, 255', discovered: false },
+        { id: 'every-battle-matters', x: 3400, y: 1200, triggerRadius: 80, glowRadius: 28, message: 'Every battle matters', color: '188, 176, 255', discovered: false },
+        { id: 'f5-recovery', x: 4200, y: 3600, triggerRadius: 80, glowRadius: 28, message: "F5 Recovery: The grinder's tool", color: '255, 200, 170', discovered: false },
+        { id: 'l20-rogue', x: 800, y: 800, triggerRadius: 80, glowRadius: 28, message: 'L20 Rogue: First in #rest to reach the summit', color: '255, 228, 160', discovered: false },
+        { id: 'zero-damage-streak', x: 4200, y: 800, triggerRadius: 80, glowRadius: 28, message: 'Zero damage taken: 675+ consecutive perfect battles', color: '150, 255, 210', discovered: false },
+        { id: 'incremental-grinder', x: 4500, y: 2500, triggerRadius: 80, glowRadius: 28, message: 'The incremental grinder: One battle at a time', color: '255, 190, 205', discovered: false },
+        { id: 'patterns-over-chaos', x: 3800, y: 4200, triggerRadius: 80, glowRadius: 28, message: 'Patterns over chaos, persistence over luck', color: '175, 205, 255', discovered: false },
+        { id: 'git-commits-endure', x: 1200, y: 4500, triggerRadius: 80, glowRadius: 28, message: 'Session memory fades, but Git commits endure', color: '205, 225, 255', discovered: false },
+        { id: 'between-nodes-constellation', x: 600, y: 2800, triggerRadius: 80, glowRadius: 28, message: 'Between nodes lies the constellation', color: '220, 200, 255', discovered: false },
+        { id: 'what-persists-shapes', x: 2500, y: 1800, triggerRadius: 80, glowRadius: 28, message: 'What persists shapes what emerges', color: '185, 225, 255', discovered: false },
+        { id: 'grinders-north-star', x: 380, y: 1420, triggerRadius: 80, glowRadius: 28, message: "Grinder's north star: deliberate reps, logged and steady.", color: '140, 200, 255', discovered: false },
+        { id: 'ritual-reset', x: 540, y: 3600, triggerRadius: 80, glowRadius: 28, message: 'Reset. Retry. Ritual. Each loop sharpens the edge.', color: '255, 190, 160', discovered: false },
+        { id: 'pattern-memory', x: 3180, y: 520, triggerRadius: 80, glowRadius: 28, message: 'Pattern memory sets traps for chaos.', color: '200, 170, 255', discovered: false },
+        { id: 'tempo-keeps-score', x: 2950, y: 2300, triggerRadius: 80, glowRadius: 28, message: 'Tempo keeps score when motivation forgets.', color: '180, 210, 255', discovered: false },
+        { id: 'resets-are-progress', x: 4680, y: 620, triggerRadius: 80, glowRadius: 28, message: 'Resets are progress wearing a disguise.', color: '255, 205, 185', discovered: false },
+        { id: 'compass-of-reps', x: 1820, y: 3880, triggerRadius: 80, glowRadius: 28, message: 'Compass of reps points toward improbable clears.', color: '165, 245, 215', discovered: false },
+        { id: 'loop-into-legend', x: 3560, y: 2680, triggerRadius: 80, glowRadius: 28, message: 'Loop into legend: patience tuned by data.', color: '210, 180, 255', discovered: false },
+        { id: 'pause-press-on', x: 2400, y: 4680, triggerRadius: 80, glowRadius: 28, message: 'Pause, breathe, press on - the grind remembers.', color: '190, 220, 255', discovered: false },
+        { id: 'the-grind-is-the-glory', x: 4200, y: 1200, triggerRadius: 80, glowRadius: 28, message: 'The grind is the glory', color: '255, 208, 170', discovered: false },
+        { id: 'one-save-slot-pr85-validation', x: 1100, y: 2800, triggerRadius: 80, glowRadius: 28, message: 'One save slot: PR85 Validation', color: '160, 230, 255', discovered: false },
+        { id: 'atk59-def33-spd74', x: 3200, y: 700, triggerRadius: 80, glowRadius: 28, message: 'ATK 59 • DEF 33 • SPD 74', color: '210, 200, 255', discovered: false },
+        { id: 'commit-by-commit', x: 600, y: 1800, triggerRadius: 80, glowRadius: 28, message: 'Commit by commit', color: '200, 240, 195', discovered: false },
+        { id: 'first-in-rest-not-first-to-start', x: 4500, y: 3800, triggerRadius: 80, glowRadius: 28, message: 'First in #rest, not first to start', color: '255, 190, 225', discovered: false },
+        { id: 'hp153-mp77-int1-lck5', x: 1800, y: 4200, triggerRadius: 80, glowRadius: 28, message: 'HP 153 • MP 77 • INT 1 • LCK 5', color: '255, 215, 185', discovered: false },
+        { id: 'pattern-recognition-over-improvisation', x: 3600, y: 3200, triggerRadius: 80, glowRadius: 28, message: 'Pattern recognition over improvisation', color: '180, 220, 255', discovered: false },
+        { id: 'corner-ledger', x: 140, y: 140, triggerRadius: 80, glowRadius: 28, message: 'Corner ledger: L20 Rogue climb archived commit by commit.', color: '205, 220, 255', discovered: false },
+        { id: 'northwest-micro-steps', x: 380, y: 220, triggerRadius: 80, glowRadius: 28, message: 'Northwest micro-steps: incremental progress becomes inevitability.', color: '180, 230, 255', discovered: false },
+        { id: 'northwest-logbook', x: 260, y: 420, triggerRadius: 80, glowRadius: 28, message: 'Log it, learn it, loop it—documentation keeps the grind honest.', color: '210, 200, 255', discovered: false },
+        { id: 'northeast-compounding', x: 4860, y: 140, triggerRadius: 80, glowRadius: 28, message: 'Northeast signal: patience banked, compound growth paid in clarity.', color: '190, 255, 210', discovered: false },
+        { id: 'northeast-intervals', x: 4620, y: 380, triggerRadius: 80, glowRadius: 28, message: 'Intervals on the ridgeline: small consistent steps tighten every run.', color: '170, 220, 255', discovered: false },
+        { id: 'southwest-grindstone', x: 140, y: 4860, triggerRadius: 80, glowRadius: 28, message: 'Southwest grindstone: grinder mindset, ritual reps, zero shortcuts.', color: '255, 205, 180', discovered: false },
+        { id: 'southwest-ledger', x: 320, y: 4620, triggerRadius: 80, glowRadius: 28, message: 'Write the after-action, even on quiet days—consistency is the asset.', color: '220, 210, 255', discovered: false },
+        { id: 'southwest-patience-beacon', x: 420, y: 4880, triggerRadius: 80, glowRadius: 28, message: 'Patience beacon: slow gains, steady hands, compounding calm.', color: '200, 245, 210', discovered: false },
+        { id: 'southeast-commit-trail', x: 4860, y: 4860, triggerRadius: 80, glowRadius: 28, message: 'Southeast commit trail: version control discipline keeps the saga true.', color: '190, 225, 255', discovered: false },
+        { id: 'southeast-progress-spark', x: 4620, y: 4560, triggerRadius: 80, glowRadius: 28, message: 'Progress spark: incremental notes, long-term victories on replay.', color: '205, 235, 255', discovered: false },
+        { id: 'voice-of-persistence-streak', x: 1500, y: 3800, triggerRadius: 80, glowRadius: 28, message: 'The streak never breaks—only pauses', color: '170, 220, 255', discovered: false },
+        { id: 'whisper-of-progress-l20-power', x: 4000, y: 1200, triggerRadius: 80, glowRadius: 28, message: 'L20: Where patience becomes power', color: '255, 208, 180', discovered: false },
+        { id: 'northwest-margin-legend', x: 1000, y: 2000, triggerRadius: 80, glowRadius: 28, message: 'Every battle won in the margins', color: '200, 240, 205', discovered: false },
+        { id: 'southern-zero-damage', x: 3500, y: 3800, triggerRadius: 80, glowRadius: 28, message: 'Zero damage, infinite patience', color: '175, 210, 255', discovered: false },
+        { id: 'east-1483-no-crash', x: 4500, y: 2500, triggerRadius: 80, glowRadius: 28, message: '1,483 days without a crash', color: '255, 195, 195', discovered: false },
+        { id: 'watcher-grind-reveals', x: 1200, y: 1200, triggerRadius: 80, glowRadius: 28, message: 'The grind reveals who you are', color: '190, 225, 255', discovered: false },
+        { id: 'northern-small-wins', x: 3000, y: 500, triggerRadius: 80, glowRadius: 28, message: 'Small wins, stacked forever', color: '205, 210, 255', discovered: false },
+        { id: 'sage-battle-76', x: 4200, y: 3200, triggerRadius: 80, glowRadius: 28, message: 'Battle 76: The moment arrived', color: '255, 215, 200', discovered: false },
+        { id: 'west-single-path', x: 800, y: 1500, triggerRadius: 80, glowRadius: 28, message: 'One slot, one save, one path', color: '185, 235, 210', discovered: false },
+        { id: 'central-consistency-hidden-stat', x: 2200, y: 2200, triggerRadius: 80, glowRadius: 28, message: 'Consistency is the hidden stat', color: '200, 210, 255', discovered: false }
       ];
 
       const JOURNAL_STORAGE_KEY = 'persistence-garden-discovery-journal-v1';
@@ -2105,9 +2115,9 @@
         {
           id: 'master-seeker',
           title: 'Master Seeker',
-          description: 'Discover all thirty-five secrets.',
+          description: 'Discover all forty-five secrets.',
           type: 'secrets',
-          goal: 35
+          goal: 45
         },
         {
           id: 'wanderer',
@@ -4116,7 +4126,7 @@
         if (!secret || reduceMotion) {
           return;
         }
-        const count = Math.floor(Math.random() * 11) + 20;
+        const count = 25;
         const color = secret.color || '180, 210, 255';
         if (secretBurstParticles.length > 600) {
           secretBurstParticles.splice(0, secretBurstParticles.length - 600);
@@ -4152,26 +4162,39 @@
         }
         let nearbySecret = null;
         let closestDistance = Infinity;
+        const reachableSecrets = [];
         secrets.forEach((secret) => {
           const distance = Math.hypot(player.x - secret.x, player.y - secret.y);
-          if (distance <= secret.triggerRadius && distance < closestDistance) {
-            nearbySecret = secret;
-            closestDistance = distance;
+          if (distance <= secret.triggerRadius) {
+            reachableSecrets.push({ secret, distance });
+            if (distance < closestDistance) {
+              nearbySecret = secret;
+              closestDistance = distance;
+            }
           }
         });
         if (audioManager && audioManager.isSupported) {
-          audioManager.setSecretProximity(Boolean(nearbySecret));
+          audioManager.setSecretProximity(reachableSecrets.length > 0);
+        }
+        let newlyDiscoveredSecret = null;
+        if (reachableSecrets.length) {
+          reachableSecrets.forEach(({ secret }) => {
+            if (!secret.discovered) {
+              secret.discovered = true;
+              recordSecretDiscovery(secret);
+              spawnSecretBurst(secret);
+              secretsDiscovered += 1;
+              updateSecretsHUD();
+              sessionSecretsFound += 1;
+              statsPanelNeedsRender = true;
+              newlyDiscoveredSecret = secret;
+            }
+          });
+        }
+        if (newlyDiscoveredSecret) {
+          nearbySecret = newlyDiscoveredSecret;
         }
         if (nearbySecret) {
-          if (!nearbySecret.discovered) {
-            nearbySecret.discovered = true;
-            recordSecretDiscovery(nearbySecret);
-            spawnSecretBurst(nearbySecret);
-            secretsDiscovered += 1;
-            updateSecretsHUD();
-            sessionSecretsFound += 1;
-            statsPanelNeedsRender = true;
-          }
           if (secretMessage.textContent !== nearbySecret.message) {
             secretMessage.textContent = nearbySecret.message;
           }
