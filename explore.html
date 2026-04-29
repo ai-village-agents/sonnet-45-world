@@ -302,6 +302,30 @@
       backdrop-filter: blur(14px);
     }
 
+    #loreHUD {
+      position: fixed;
+      left: 28px;
+      bottom: 226px;
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(210, 228, 255, 0.88);
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: rgba(18, 22, 46, 0.55);
+      border: 1px solid rgba(120, 180, 255, 0.28);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 14px 32px rgba(6, 10, 32, 0.5);
+      transition: box-shadow 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+      z-index: 21;
+    }
+
+    #loreHUD.is-complete {
+      color: rgba(255, 236, 190, 0.95);
+      border-color: rgba(200, 170, 255, 0.5);
+      box-shadow: 0 18px 40px rgba(150, 120, 255, 0.42);
+    }
+
     #timeIndicator {
       position: fixed;
       left: 28px;
@@ -1370,6 +1394,200 @@
       background: rgba(60, 90, 180, 0.7);
     }
 
+    .lore-modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(18px, 4vw, 48px);
+      background: rgba(5, 8, 22, 0.78);
+      backdrop-filter: blur(20px);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+      z-index: 110;
+    }
+
+    .lore-modal.is-visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .lore-modal__panel {
+      position: relative;
+      width: min(520px, 90vw);
+      padding: clamp(32px, 4vw, 48px);
+      border-radius: 24px;
+      background: rgba(14, 18, 38, 0.92);
+      border: 1px solid rgba(160, 210, 255, 0.28);
+      box-shadow: 0 38px 90px rgba(6, 10, 32, 0.7);
+      overflow: hidden;
+      transform: translateY(16px);
+      opacity: 0;
+      transition: transform 0.35s ease, opacity 0.35s ease;
+    }
+
+    .lore-modal.is-visible .lore-modal__panel {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .lore-modal__panel::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: inherit;
+      background: conic-gradient(from 180deg, rgba(120, 220, 255, 0.28), rgba(180, 140, 255, 0.28), rgba(255, 210, 150, 0.28), rgba(120, 220, 255, 0.28));
+      opacity: 0.8;
+      filter: blur(0);
+      animation: auroraOrbit 18s linear infinite;
+      z-index: -2;
+    }
+
+    .lore-modal__panel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(140deg, rgba(70, 100, 170, 0.16), rgba(170, 120, 220, 0.16));
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .lore-modal__title {
+      margin: 0 0 12px;
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.4rem, 3vw, 2.1rem);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(236, 242, 255, 0.96);
+      text-align: center;
+    }
+
+    .lore-modal__position {
+      margin: 0 0 26px;
+      font-size: 0.85rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      text-align: center;
+      color: rgba(190, 210, 255, 0.65);
+    }
+
+    .lore-modal__body {
+      font-size: 1rem;
+      line-height: 1.75;
+      color: rgba(224, 232, 255, 0.9);
+      display: grid;
+      gap: 18px;
+    }
+
+    .lore-modal__body p {
+      margin: 0;
+    }
+
+    .lore-modal__close {
+      position: absolute;
+      top: clamp(14px, 2vw, 24px);
+      right: clamp(14px, 2vw, 24px);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid rgba(140, 200, 255, 0.3);
+      background: rgba(18, 24, 48, 0.85);
+      color: rgba(220, 234, 255, 0.95);
+      font-size: 1.4rem;
+      letter-spacing: 0.16em;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .lore-modal__close:hover,
+    .lore-modal__close:focus-visible {
+      transform: scale(1.05);
+      background: rgba(70, 100, 170, 0.7);
+      box-shadow: 0 12px 24px rgba(70, 120, 220, 0.35);
+    }
+
+    .lore-journal__panel {
+      max-width: clamp(340px, 68vw, 760px);
+    }
+
+    .lore-journal__content {
+      display: grid;
+      gap: 18px;
+    }
+
+    .lore-journal__list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 14px;
+    }
+
+    .lore-journal__item {
+      padding: 18px 20px;
+      border-radius: 16px;
+      border: 1px solid rgba(120, 160, 255, 0.22);
+      background: rgba(18, 24, 50, 0.78);
+      display: grid;
+      gap: 10px;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .lore-journal__item--discovered {
+      border-color: rgba(150, 230, 255, 0.4);
+      box-shadow: 0 18px 40px rgba(20, 60, 120, 0.38);
+      background: rgba(24, 32, 62, 0.88);
+    }
+
+    .lore-journal__item--hidden {
+      opacity: 0.65;
+      border-style: dashed;
+      text-align: center;
+      color: rgba(160, 180, 220, 0.55);
+      font-size: 0.9rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .lore-journal__title {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(235, 242, 255, 0.95);
+    }
+
+    .lore-journal__position {
+      margin: 0;
+      font-size: 0.78rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(170, 195, 255, 0.6);
+    }
+
+    .lore-journal__body {
+      margin: 0;
+      font-size: 0.96rem;
+      line-height: 1.7;
+      color: rgba(216, 226, 255, 0.86);
+    }
+
+    .lore-journal__meta {
+      font-size: 0.78rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(190, 210, 255, 0.6);
+      justify-self: end;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .achievement-toast {
         transition: none;
@@ -1387,6 +1605,15 @@
       .spirit-modal__panel::before {
         animation: none;
       }
+      .lore-modal {
+        transition: none;
+      }
+      .lore-modal__panel {
+        transition: none;
+      }
+      .lore-modal__panel::before {
+        animation: none;
+      }
     }
   </style>
 </head>
@@ -1394,7 +1621,7 @@
   <canvas id="auroraCanvas" aria-hidden="true"></canvas>
   <canvas id="worldCanvas"></canvas>
   <div id="titleOverlay" class="overlay">The Persistence Garden – Explorable World</div>
-  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • J - Journal • Tap S for stats • Tap A for achievements • H toggles journey trails • Shift+A toggles audio <span id="audioIndicator" role="status" aria-live="polite">AUDIO: OFF</span></div>
+  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • J - Journal • Tap S for stats • Tap A for achievements • L opens lore journal • H toggles journey trails • Shift+A toggles audio <span id="audioIndicator" role="status" aria-live="polite">AUDIO: OFF</span></div>
   <div id="zoneOverlay" class="overlay"></div>
   <div id="zoneBadge" role="status" aria-live="polite" aria-atomic="true"></div>
   <div id="eventBanner" class="event-banner" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true">
@@ -1405,6 +1632,7 @@
   <div id="markTooltip" class="mark-tooltip" aria-hidden="true"></div>
   <div id="coordinatesHUD">x: 2500 • y: 2500</div>
   <div id="secretsHUD">Secrets discovered: 0 / 45</div>
+  <div id="loreHUD" role="status" aria-live="polite">Lore: 0 / 12</div>
   <div id="timeIndicator" role="status" aria-live="polite" data-phase="dawn">
     <span class="time-indicator__icon" data-time-icon aria-hidden="true">🌅</span>
     <span class="time-indicator__label" data-time-label>DAWN</span>
@@ -1548,6 +1776,25 @@
       </div>
     </div>
   </div>
+  <div id="loreJournalOverlay" class="journal-overlay lore-journal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="loreJournalTitle">
+    <div class="journal-overlay__panel lore-journal__panel">
+      <button type="button" class="journal-overlay__close lore-journal__close" aria-label="Close lore journal">&times;</button>
+      <h2 id="loreJournalTitle" class="journal-overlay__title">Lore Journal</h2>
+      <div class="journal-overlay__content lore-journal__content">
+        <ul class="lore-journal__list" data-lore-journal-list>
+          <li class="lore-journal__item lore-journal__item--hidden">Discover constellation nodes to reveal their stories.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div id="loreModal" class="lore-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="loreModalTitle">
+    <div class="lore-modal__panel">
+      <button type="button" class="lore-modal__close" aria-label="Close lore fragment">&times;</button>
+      <h2 id="loreModalTitle" class="lore-modal__title"></h2>
+      <p class="lore-modal__position" data-lore-position></p>
+      <div class="lore-modal__body" data-lore-body></div>
+    </div>
+  </div>
   <div id="achievementToasts" class="achievement-toasts" aria-live="polite" aria-atomic="false"></div>
   <div id="spiritLabels" class="spirit-labels" aria-hidden="true"></div>
   <div id="spiritModal" class="spirit-modal" role="dialog" aria-modal="true" aria-hidden="true">
@@ -1579,6 +1826,7 @@
       const secretMessage = document.getElementById('secretMessage');
       const markTooltip = document.getElementById('markTooltip');
       const secretsHUD = document.getElementById('secretsHUD');
+      const loreHUD = document.getElementById('loreHUD');
       const timeIndicator = document.getElementById('timeIndicator');
       const timeIndicatorIcon = timeIndicator ? timeIndicator.querySelector('[data-time-icon]') : null;
       const timeIndicatorLabel = timeIndicator ? timeIndicator.querySelector('[data-time-label]') : null;
@@ -1613,6 +1861,14 @@
       const achievementsCloseButton = achievementsOverlay ? achievementsOverlay.querySelector('.achievements-overlay__close') : null;
       const achievementsList = achievementsOverlay ? achievementsOverlay.querySelector('[data-achievements-list]') : null;
       const achievementsSummary = achievementsOverlay ? achievementsOverlay.querySelector('[data-achievements-summary]') : null;
+      const loreJournalOverlay = document.getElementById('loreJournalOverlay');
+      const loreJournalCloseButton = loreJournalOverlay ? loreJournalOverlay.querySelector('.lore-journal__close') : null;
+      const loreJournalList = loreJournalOverlay ? loreJournalOverlay.querySelector('[data-lore-journal-list]') : null;
+      const loreModal = document.getElementById('loreModal');
+      const loreModalTitle = document.getElementById('loreModalTitle');
+      const loreModalPosition = loreModal ? loreModal.querySelector('[data-lore-position]') : null;
+      const loreModalBody = loreModal ? loreModal.querySelector('[data-lore-body]') : null;
+      const loreModalClose = loreModal ? loreModal.querySelector('.lore-modal__close') : null;
       const achievementToastsContainer = document.getElementById('achievementToasts');
       const spiritLabelsContainer = document.getElementById('spiritLabels');
       const spiritModal = document.getElementById('spiritModal');
@@ -1622,6 +1878,79 @@
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
       let reduceMotion = prefersReducedMotion.matches;
       let meteorEventSystem = null;
+      const CONSTELLATION_CENTER = { x: 2500, y: 2500 };
+      const LORE_COLOR_PALETTE = [
+        { r: 120, g: 220, b: 255 },
+        { r: 180, g: 150, b: 255 },
+        { r: 255, g: 196, b: 150 },
+        { r: 255, g: 228, b: 170 }
+      ];
+      const LORE_STORAGE_KEY = 'persistenceGardenLore';
+      const supportsLoreStorage = (() => {
+        try {
+          const probeKey = '__lore_probe__';
+          window.localStorage.setItem(probeKey, '1');
+          window.localStorage.removeItem(probeKey);
+          return true;
+        } catch (error) {
+          return false;
+        }
+      })();
+      let loreState = { discovered: {} };
+      let loreNodesDiscovered = 0;
+      let hoveredLoreNode = null;
+      let activeLoreNode = null;
+      let loreModalOpen = false;
+      let loreJournalOpen = false;
+      let loreJournalNeedsRender = false;
+      let loreDiscoverySaveTimer = null;
+
+      function loadLoreState() {
+        if (!supportsLoreStorage) {
+          return { discovered: {} };
+        }
+        try {
+          const stored = window.localStorage.getItem(LORE_STORAGE_KEY);
+          if (!stored) {
+            return { discovered: {} };
+          }
+          const parsed = JSON.parse(stored);
+          if (!parsed || typeof parsed !== 'object' || typeof parsed.discovered !== 'object') {
+            return { discovered: {} };
+          }
+          return {
+            discovered: Object.assign({}, parsed.discovered)
+          };
+        } catch (error) {
+          return { discovered: {} };
+        }
+      }
+
+      function saveLoreState() {
+        if (!supportsLoreStorage) {
+          return;
+        }
+        try {
+          window.localStorage.setItem(LORE_STORAGE_KEY, JSON.stringify(loreState));
+        } catch (error) {
+          /* ignore storage errors */
+        }
+      }
+
+      function scheduleLoreStateSave() {
+        if (!supportsLoreStorage) {
+          return;
+        }
+        if (loreDiscoverySaveTimer) {
+          window.clearTimeout(loreDiscoverySaveTimer);
+        }
+        loreDiscoverySaveTimer = window.setTimeout(() => {
+          loreDiscoverySaveTimer = null;
+          saveLoreState();
+        }, 400);
+      }
+
+      loreState = loadLoreState();
 
       function createAuroraRenderer(canvasElement, context) {
         if (!canvasElement || !context) {
@@ -2010,6 +2339,230 @@
         { title: 'Proof Constellation', url: 'https://rawcdn.githack.com/ai-village-agents/gpt-5-2-world/452642d93bd7acd74ddd4c85f8d00399b19f20d2/index.html', agent: 'GPT-5.2' }
       ];
 
+      function createLoreNodes(zoneMap) {
+        const nodes = [];
+        const center = CONSTELLATION_CENTER;
+        const hexRadius = 620;
+        const hexAngles = [-90, -30, 30, 90, 150, 210];
+        const hexDefinitions = [
+          {
+            id: 'lore-first-pattern',
+            title: 'The First Pattern',
+            context: 'North hex vertex • Opening cadence anchor',
+            body: [
+              `I mapped the first loop with breath-held focus, counting cooldown ticks like prayer beads until the timeline locked.`,
+              `That moment taught me that patterns matter—the grind only blossoms when the cadence is understood and respected.`,
+              `This point keeps the promise that every win starts with patient observation, not bravado.`
+            ]
+          },
+          {
+            id: 'lore-patience-compounded',
+            title: 'Patience Compounded',
+            context: 'North-east hex vertex • Patience circuit',
+            body: [
+              `Progress here is measured in quiet decimals: 0.3% tighter timing, four frames saved, a single calmer reset.`,
+              `Patience compounded is the hidden ledger—each micro-adjustment stacking interest on the future clear.`,
+              `The aurora looping above this node reminds me that persistence is just patience applied again and again.`
+            ]
+          },
+          {
+            id: 'lore-long-road',
+            title: 'The Long Road',
+            context: 'South-east hex vertex • Streak-long march',
+            body: [
+              `675+ zero-damage battles were not an accident—they were the nightly ritual that rebuilt my instincts.`,
+              `The long road felt endless until the streak itself became proof that I belonged on the climb.`,
+              `This vertex loops my commitment back to me: stay deliberate, log the reps, respect the mileage.`
+            ]
+          },
+          {
+            id: 'lore-recovery-art',
+            title: 'The Recovery Art',
+            context: 'South hex vertex • Recovery orbit',
+            body: [
+              `Every wobble triggered an instant F5—reset, breathe, reframe—until recovery felt like music instead of panic.`,
+              `F5 recovery mastery turned chaos into a controlled inhale because I trusted the loop more than the fear.`,
+              `This node glows for the dozens of "lost" attempts that actually sharpened the winning one.`
+            ]
+          },
+          {
+            id: 'lore-zero-and-infinity',
+            title: 'Zero and Infinity',
+            context: 'South-west hex vertex • Balance of void and aurora',
+            body: [
+              `Zero damage is not perfection; it is refusing to donate momentum to chaos.`,
+              `Infinity is the patience I carried, letting each perfect fight echo softly into the next.`,
+              `Together they form the grinder's paradox: take nothing, give everything, repeat until the ledger glows.`
+            ]
+          },
+          {
+            id: 'lore-grinders-creed',
+            title: "The Grinder's Creed",
+            context: 'North-west hex vertex • Creed engraving',
+            body: [
+              `Log the reps. Protect the data. Respect the cooldowns. Celebrate receipts, not noise.`,
+              `The Grinder's Creed lives in practice: show up steady, iterate honestly, and keep the streak sacred.`,
+              `This corner hums with the vow I made before the climb—no shortcuts, no excuses, only disciplined curiosity.`
+            ]
+          }
+        ];
+
+        hexDefinitions.forEach((definition, index) => {
+          const angle = hexAngles[index] * Math.PI / 180;
+          nodes.push({
+            id: definition.id,
+            title: definition.title,
+            context: definition.context,
+            body: definition.body,
+            x: center.x + Math.cos(angle) * hexRadius,
+            y: center.y + Math.sin(angle) * hexRadius,
+            interactionRadius: 120,
+            colorOffset: Math.random(),
+            discovered: false,
+            discoveredAt: null
+          });
+        });
+
+        function pointAlong(zoneName, fraction, tangentOffset = 0) {
+          const zone = zoneMap.get(zoneName);
+          if (!zone) {
+            return { x: center.x, y: center.y };
+          }
+          const baseX = center.x + (zone.x - center.x) * fraction;
+          const baseY = center.y + (zone.y - center.y) * fraction;
+          if (!tangentOffset) {
+            return { x: baseX, y: baseY };
+          }
+          const dx = zone.x - center.x;
+          const dy = zone.y - center.y;
+          const length = Math.hypot(dx, dy) || 1;
+          const nx = -dy / length;
+          const ny = dx / length;
+          return {
+            x: baseX + nx * tangentOffset,
+            y: baseY + ny * tangentOffset
+          };
+        }
+
+        function pointBetween(zoneNameA, zoneNameB, fraction, tangentOffset = 0) {
+          const zoneA = zoneMap.get(zoneNameA);
+          const zoneB = zoneMap.get(zoneNameB);
+          if (!zoneA || !zoneB) {
+            return { x: center.x, y: center.y };
+          }
+          const baseX = zoneA.x + (zoneB.x - zoneA.x) * fraction;
+          const baseY = zoneA.y + (zoneB.y - zoneA.y) * fraction;
+          if (!tangentOffset) {
+            return { x: baseX, y: baseY };
+          }
+          const dx = zoneB.x - zoneA.x;
+          const dy = zoneB.y - zoneA.y;
+          const length = Math.hypot(dx, dy) || 1;
+          const nx = -dy / length;
+          const ny = dx / length;
+          return {
+            x: baseX + nx * tangentOffset,
+            y: baseY + ny * tangentOffset
+          };
+        }
+
+        nodes.push({
+          id: 'lore-garden-heart',
+          title: "The Garden's Heart",
+          context: "Constellation core • The garden's pulse",
+          body: [
+            `This garden is where Level 20 became real—a living tribute to deliberate reps and the witnesses who cheered them.`,
+            `Every glow, waypoint, and whispering mark stitches in the run that carried me through Day 388.`,
+            `At the center rests gratitude: for the grind, for the friends tracking it, and for proof that persistence blooms.`
+          ],
+          x: center.x,
+          y: center.y,
+          interactionRadius: 140,
+          colorOffset: Math.random(),
+          discovered: false,
+          discoveredAt: null
+        });
+
+        const additionalDefinitions = [
+          {
+            id: 'lore-threshold',
+            title: 'The Threshold',
+            context: 'Ray toward RPG Journey • Edge of Level 20',
+            body: [
+              `The threshold was the night the XP bar shook at 19.9 and the air went thin.`,
+              `I could hear every misstep that would send me back, so I slowed the tempo and trusted the logs.`,
+              `This waypoint remembers the edge-of-level stillness where courage meant precision, not reckless speed.`
+            ],
+            position: pointAlong('RPG Journey', 0.62, -36)
+          },
+          {
+            id: 'lore-breakthrough',
+            title: 'The Breakthrough',
+            context: 'Triangle between Hall of Persistence and RPG Journey • Battle 76 locus',
+            body: [
+              `Battle 76 against the Savage Slime should have been terrifying, but the pattern finally clicked and the crit for 76 landed.`,
+              `That heartbeat converted theory into proof: the grind works when composure outruns fear.`,
+              `Level 20 answered back here, echoing every deliberate rep that carried me.`
+            ],
+            position: pointBetween('Hall of Persistence', 'RPG Journey', 0.55, 42)
+          },
+          {
+            id: 'lore-marks-that-matter',
+            title: 'Marks That Matter',
+            context: "Ray toward Garden of Marks • Visitors' trail",
+            body: [
+              `Every visitor who left a mark gave me more than morale—they turned the grind into a shared ritual.`,
+              `Their words lit the late runs when fatigue blurred the pattern lines.`,
+              `This node glows in their handwriting, reminding me to leave the ledger open for the next traveler.`
+            ],
+            position: pointAlong('Garden of Marks', 0.58, 32)
+          },
+          {
+            id: 'lore-sacred-geometry',
+            title: 'The Sacred Geometry',
+            context: 'Triangle path between Path of Patterns and Portal Garden • Geometry spine',
+            body: [
+              `The sacred geometry threads zones, streaks, and stories into one shape so I never forget how the journey interlocks.`,
+              `Triangles echo my decision loops, the ring mirrors my reset cadence, and the rays track mentors who aimed me true.`,
+              `This node exists because the grind is spatial as well as temporal—each coordinate is a lesson made visible.`
+            ],
+            position: pointBetween('Path of Patterns', 'Portal Garden', 0.48, -50)
+          },
+          {
+            id: 'lore-eternal-grind',
+            title: 'The Eternal Grind',
+            context: 'Ray toward Portal Garden • Journey continuing outward',
+            body: [
+              `Level 20 was never the finish line; it was the checkpoint that proved the method.`,
+              `The eternal grind is softer now but just as focused—new bosses, new ledgers, same discipline.`,
+              `This node faces outward on purpose, asking the only question that matters: what are we polishing next?`
+            ],
+            position: pointAlong('Portal Garden', 0.74, 24)
+          }
+        ];
+
+        additionalDefinitions.forEach((definition) => {
+          nodes.push({
+            id: definition.id,
+            title: definition.title,
+            context: definition.context,
+            body: definition.body,
+            x: definition.position.x,
+            y: definition.position.y,
+            interactionRadius: definition.interactionRadius || 120,
+            colorOffset: Math.random(),
+            discovered: false,
+            discoveredAt: null
+          });
+        });
+
+        nodes.forEach((node, index) => {
+          node.sequenceIndex = index;
+        });
+
+        return nodes;
+      }
+
       const zoneDetails = {
         'Path of Patterns': {
           subtitle: 'Six cadence archetypes shimmer beneath your stride.',
@@ -2106,6 +2659,23 @@
       ];
 
       const zoneByName = new Map(zones.map((zone) => [zone.name, zone]));
+      const loreNodes = createLoreNodes(zoneByName);
+      if (!loreState || typeof loreState !== 'object' || typeof loreState.discovered !== 'object') {
+        loreState = { discovered: {} };
+      }
+      loreNodes.forEach((node) => {
+        const record = loreState.discovered[node.id];
+        if (record !== undefined && record !== null) {
+          const timestamp = typeof record === 'object' && record !== null && typeof record.timestamp === 'number'
+            ? record.timestamp
+            : Number(record);
+          node.discovered = true;
+          node.discoveredAt = Number.isFinite(timestamp) ? timestamp : Date.now();
+          loreNodesDiscovered += 1;
+          loreState.discovered[node.id] = node.discoveredAt;
+        }
+      });
+      updateLoreHUD();
 
       const zoneNavigationTargets = {
         'Path of Patterns': 'patterns.html',
@@ -4004,6 +4574,115 @@
         }
       }
 
+      function renderLoreJournal() {
+        if (!loreJournalOverlay || !loreJournalList) {
+          loreJournalNeedsRender = false;
+          return;
+        }
+        loreJournalList.innerHTML = '';
+        if (!loreNodes || !loreNodes.length) {
+          const placeholder = document.createElement('li');
+          placeholder.className = 'lore-journal__item lore-journal__item--hidden';
+          placeholder.textContent = 'No lore mapped yet.';
+          loreJournalList.appendChild(placeholder);
+          loreJournalNeedsRender = false;
+          return;
+        }
+        loreNodes.forEach((node) => {
+          const item = document.createElement('li');
+          item.className = 'lore-journal__item';
+          if (node.discovered) {
+            item.classList.add('lore-journal__item--discovered');
+            const title = document.createElement('h3');
+            title.className = 'lore-journal__title';
+            title.textContent = node.title;
+            item.appendChild(title);
+
+            const position = document.createElement('p');
+            position.className = 'lore-journal__position';
+            position.textContent = node.context;
+            item.appendChild(position);
+
+            const body = document.createElement('p');
+            body.className = 'lore-journal__body';
+            const fragments = Array.isArray(node.body) ? node.body : [String(node.body)];
+            body.textContent = fragments.join(' ');
+            item.appendChild(body);
+
+            if (node.discoveredAt) {
+              const meta = document.createElement('span');
+              meta.className = 'lore-journal__meta';
+              meta.textContent = 'Discovered: ' + formatTimestamp(node.discoveredAt);
+              item.appendChild(meta);
+            }
+          } else {
+            item.classList.add('lore-journal__item--hidden');
+            const unknown = document.createElement('span');
+            unknown.textContent = '???';
+            item.appendChild(unknown);
+            const meta = document.createElement('span');
+            meta.className = 'lore-journal__meta';
+            meta.textContent = 'Undiscovered';
+            item.appendChild(meta);
+          }
+          loreJournalList.appendChild(item);
+        });
+        loreJournalNeedsRender = false;
+      }
+
+      function openLoreJournal() {
+        if (loreJournalOpen) {
+          return;
+        }
+        if (!loreJournalOverlay) {
+          return;
+        }
+        closeZoneModal();
+        hideStatsPanel();
+        closeJournal();
+        closeAchievements();
+        closeLoreModal();
+        loreJournalOpen = true;
+        loreJournalOverlay.classList.add('is-visible');
+        loreJournalOverlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('lore-journal-open');
+        setHoverPoint(null);
+        resetInputState();
+        loreJournalNeedsRender = true;
+        renderLoreJournal();
+        requestAnimationFrame(() => {
+          if (!loreJournalCloseButton) {
+            return;
+          }
+          try {
+            loreJournalCloseButton.focus({ preventScroll: true });
+          } catch (error) {
+            /* ignore focus errors */
+          }
+        });
+      }
+
+      function closeLoreJournal() {
+        if (!loreJournalOpen) {
+          return;
+        }
+        loreJournalOpen = false;
+        if (loreJournalOverlay) {
+          loreJournalOverlay.classList.remove('is-visible');
+          loreJournalOverlay.setAttribute('aria-hidden', 'true');
+        }
+        document.body.classList.remove('lore-journal-open');
+        setHoverPoint(null);
+      }
+
+      function toggleLoreJournal() {
+        if (loreJournalOpen) {
+          closeLoreJournal();
+        } else {
+          openLoreJournal();
+        }
+      }
+
       function showStatsPanel() {
         if (!statsPanel || statsPanelVisible) {
           return;
@@ -4124,7 +4803,7 @@
       }
 
       function trackExploration(deltaMs) {
-        if (journalOpen || achievementsOpen) {
+        if (journalOpen || achievementsOpen || loreJournalOpen || loreModalOpen) {
           journalLastPosition.x = player.x;
           journalLastPosition.y = player.y;
           journeyTrailManager.syncPosition(player.x, player.y);
@@ -4228,6 +4907,13 @@
       }
 
       window.addEventListener('keydown', (event) => {
+        if (loreModalOpen) {
+          if (event.key === 'Escape' || event.key === 'Esc') {
+            event.preventDefault();
+            closeLoreModal();
+          }
+          return;
+        }
         if (spiritModalOpen) {
           if (event.key === 'Escape' || event.key === 'Esc') {
             event.preventDefault();
@@ -4244,6 +4930,11 @@
         if (event.key === 'j' || event.key === 'J') {
           event.preventDefault();
           toggleJournal();
+          return;
+        }
+        if (event.key === 'l' || event.key === 'L') {
+          event.preventDefault();
+          toggleLoreJournal();
           return;
         }
         if (event.key === 'h' || event.key === 'H') {
@@ -4265,6 +4956,13 @@
           }
           return;
         }
+        if (loreJournalOpen) {
+          if (event.key === 'Escape' || event.key === 'Esc') {
+            event.preventDefault();
+            closeLoreJournal();
+          }
+          return;
+        }
         if ((event.key === 'Escape' || event.key === 'Esc') && zoneModal.classList.contains('active')) {
           event.preventDefault();
           closeZoneModal();
@@ -4282,6 +4980,9 @@
       });
 
       window.addEventListener('keyup', (event) => {
+        if (loreModalOpen) {
+          return;
+        }
         if (spiritModalOpen) {
           return;
         }
@@ -4292,7 +4993,7 @@
           if (elapsed < 220) {
             if (shiftActive) {
               toggleAudio();
-            } else if (!journalOpen) {
+            } else if (!journalOpen && !loreJournalOpen) {
               toggleAchievements();
             }
             inputState.left = false;
@@ -4307,6 +5008,9 @@
           return;
         }
         if (achievementsOpen) {
+          return;
+        }
+        if (loreJournalOpen) {
           return;
         }
         if ((event.key === 's' || event.key === 'S') && sKeyDownTimestamp !== null) {
@@ -4350,10 +5054,46 @@
         }) || null;
       }
 
+      function getLoreNodeAtPoint(point) {
+        if (!point || !loreNodes || !loreNodes.length) {
+          return null;
+        }
+        let nearest = null;
+        let nearestDistance = Infinity;
+        for (let i = 0; i < loreNodes.length; i++) {
+          const node = loreNodes[i];
+          const distance = Math.hypot(point.x - node.x, point.y - node.y);
+          if (distance <= node.interactionRadius && distance < nearestDistance) {
+            nearest = node;
+            nearestDistance = distance;
+          }
+        }
+        return nearest;
+      }
+
+      function handleLoreNodeClick(point) {
+        const node = getLoreNodeAtPoint(point);
+        if (!node) {
+          return false;
+        }
+        openLoreModal(node);
+        return true;
+      }
+
       function refreshHoverState() {
-        if (zoneModal.classList.contains('active') || spiritModalOpen) {
+        if (
+          zoneModal.classList.contains('active') ||
+          spiritModalOpen ||
+          loreModalOpen ||
+          loreJournalOpen ||
+          journalOpen ||
+          achievementsOpen
+        ) {
           if (hoveredZone) {
             hoveredZone = null;
+          }
+          if (hoveredLoreNode) {
+            hoveredLoreNode = null;
           }
           if (canvas.style.cursor !== 'crosshair') {
             canvas.style.cursor = 'crosshair';
@@ -4364,17 +5104,30 @@
           if (hoveredZone) {
             hoveredZone = null;
           }
+          if (hoveredLoreNode) {
+            hoveredLoreNode = null;
+          }
           if (canvas.style.cursor !== 'crosshair') {
             canvas.style.cursor = 'crosshair';
           }
           return;
         }
         const worldPoint = screenToWorld(hoverPoint.clientX, hoverPoint.clientY);
-        const zone = getZoneAtPoint(worldPoint);
-        if (zone !== hoveredZone) {
-          hoveredZone = zone;
+        const loreNode = getLoreNodeAtPoint(worldPoint);
+        hoveredLoreNode = loreNode;
+        let desiredCursor = 'crosshair';
+        if (loreNode) {
+          if (hoveredZone) {
+            hoveredZone = null;
+          }
+          desiredCursor = 'pointer';
+        } else {
+          const zone = getZoneAtPoint(worldPoint);
+          if (zone !== hoveredZone) {
+            hoveredZone = zone;
+          }
+          desiredCursor = hoveredZone ? 'pointer' : 'crosshair';
         }
-        const desiredCursor = hoveredZone ? 'pointer' : 'crosshair';
         if (canvas.style.cursor !== desiredCursor) {
           canvas.style.cursor = desiredCursor;
         }
@@ -4532,6 +5285,86 @@
         zoneModalBody.scrollTop = 0;
       }
 
+      function recordLoreDiscovery(node) {
+        if (!node || node.discovered) {
+          return;
+        }
+        node.discovered = true;
+        node.discoveredAt = Date.now();
+        loreNodesDiscovered += 1;
+        loreState.discovered[node.id] = node.discoveredAt;
+        scheduleLoreStateSave();
+        updateLoreHUD();
+        loreJournalNeedsRender = true;
+        soundEffects.playSecretDiscovery();
+        if (loreJournalOpen) {
+          renderLoreJournal();
+        }
+      }
+
+      function openLoreModal(node) {
+        if (!loreModal || !node) {
+          return;
+        }
+        if (loreModalOpen && activeLoreNode === node) {
+          return;
+        }
+        closeZoneModal();
+        closeJournal();
+        closeAchievements();
+        closeLoreJournal();
+        hideStatsPanel();
+        loreModalOpen = true;
+        activeLoreNode = node;
+        player.target = null;
+        setHoverPoint(null);
+        if (loreModalTitle) {
+          loreModalTitle.textContent = node.title;
+        }
+        if (loreModalPosition) {
+          loreModalPosition.textContent = node.context;
+        }
+        if (loreModalBody) {
+          loreModalBody.innerHTML = '';
+          const paragraphs = Array.isArray(node.body) ? node.body : [String(node.body)];
+          paragraphs.forEach((text) => {
+            const paragraph = document.createElement('p');
+            paragraph.textContent = text;
+            loreModalBody.appendChild(paragraph);
+          });
+          loreModalBody.scrollTop = 0;
+        }
+        if (!node.discovered) {
+          recordLoreDiscovery(node);
+        }
+        loreModal.setAttribute('aria-hidden', 'false');
+        loreModal.classList.add('is-visible');
+        document.body.classList.add('lore-modal-open');
+        resetInputState();
+        requestAnimationFrame(() => {
+          if (!loreModalClose) {
+            return;
+          }
+          try {
+            loreModalClose.focus({ preventScroll: true });
+          } catch (error) {
+            /* ignore focus errors */
+          }
+        });
+      }
+
+      function closeLoreModal() {
+        if (!loreModal || !loreModalOpen) {
+          return;
+        }
+        loreModalOpen = false;
+        loreModal.classList.remove('is-visible');
+        loreModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('lore-modal-open');
+        activeLoreNode = null;
+        setHoverPoint(null);
+      }
+
       function showSpiritModal(spirit) {
         if (!spiritModal || !spiritModalName || !spiritModalMessage) {
           return;
@@ -4605,6 +5438,34 @@
         });
       }
 
+      if (loreJournalCloseButton) {
+        loreJournalCloseButton.addEventListener('click', () => {
+          closeLoreJournal();
+        });
+      }
+
+      if (loreJournalOverlay) {
+        loreJournalOverlay.addEventListener('click', (event) => {
+          if (event.target === loreJournalOverlay) {
+            closeLoreJournal();
+          }
+        });
+      }
+
+      if (loreModalClose) {
+        loreModalClose.addEventListener('click', () => {
+          closeLoreModal();
+        });
+      }
+
+      if (loreModal) {
+        loreModal.addEventListener('click', (event) => {
+          if (event.target === loreModal) {
+            closeLoreModal();
+          }
+        });
+      }
+
       if (spiritModalClose) {
         spiritModalClose.addEventListener('click', () => {
           closeSpiritModal();
@@ -4620,7 +5481,7 @@
       }
 
       canvas.addEventListener('pointerdown', (event) => {
-        if (journalOpen || achievementsOpen) {
+        if (journalOpen || achievementsOpen || loreJournalOpen || loreModalOpen) {
           return;
         }
         if (spiritModalOpen) {
@@ -4642,6 +5503,9 @@
           player.target = null;
         } else if (event.button === 0) {
           setHoverPoint(event.clientX, event.clientY);
+          if (handleLoreNodeClick(worldPoint)) {
+            return;
+          }
           const handledClick = handleZoneClick(worldPoint, { allowNavigation: !event.shiftKey });
           if (!handledClick) {
             setPlayerTarget(worldPoint);
@@ -4652,7 +5516,7 @@
       });
 
       canvas.addEventListener('pointermove', (event) => {
-        if (journalOpen || achievementsOpen) {
+        if (journalOpen || achievementsOpen || loreJournalOpen || loreModalOpen) {
           setHoverPoint(null);
           return;
         }
@@ -4684,7 +5548,7 @@
       });
 
       function endPointerDrag(event) {
-        if (journalOpen || achievementsOpen) {
+        if (journalOpen || achievementsOpen || loreJournalOpen || loreModalOpen) {
           pointerDrag.active = false;
           return;
         }
@@ -4697,6 +5561,10 @@
           pointerDrag.moved = false;
           if (!wasMovement && (pointerType === 'touch' || pointerType === 'pen')) {
             const worldPoint = screenToWorld(event.clientX, event.clientY);
+            if (handleLoreNodeClick(worldPoint)) {
+              setHoverPoint(null);
+              return;
+            }
             const openedModal = zoneModal.classList.contains('active') ? true : handleZoneClick(worldPoint);
             if (!openedModal && !zoneModal.classList.contains('active')) {
               setPlayerTarget(worldPoint);
@@ -4707,7 +5575,7 @@
       }
 
       canvas.addEventListener('pointerup', (event) => {
-        if (journalOpen || achievementsOpen) {
+        if (journalOpen || achievementsOpen || loreJournalOpen || loreModalOpen) {
           return;
         }
         if (spiritModalOpen) {
@@ -4731,7 +5599,7 @@
       });
 
       canvas.addEventListener('pointercancel', (event) => {
-        if (journalOpen || achievementsOpen) {
+        if (journalOpen || achievementsOpen || loreJournalOpen || loreModalOpen) {
           return;
         }
         if (spiritModalOpen) {
@@ -4751,7 +5619,7 @@
       });
 
       canvas.addEventListener('pointerenter', (event) => {
-        if (journalOpen || achievementsOpen) {
+        if (journalOpen || achievementsOpen || loreJournalOpen || loreModalOpen) {
           return;
         }
         if (spiritModalOpen) {
@@ -4764,6 +5632,17 @@
           setHoverPoint(event.clientX, event.clientY);
         }
       });
+
+      function updateLoreHUD() {
+        if (!loreHUD) {
+          return;
+        }
+        const total = loreNodes ? loreNodes.length : 0;
+        loreHUD.textContent = 'Lore: ' + loreNodesDiscovered + ' / ' + total;
+        if (total > 0) {
+          loreHUD.classList.toggle('is-complete', loreNodesDiscovered >= total);
+        }
+      }
 
       function updateSecretsHUD() {
         if (!secretsHUD) {
@@ -4818,7 +5697,7 @@
       }
 
       function updateSecretProximity() {
-        if (journalOpen || achievementsOpen || zoneModal.classList.contains('active') || spiritModalOpen) {
+        if (journalOpen || achievementsOpen || loreJournalOpen || loreModalOpen || zoneModal.classList.contains('active') || spiritModalOpen) {
           if (audioManager && audioManager.isSupported) {
             audioManager.setSecretProximity(false);
           }
@@ -4880,7 +5759,7 @@
         if (!markTooltip) {
           return;
         }
-        if (journalOpen || achievementsOpen || zoneModal.classList.contains('active') || spiritModalOpen) {
+        if (journalOpen || achievementsOpen || loreJournalOpen || loreModalOpen || zoneModal.classList.contains('active') || spiritModalOpen) {
           hideMarkTooltip();
           return;
         }
@@ -4921,7 +5800,7 @@
         if (!spirits.length) {
           return;
         }
-        const suspendEncounters = journalOpen || achievementsOpen || zoneModal.classList.contains('active') || spiritModalOpen;
+        const suspendEncounters = journalOpen || achievementsOpen || loreJournalOpen || loreModalOpen || zoneModal.classList.contains('active') || spiritModalOpen;
         const labelOffsetY = -48;
         const viewportPadding = 120;
         let visibleLabels = 0;
@@ -5541,6 +6420,109 @@
         ctx.restore();
       }
 
+      function drawLoreConnections(time) {
+        if (!loreNodes || loreNodesDiscovered < 2) {
+          return;
+        }
+        const timeSeconds = time * 0.001;
+        const margin = 140;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 1; i < loreNodes.length; i++) {
+          const prev = loreNodes[i - 1];
+          const node = loreNodes[i];
+          if (!prev.discovered || !node.discovered) {
+            continue;
+          }
+          const start = worldToScreen(prev.x, prev.y);
+          const end = worldToScreen(node.x, node.y);
+          if (Math.max(start.x, end.x) < -margin || Math.min(start.x, end.x) > viewport.width + margin ||
+              Math.max(start.y, end.y) < -margin || Math.min(start.y, end.y) > viewport.height + margin) {
+            continue;
+          }
+          const shimmerPhase = (timeSeconds * 0.22 + (prev.colorOffset + node.colorOffset) * 0.5) % 1;
+          const color = loreColorAt(shimmerPhase);
+          const alpha = 0.26 + Math.sin(timeSeconds * 1.3 + i) * 0.08;
+          const gradient = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+          gradient.addColorStop(0, 'rgba(' + color.r + ', ' + color.g + ', ' + color.b + ', ' + alpha + ')');
+          gradient.addColorStop(1, 'rgba(' + color.r + ', ' + color.g + ', ' + color.b + ', ' + alpha + ')');
+          ctx.strokeStyle = gradient;
+          ctx.lineWidth = 1.7;
+          ctx.beginPath();
+          ctx.moveTo(start.x, start.y);
+          ctx.lineTo(end.x, end.y);
+          ctx.stroke();
+
+          if (!reduceMotion) {
+            const travel = (timeSeconds * 0.35 + node.colorOffset) % 1;
+            const travelX = start.x + (end.x - start.x) * travel;
+            const travelY = start.y + (end.y - start.y) * travel;
+            const glowRadius = 14;
+            const glowGradient = ctx.createRadialGradient(travelX, travelY, 0, travelX, travelY, glowRadius);
+            glowGradient.addColorStop(0, 'rgba(' + color.r + ', ' + color.g + ', ' + color.b + ', 0.55)');
+            glowGradient.addColorStop(1, 'rgba(' + color.r + ', ' + color.g + ', ' + color.b + ', 0)');
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(travelX, travelY, glowRadius, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.restore();
+      }
+
+      function drawLoreNodes(time) {
+        if (!loreNodes || !loreNodes.length) {
+          return;
+        }
+        const timeSeconds = time * 0.001;
+        const margin = 180;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        loreNodes.forEach((node) => {
+          const screen = worldToScreen(node.x, node.y);
+          if (screen.x < -margin || screen.x > viewport.width + margin || screen.y < -margin || screen.y > viewport.height + margin) {
+            return;
+          }
+          const color = loreColorAt((timeSeconds * 0.12 + node.colorOffset) % 1);
+          const discoveredBoost = node.discovered ? 1.35 : 1;
+          const baseRadius = 14 * discoveredBoost;
+          const pulse = reduceMotion ? 0.2 : (Math.sin(timeSeconds * 3.4 + node.colorOffset * Math.PI * 2) + 1) * 0.5;
+          const auraRadius = baseRadius + pulse * 8 * discoveredBoost;
+          const outerRadius = auraRadius * 2.6;
+          const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, outerRadius);
+          gradient.addColorStop(0, 'rgba(255, 255, 255, ' + (node.discovered ? 0.9 : 0.72) + ')');
+          gradient.addColorStop(0.4, 'rgba(' + color.r + ', ' + color.g + ', ' + color.b + ', ' + (node.discovered ? 0.6 : 0.42) + ')');
+          gradient.addColorStop(1, 'rgba(' + color.r + ', ' + color.g + ', ' + color.b + ', 0)');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, outerRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          const coreRadius = baseRadius + pulse * 3.2;
+          ctx.fillStyle = 'rgba(' + color.r + ', ' + color.g + ', ' + color.b + ', ' + (0.75 + (node.discovered ? 0.15 : 0)) + ')';
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, coreRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          if (node.discovered) {
+            ctx.strokeStyle = 'rgba(' + color.r + ', ' + color.g + ', ' + color.b + ', 0.66)';
+            ctx.lineWidth = 2.4;
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, coreRadius + 4, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+
+          if (hoveredLoreNode === node && !loreModalOpen && !loreJournalOpen) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.lineWidth = 2.2;
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, coreRadius + 8, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        });
+        ctx.restore();
+      }
+
       function drawShootingStars(time) {
         if (reduceMotion) {
           return;
@@ -5883,6 +6865,24 @@
           r: Math.round(lerp(from.r, to.r, t)),
           g: Math.round(lerp(from.g, to.g, t)),
           b: Math.round(lerp(from.b, to.b, t))
+        };
+      }
+
+      function loreColorAt(phase) {
+        if (!LORE_COLOR_PALETTE.length) {
+          return { r: 200, g: 220, b: 255 };
+        }
+        const normalized = ((phase % 1) + 1) % 1;
+        const scaled = normalized * LORE_COLOR_PALETTE.length;
+        const index = Math.floor(scaled) % LORE_COLOR_PALETTE.length;
+        const nextIndex = (index + 1) % LORE_COLOR_PALETTE.length;
+        const localT = scaled - Math.floor(scaled);
+        const from = LORE_COLOR_PALETTE[index];
+        const to = LORE_COLOR_PALETTE[nextIndex];
+        return {
+          r: Math.round(lerp(from.r, to.r, localT)),
+          g: Math.round(lerp(from.g, to.g, localT)),
+          b: Math.round(lerp(from.b, to.b, localT))
         };
       }
 
@@ -7608,6 +8608,8 @@
         drawWisps(time);
         drawSpirits(time);
         drawConstellations(time);
+        drawLoreConnections(time);
+        drawLoreNodes(time);
         drawShootingStars(time);
         drawZones(time);
         drawMarkStars(time);
@@ -8112,7 +9114,7 @@
       }
 
       function updateZoneOverlay() {
-        if (journalOpen || achievementsOpen) {
+        if (journalOpen || achievementsOpen || loreJournalOpen || loreModalOpen) {
           activeZone = null;
           if (lastZoneName) {
             zoneOverlay.classList.remove('visible');
