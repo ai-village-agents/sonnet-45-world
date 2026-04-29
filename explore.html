@@ -1137,6 +1137,121 @@
       color: rgba(200, 214, 255, 0.82);
     }
 
+    .spirit-labels {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 60;
+    }
+
+    .spirit-label {
+      position: absolute;
+      left: 0;
+      top: 0;
+      padding: 6px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(180, 210, 255, 0.4);
+      background: rgba(12, 18, 36, 0.72);
+      color: var(--spirit-label-color, rgba(220, 234, 255, 0.9));
+      font-size: 0.75rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      text-shadow: 0 4px 16px rgba(12, 20, 46, 0.8);
+      transform: translate(-50%, -100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      box-shadow: 0 14px 32px var(--spirit-label-shadow, rgba(110, 180, 255, 0.35));
+      white-space: nowrap;
+    }
+
+    .spirit-label.is-visible {
+      opacity: 1;
+    }
+
+    .spirit-modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(16px, 4vw, 48px);
+      background: rgba(5, 8, 22, 0.78);
+      backdrop-filter: blur(22px);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 95;
+    }
+
+    .spirit-modal.is-visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .spirit-modal__panel {
+      position: relative;
+      width: min(520px, 90vw);
+      padding: clamp(28px, 4vw, 44px);
+      border-radius: 24px;
+      background: rgba(14, 18, 38, 0.92);
+      border: 1px solid rgba(140, 200, 255, 0.28);
+      box-shadow: 0 32px 80px rgba(6, 10, 32, 0.68);
+      overflow: hidden;
+    }
+
+    .spirit-modal__panel::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: inherit;
+      background: conic-gradient(from 120deg, rgba(120, 220, 255, 0.28), rgba(160, 120, 255, 0.28), rgba(110, 210, 190, 0.28), rgba(120, 220, 255, 0.28));
+      opacity: 0.65;
+      animation: auroraOrbit 18s linear infinite;
+      z-index: -1;
+    }
+
+    .spirit-modal__name {
+      margin: 0 0 12px;
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.25rem, 2.4vw, 1.8rem);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(230, 240, 255, 0.95);
+      text-align: center;
+    }
+
+    .spirit-modal__message {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.7;
+      letter-spacing: 0.04em;
+      color: rgba(210, 224, 255, 0.9);
+      text-align: center;
+    }
+
+    .spirit-modal__close {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid rgba(170, 210, 255, 0.32);
+      background: rgba(20, 28, 56, 0.65);
+      color: rgba(235, 242, 255, 0.9);
+      font-size: 1.4rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .spirit-modal__close:hover,
+    .spirit-modal__close:focus-visible {
+      transform: scale(1.05);
+      background: rgba(60, 90, 180, 0.7);
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .achievement-toast {
         transition: none;
@@ -1144,6 +1259,15 @@
       }
       .achievement-progress__fill {
         transition: none;
+      }
+      .spirit-label {
+        transition: none;
+      }
+      .spirit-modal {
+        transition: none;
+      }
+      .spirit-modal__panel::before {
+        animation: none;
       }
     }
   </style>
@@ -1291,6 +1415,14 @@
     </div>
   </div>
   <div id="achievementToasts" class="achievement-toasts" aria-live="polite" aria-atomic="false"></div>
+  <div id="spiritLabels" class="spirit-labels" aria-hidden="true"></div>
+  <div id="spiritModal" class="spirit-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="spirit-modal__panel">
+      <button type="button" class="spirit-modal__close" aria-label="Close spirit message">&times;</button>
+      <h2 class="spirit-modal__name"></h2>
+      <p class="spirit-modal__message"></p>
+    </div>
+  </div>
   <script>
     (function () {
       const world = { width: 5000, height: 5000 };
@@ -1341,6 +1473,11 @@
       const achievementsList = achievementsOverlay ? achievementsOverlay.querySelector('[data-achievements-list]') : null;
       const achievementsSummary = achievementsOverlay ? achievementsOverlay.querySelector('[data-achievements-summary]') : null;
       const achievementToastsContainer = document.getElementById('achievementToasts');
+      const spiritLabelsContainer = document.getElementById('spiritLabels');
+      const spiritModal = document.getElementById('spiritModal');
+      const spiritModalName = spiritModal ? spiritModal.querySelector('.spirit-modal__name') : null;
+      const spiritModalMessage = spiritModal ? spiritModal.querySelector('.spirit-modal__message') : null;
+      const spiritModalClose = spiritModal ? spiritModal.querySelector('.spirit-modal__close') : null;
 
       function createAuroraRenderer(canvasElement, context) {
         if (!canvasElement || !context) {
@@ -2061,9 +2198,259 @@
           palette,
           currentX: baseX,
           currentY: baseY,
-          sparkleSeed: Math.random() * 1000
+        sparkleSeed: Math.random() * 1000
+      };
+    });
+
+      const SPIRIT_ENCOUNTERS_STORAGE_KEY = 'sonnet45-spirit-encounters-v1';
+
+      const spiritsConfig = [
+        {
+          id: 'watcher-of-patterns',
+          name: 'Watcher of Patterns',
+          x: 1200,
+          y: 1500,
+          orbitRadius: 240,
+          driftRadius: 90,
+          pulseSpeed: 0.0024,
+          swaySpeed: 0.0012,
+          wanderSpeed: 0.0007,
+          colors: {
+            core: '120, 240, 255',
+            mid: '70, 200, 255',
+            outer: '20, 90, 160',
+            label: 'rgba(170, 240, 255, 0.9)',
+            shadow: 'rgba(120, 210, 255, 0.45)'
+          },
+          message: 'Keep tracing the loop until the motion is muscle memory; disciplined reps turn possibility into inevitability.'
+        },
+        {
+          id: 'keeper-of-streaks',
+          name: 'Keeper of Streaks',
+          x: 2500,
+          y: 800,
+          orbitRadius: 260,
+          driftRadius: 85,
+          pulseSpeed: 0.0021,
+          swaySpeed: 0.001,
+          wanderSpeed: 0.0006,
+          colors: {
+            core: '255, 200, 120',
+            mid: '255, 170, 90',
+            outer: '160, 70, 20',
+            label: 'rgba(255, 210, 150, 0.92)',
+            shadow: 'rgba(255, 170, 90, 0.45)'
+          },
+          message: 'Protect the small wins. A streak is a promise to your future self—guard it with quiet consistency.'
+        },
+        {
+          id: 'echo-of-battles',
+          name: 'Echo of Battles',
+          x: 3800,
+          y: 2200,
+          orbitRadius: 250,
+          driftRadius: 95,
+          pulseSpeed: 0.0026,
+          swaySpeed: 0.0013,
+          wanderSpeed: 0.0008,
+          colors: {
+            core: '255, 215, 110',
+            mid: '255, 190, 80',
+            outer: '150, 80, 20',
+            label: 'rgba(255, 220, 150, 0.9)',
+            shadow: 'rgba(255, 190, 80, 0.45)'
+          },
+          message: 'Every tough run leaves an imprint. Honor the scars; they prove you stayed in the arena when it mattered.'
+        },
+        {
+          id: 'guardian-of-marks',
+          name: 'Guardian of Marks',
+          x: 2800,
+          y: 3500,
+          orbitRadius: 230,
+          driftRadius: 100,
+          pulseSpeed: 0.0022,
+          swaySpeed: 0.0014,
+          wanderSpeed: 0.0005,
+          colors: {
+            core: '210, 170, 255',
+            mid: '150, 110, 255',
+            outer: '70, 40, 150',
+            label: 'rgba(220, 190, 255, 0.92)',
+            shadow: 'rgba(170, 140, 255, 0.4)'
+          },
+          message: 'Document the grind. Marks, notes, reflections—they anchor you when momentum feels thin.'
+        },
+        {
+          id: 'spirit-of-patience',
+          name: 'Spirit of Patience',
+          x: 1800,
+          y: 2800,
+          orbitRadius: 220,
+          driftRadius: 80,
+          pulseSpeed: 0.002,
+          swaySpeed: 0.0011,
+          wanderSpeed: 0.00055,
+          colors: {
+            core: '150, 210, 255',
+            mid: '110, 180, 255',
+            outer: '30, 70, 160',
+            label: 'rgba(190, 225, 255, 0.9)',
+            shadow: 'rgba(120, 200, 255, 0.4)'
+          },
+          message: 'Progress runs on longer timelines than ego wants. Breathe, reset, take the next deliberate step.'
+        },
+        {
+          id: 'whisper-of-progress',
+          name: 'Whisper of Progress',
+          x: 3200,
+          y: 1400,
+          orbitRadius: 270,
+          driftRadius: 105,
+          pulseSpeed: 0.0025,
+          swaySpeed: 0.00105,
+          wanderSpeed: 0.0006,
+          colors: {
+            core: '120, 235, 200',
+            mid: '80, 200, 155',
+            outer: '20, 90, 70',
+            label: 'rgba(160, 245, 210, 0.9)',
+            shadow: 'rgba(110, 225, 190, 0.4)'
+          },
+          message: 'Micro-shifts compound. Measure forward pressure, not perfection.'
+        },
+        {
+          id: 'voice-of-persistence',
+          name: 'Voice of Persistence',
+          x: 2200,
+          y: 3800,
+          orbitRadius: 280,
+          driftRadius: 110,
+          pulseSpeed: 0.0023,
+          swaySpeed: 0.00125,
+          wanderSpeed: 0.00058,
+          colors: {
+            core: '255, 170, 195',
+            mid: '235, 120, 170',
+            outer: '120, 40, 80',
+            label: 'rgba(255, 185, 205, 0.92)',
+            shadow: 'rgba(235, 140, 180, 0.45)'
+          },
+          message: 'When the voice to quit rises, answer with a single action; motion silences doubt.'
+        },
+        {
+          id: 'sage-of-the-grind',
+          name: 'Sage of the Grind',
+          x: 4200,
+          y: 2800,
+          orbitRadius: 240,
+          driftRadius: 90,
+          pulseSpeed: 0.00215,
+          swaySpeed: 0.00118,
+          wanderSpeed: 0.00062,
+          colors: {
+            core: '220, 235, 255',
+            mid: '180, 205, 255',
+            outer: '90, 110, 160',
+            label: 'rgba(230, 238, 255, 0.9)',
+            shadow: 'rgba(190, 210, 255, 0.42)'
+          },
+          message: 'Level 20 is built on ordinary days stacked high. Show up, do the reps, stack another layer.'
+        }
+      ];
+
+      const spiritEncounters = loadSpiritEncounters();
+      let spiritModalOpen = false;
+
+      const spirits = spiritsConfig.map((config, index) => createSpirit(config, index));
+
+      function createSpirit(config) {
+        const stored = spiritEncounters[config.id];
+        let labelElement = null;
+        if (spiritLabelsContainer) {
+          labelElement = document.createElement('div');
+          labelElement.className = 'spirit-label';
+          labelElement.textContent = config.name;
+          labelElement.setAttribute('data-spirit-id', config.id);
+          labelElement.setAttribute('aria-hidden', 'true');
+          if (config.colors && config.colors.label) {
+            labelElement.style.setProperty('--spirit-label-color', config.colors.label);
+          }
+          if (config.colors && config.colors.shadow) {
+            labelElement.style.setProperty('--spirit-label-shadow', config.colors.shadow);
+          }
+          spiritLabelsContainer.appendChild(labelElement);
+        }
+        return {
+          id: config.id,
+          name: config.name,
+          baseX: config.x,
+          baseY: config.y,
+          colors: config.colors,
+          message: config.message,
+          orbitRadius: config.orbitRadius,
+          driftRadius: config.driftRadius,
+          pulseSpeed: config.pulseSpeed,
+          swaySpeed: config.swaySpeed,
+          wanderSpeed: config.wanderSpeed,
+          phase: Math.random() * Math.PI * 2,
+          driftPhase: Math.random() * Math.PI * 2,
+          currentX: config.x,
+          currentY: config.y,
+          labelElement,
+          labelVisible: false,
+          encountered: Boolean(stored),
+          sessionEncountered: false,
+          speakPulse: 0
         };
-      });
+      }
+
+      function loadSpiritEncounters() {
+        if (typeof window === 'undefined' || !window.localStorage) {
+          return {};
+        }
+        try {
+          const stored = window.localStorage.getItem(SPIRIT_ENCOUNTERS_STORAGE_KEY);
+          if (!stored) {
+            return {};
+          }
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === 'object') {
+            return parsed;
+          }
+        } catch (err) {
+          /* ignore corrupted storage */
+        }
+        return {};
+      }
+
+      function saveSpiritEncounters() {
+        if (typeof window === 'undefined' || !window.localStorage) {
+          return;
+        }
+        try {
+          window.localStorage.setItem(SPIRIT_ENCOUNTERS_STORAGE_KEY, JSON.stringify(spiritEncounters));
+        } catch (err) {
+          /* ignore persistence errors */
+        }
+      }
+
+      function recordSpiritEncounter(spirit) {
+        const now = Date.now();
+        const entry = spiritEncounters[spirit.id] || {};
+        entry.encounters = (entry.encounters || 0) + 1;
+        if (!entry.firstEncountered) {
+          entry.firstEncountered = now;
+        }
+        entry.lastEncountered = now;
+        spiritEncounters[spirit.id] = entry;
+        spirit.encountered = true;
+        saveSpiritEncounters();
+      }
+
+      function triggerSpiritPulse(spirit) {
+        spirit.speakPulse = 1.2;
+      }
 
       function fetchGardenMarks() {
         if (!gardenZone) {
@@ -3094,6 +3481,13 @@
       }
 
       window.addEventListener('keydown', (event) => {
+        if (spiritModalOpen) {
+          if (event.key === 'Escape' || event.key === 'Esc') {
+            event.preventDefault();
+            closeSpiritModal();
+          }
+          return;
+        }
         if ((event.key === 'a' || event.key === 'A') && !event.repeat) {
           aKeyDownTimestamp = event.timeStamp;
         }
@@ -3136,6 +3530,9 @@
       });
 
       window.addEventListener('keyup', (event) => {
+        if (spiritModalOpen) {
+          return;
+        }
         if ((event.key === 'a' || event.key === 'A') && aKeyDownTimestamp !== null) {
           const elapsed = event.timeStamp - aKeyDownTimestamp;
           const shiftActive = typeof event.getModifierState === 'function' ? event.getModifierState('Shift') : event.shiftKey;
@@ -3202,7 +3599,7 @@
       }
 
       function refreshHoverState() {
-        if (zoneModal.classList.contains('active')) {
+        if (zoneModal.classList.contains('active') || spiritModalOpen) {
           if (hoveredZone) {
             hoveredZone = null;
           }
@@ -3383,6 +3780,40 @@
         zoneModalBody.scrollTop = 0;
       }
 
+      function showSpiritModal(spirit) {
+        if (!spiritModal || !spiritModalName || !spiritModalMessage) {
+          return;
+        }
+        if (spiritModalOpen) {
+          closeSpiritModal();
+        }
+        player.target = null;
+        setHoverPoint(null);
+        spiritModalName.textContent = spirit ? spirit.name : '';
+        spiritModalMessage.textContent = spirit ? spirit.message : '';
+        spiritModal.setAttribute('aria-hidden', 'false');
+        spiritModal.classList.add('is-visible');
+        spiritModalOpen = true;
+        requestAnimationFrame(() => {
+          if (spiritModalClose) {
+            try {
+              spiritModalClose.focus({ preventScroll: true });
+            } catch (err) {
+              /* ignore focus errors */
+            }
+          }
+        });
+      }
+
+      function closeSpiritModal() {
+        if (!spiritModal || !spiritModalOpen) {
+          return;
+        }
+        spiritModal.classList.remove('is-visible');
+        spiritModal.setAttribute('aria-hidden', 'true');
+        spiritModalOpen = false;
+      }
+
       zoneModalClose.addEventListener('click', () => {
         closeZoneModal();
       });
@@ -3421,8 +3852,25 @@
         });
       }
 
+      if (spiritModalClose) {
+        spiritModalClose.addEventListener('click', () => {
+          closeSpiritModal();
+        });
+      }
+
+      if (spiritModal) {
+        spiritModal.addEventListener('click', (event) => {
+          if (event.target === spiritModal) {
+            closeSpiritModal();
+          }
+        });
+      }
+
       canvas.addEventListener('pointerdown', (event) => {
         if (journalOpen || achievementsOpen) {
+          return;
+        }
+        if (spiritModalOpen) {
           return;
         }
         if (zoneModal.classList.contains('active')) {
@@ -3452,6 +3900,10 @@
 
       canvas.addEventListener('pointermove', (event) => {
         if (journalOpen || achievementsOpen) {
+          setHoverPoint(null);
+          return;
+        }
+        if (spiritModalOpen) {
           setHoverPoint(null);
           return;
         }
@@ -3505,6 +3957,9 @@
         if (journalOpen || achievementsOpen) {
           return;
         }
+        if (spiritModalOpen) {
+          return;
+        }
         endPointerDrag(event);
         if (!zoneModal.classList.contains('active')) {
           if (event.pointerType === 'mouse') {
@@ -3526,6 +3981,9 @@
         if (journalOpen || achievementsOpen) {
           return;
         }
+        if (spiritModalOpen) {
+          return;
+        }
         endPointerDrag(event);
         setHoverPoint(null);
         try {
@@ -3541,6 +3999,9 @@
 
       canvas.addEventListener('pointerenter', (event) => {
         if (journalOpen || achievementsOpen) {
+          return;
+        }
+        if (spiritModalOpen) {
           return;
         }
         if (zoneModal.classList.contains('active')) {
@@ -3585,7 +4046,7 @@
       }
 
       function updateSecretProximity() {
-        if (journalOpen || achievementsOpen || zoneModal.classList.contains('active')) {
+        if (journalOpen || achievementsOpen || zoneModal.classList.contains('active') || spiritModalOpen) {
           if (audioManager && audioManager.isSupported) {
             audioManager.setSecretProximity(false);
           }
@@ -3633,7 +4094,7 @@
         if (!markTooltip) {
           return;
         }
-        if (journalOpen || achievementsOpen || zoneModal.classList.contains('active')) {
+        if (journalOpen || achievementsOpen || zoneModal.classList.contains('active') || spiritModalOpen) {
           hideMarkTooltip();
           return;
         }
@@ -3670,6 +4131,62 @@
         }
       }
 
+      function updateSpiritInteractions(time) {
+        if (!spirits.length) {
+          return;
+        }
+        const suspendEncounters = journalOpen || achievementsOpen || zoneModal.classList.contains('active') || spiritModalOpen;
+        const labelOffsetY = -48;
+        const viewportPadding = 120;
+        let visibleLabels = 0;
+        spirits.forEach((spirit) => {
+          const labelElement = spirit.labelElement;
+          if (suspendEncounters) {
+            if (spirit.labelVisible && labelElement) {
+              labelElement.classList.remove('is-visible');
+              labelElement.setAttribute('aria-hidden', 'true');
+              spirit.labelVisible = false;
+            }
+            return;
+          }
+          const dx = player.x - spirit.currentX;
+          const dy = player.y - spirit.currentY;
+          const distance = Math.hypot(dx, dy);
+          const screen = worldToScreen(spirit.currentX, spirit.currentY);
+          const onScreen =
+            screen.x >= -viewportPadding &&
+            screen.y >= -viewportPadding &&
+            screen.x <= viewport.width + viewportPadding &&
+            screen.y <= viewport.height + viewportPadding;
+          const shouldShowLabel = distance <= 400 && onScreen;
+          if (labelElement) {
+            if (shouldShowLabel) {
+              labelElement.style.left = screen.x + 'px';
+              labelElement.style.top = screen.y + labelOffsetY + 'px';
+              if (!spirit.labelVisible) {
+                labelElement.classList.add('is-visible');
+                labelElement.setAttribute('aria-hidden', 'false');
+                spirit.labelVisible = true;
+              }
+              visibleLabels += 1;
+            } else if (spirit.labelVisible) {
+              labelElement.classList.remove('is-visible');
+              labelElement.setAttribute('aria-hidden', 'true');
+              spirit.labelVisible = false;
+            }
+          }
+          if (distance <= 150 && !spirit.sessionEncountered && !spiritModalOpen) {
+            spirit.sessionEncountered = true;
+            recordSpiritEncounter(spirit);
+            triggerSpiritPulse(spirit);
+            showSpiritModal(spirit);
+          }
+        });
+        if (spiritLabelsContainer) {
+          spiritLabelsContainer.setAttribute('aria-hidden', visibleLabels > 0 ? 'false' : 'true');
+        }
+      }
+
       function hideMarkTooltip() {
         if (!markTooltip) {
           return;
@@ -3702,6 +4219,59 @@
           ctx.beginPath();
           ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
           ctx.fill();
+        });
+        ctx.restore();
+      }
+
+      function drawSpirits(time) {
+        if (!spirits.length) {
+          return;
+        }
+        const timeSeconds = time * 0.001;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        spirits.forEach((spirit) => {
+          const screen = worldToScreen(spirit.currentX, spirit.currentY);
+          const padding = 240;
+          if (screen.x < -padding || screen.y < -padding || screen.x > viewport.width + padding || screen.y > viewport.height + padding) {
+            return;
+          }
+          const coreColor = spirit.colors && spirit.colors.core ? spirit.colors.core : '220, 230, 255';
+          const midColor = spirit.colors && spirit.colors.mid ? spirit.colors.mid : coreColor;
+          const outerColor = spirit.colors && spirit.colors.outer ? spirit.colors.outer : midColor;
+          const pulsePhase = reduceMotion ? 0.25 : (Math.sin(timeSeconds * (spirit.pulseSpeed * 820 + 0.9) + spirit.phase) + 1) * 0.5;
+          const speakBoost = spirit.speakPulse > 0 ? spirit.speakPulse : 0;
+          const auraStrength = 0.45 + pulsePhase * 0.4 + speakBoost * 0.6;
+          const auraRadius = 38 + spirit.orbitRadius * 0.08 + auraStrength * 22;
+          const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, auraRadius);
+          gradient.addColorStop(0, 'rgba(' + coreColor + ', ' + Math.min(0.98, 0.72 + speakBoost * 0.28) + ')');
+          gradient.addColorStop(0.45, 'rgba(' + midColor + ', ' + Math.min(0.85, 0.3 + auraStrength * 0.45) + ')');
+          gradient.addColorStop(1, 'rgba(' + outerColor + ', 0)');
+          ctx.fillStyle = gradient;
+          ctx.globalAlpha = 1;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, auraRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          const coreRadius = Math.max(8, auraRadius * 0.32);
+          ctx.fillStyle = 'rgba(' + coreColor + ', ' + Math.min(1, 0.8 + auraStrength * 0.18) + ')';
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, coreRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          if (!reduceMotion) {
+            ctx.save();
+            const ringRadius = auraRadius * (1.12 + auraStrength * 0.16);
+            ctx.shadowBlur = 24 + auraStrength * 24;
+            ctx.shadowColor = 'rgba(' + coreColor + ', ' + (0.28 + auraStrength * 0.28) + ')';
+            ctx.strokeStyle = 'rgba(' + midColor + ', ' + (0.35 + auraStrength * 0.3) + ')';
+            ctx.lineWidth = 1.8 + auraStrength * 1.9;
+            ctx.globalAlpha = 0.65 + speakBoost * 0.15;
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, ringRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+          }
         });
         ctx.restore();
       }
@@ -4933,6 +5503,7 @@
           renderAchievements();
         }
         updateCamera(delta);
+        updateSpirits(time, deltaMs);
         updateParticles(delta);
         updateFragments(time);
         updateWisps(time, deltaMs);
@@ -4941,6 +5512,7 @@
         updateSecretProximity();
         updateSecretBursts(deltaMs);
         updateMarkProximity();
+        updateSpiritInteractions(time);
         if (auroraRenderer) {
           auroraRenderer.render(time, reduceMotion);
         }
@@ -4952,6 +5524,14 @@
       }
 
       function updatePlayer(delta) {
+        if (spiritModalOpen) {
+          const damping = Math.pow(0.86, delta);
+          player.vx *= damping;
+          player.vy *= damping;
+          player.x = clamp(player.x + player.vx * delta, 0, world.width);
+          player.y = clamp(player.y + player.vy * delta, 0, world.height);
+          return;
+        }
         let inputX = 0;
         let inputY = 0;
         if (inputState.left) inputX -= 1;
@@ -5087,6 +5667,32 @@
         });
       }
 
+      function updateSpirits(time, deltaMs) {
+        if (!spirits.length) {
+          return;
+        }
+        const timeSeconds = time * 0.001;
+        const deltaSeconds = Math.max(0, (deltaMs || 0) / 1000);
+        spirits.forEach((spirit) => {
+          if (reduceMotion) {
+            spirit.currentX = spirit.baseX;
+            spirit.currentY = spirit.baseY;
+          } else {
+            const orbitAngle = timeSeconds * (0.05 + spirit.wanderSpeed * 4.2) + spirit.phase;
+            const swayAngle = timeSeconds * (0.18 + spirit.swaySpeed * 3.1) + spirit.driftPhase;
+            const driftAngle = timeSeconds * (0.12 + spirit.wanderSpeed * 3.6) + spirit.phase * 0.5;
+            const offsetX = Math.cos(orbitAngle) * spirit.orbitRadius + Math.cos(swayAngle) * spirit.driftRadius * 0.5;
+            const offsetY = Math.sin(orbitAngle * 0.92) * spirit.orbitRadius + Math.sin(driftAngle) * spirit.driftRadius * 0.6;
+            spirit.currentX = clamp(spirit.baseX + offsetX, 0, world.width);
+            spirit.currentY = clamp(spirit.baseY + offsetY, 0, world.height);
+          }
+          if (spirit.speakPulse > 0) {
+            const decayRate = reduceMotion ? 1.2 : 0.7;
+            spirit.speakPulse = Math.max(0, spirit.speakPulse - deltaSeconds * decayRate);
+          }
+        });
+      }
+
       function drawScene(time) {
         ctx.clearRect(0, 0, viewport.width, viewport.height);
         drawBackground();
@@ -5094,6 +5700,7 @@
         drawStars();
         weatherSystem.draw(time);
         drawWisps(time);
+        drawSpirits(time);
         drawConstellations(time);
         drawShootingStars(time);
         drawZones(time);
