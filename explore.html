@@ -1547,6 +1547,8 @@
       const spiritModalName = spiritModal ? spiritModal.querySelector('.spirit-modal__name') : null;
       const spiritModalMessage = spiritModal ? spiritModal.querySelector('.spirit-modal__message') : null;
       const spiritModalClose = spiritModal ? spiritModal.querySelector('.spirit-modal__close') : null;
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      let reduceMotion = prefersReducedMotion.matches;
 
       function createAuroraRenderer(canvasElement, context) {
         if (!canvasElement || !context) {
@@ -1784,6 +1786,15 @@
       let aKeyDownTimestamp = null;
       let sKeyDownTimestamp = null;
       const audioManager = createAmbientAudioManager();
+      const soundEffects = createSoundEffectsManager({
+        audioManager,
+        isAudioEnabled: () => audioEnabled,
+        getReduceMotion: () => reduceMotion
+      });
+      const registerAudioInteraction = () => soundEffects.registerUserInteraction();
+      window.addEventListener('pointerdown', registerAudioInteraction, { passive: true });
+      window.addEventListener('touchstart', registerAudioInteraction, { passive: true });
+      window.addEventListener('keydown', registerAudioInteraction);
       updateAudioIndicator();
 
       const zones = [
@@ -2643,20 +2654,6 @@
       let hoverPoint = null;
       let hoveredZone = null;
 
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-      let reduceMotion = prefersReducedMotion.matches;
-      if (prefersReducedMotion.addEventListener) {
-        prefersReducedMotion.addEventListener('change', (event) => {
-          reduceMotion = event.matches;
-          weatherSystem.setReduceMotion(reduceMotion);
-        });
-      } else if (prefersReducedMotion.addListener) {
-        prefersReducedMotion.addListener((event) => {
-          reduceMotion = event.matches;
-          weatherSystem.setReduceMotion(reduceMotion);
-        });
-      }
-
       const starCount = 200;
       const stars = Array.from({ length: starCount }, () => ({
         x: Math.random() * world.width,
@@ -2700,6 +2697,17 @@
 
       const weatherSystem = createWeatherSystem(reduceMotion);
       weatherSystem.setReduceMotion(reduceMotion);
+      if (prefersReducedMotion.addEventListener) {
+        prefersReducedMotion.addEventListener('change', (event) => {
+          reduceMotion = event.matches;
+          weatherSystem.setReduceMotion(reduceMotion);
+        });
+      } else if (prefersReducedMotion.addListener) {
+        prefersReducedMotion.addListener((event) => {
+          reduceMotion = event.matches;
+          weatherSystem.setReduceMotion(reduceMotion);
+        });
+      }
 
       const dayNightCycle = createDayNightCycle();
       let currentCycleState = dayNightCycle.getState();
@@ -3117,6 +3125,7 @@
         if (!achievementToastsContainer) {
           return;
         }
+        soundEffects.playAchievementUnlock();
         const toast = document.createElement('div');
         toast.className = 'achievement-toast';
 
@@ -3420,6 +3429,7 @@
           statsPanelNeedsRender = true;
         }
         const record = journalData.zones[zoneName];
+        const isFirstVisit = !record;
         if (record) {
           record.visits += 1;
           record.lastVisited = now;
@@ -3428,6 +3438,9 @@
             visits: 1,
             lastVisited: now
           };
+        }
+        if (isFirstVisit) {
+          soundEffects.playZoneEntry();
         }
         markJournalDirty();
         achievementsNeedsRender = true;
@@ -3878,6 +3891,7 @@
         spiritModal.setAttribute('aria-hidden', 'false');
         spiritModal.classList.add('is-visible');
         spiritModalOpen = true;
+        soundEffects.playSpiritEncounter();
         requestAnimationFrame(() => {
           if (spiritModalClose) {
             try {
@@ -4187,6 +4201,7 @@
               updateSecretsHUD();
               sessionSecretsFound += 1;
               statsPanelNeedsRender = true;
+              soundEffects.playSecretDiscovery();
               newlyDiscoveredSecret = secret;
             }
           });
@@ -5612,7 +5627,291 @@
             applyZone(zoneKey);
           },
           refresh,
-          setSecretProximity
+          setSecretProximity,
+          getContext() {
+            if (!context || context.state === 'closed') {
+              return null;
+            }
+            return context;
+          }
+        };
+      }
+
+      function createSoundEffectsManager(options) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        const noop = {
+          registerUserInteraction() {},
+          playSecretDiscovery() {},
+          playZoneEntry() {},
+          playAchievementUnlock() {},
+          playSpiritEncounter() {}
+        };
+        if (!AudioContextClass) {
+          return noop;
+        }
+
+        const settings = options || {};
+        const audioManager = settings.audioManager || null;
+        const getReduceMotion = typeof settings.getReduceMotion === 'function' ? settings.getReduceMotion : () => false;
+        const isAudioEnabled = typeof settings.isAudioEnabled === 'function' ? settings.isAudioEnabled : () => false;
+        const BASE_GAIN = 0.15;
+
+        let localContext = null;
+        let localGain = null;
+        let ambientContext = null;
+        let ambientGain = null;
+        let hasUserGesture = false;
+
+        function useAmbientContext() {
+          if (!audioManager || typeof audioManager.getContext !== 'function' || !isAudioEnabled()) {
+            return null;
+          }
+          const ctx = audioManager.getContext();
+          if (!ctx || ctx.state === 'closed') {
+            return null;
+          }
+          if (ambientContext !== ctx || !ambientGain) {
+            ambientContext = ctx;
+            ambientGain = ctx.createGain();
+            ambientGain.gain.value = BASE_GAIN;
+            ambientGain.connect(ctx.destination);
+          }
+          return { context: ctx, output: ambientGain, isAmbient: true };
+        }
+
+        function ensureLocalContext() {
+          if (!localContext || localContext.state === 'closed') {
+            try {
+              localContext = new AudioContextClass();
+            } catch (error) {
+              localContext = null;
+              return null;
+            }
+            localGain = localContext.createGain();
+            localGain.gain.value = BASE_GAIN;
+            localGain.connect(localContext.destination);
+            if (hasUserGesture && localContext.state === 'suspended') {
+              localContext.resume().catch(() => {});
+            }
+          }
+          return localContext ? { context: localContext, output: localGain, isAmbient: false } : null;
+        }
+
+        function resolveContext() {
+          return useAmbientContext() || ensureLocalContext();
+        }
+
+        function ensureRunning(resolved) {
+          if (!resolved || !resolved.context) {
+            return false;
+          }
+          const ctx = resolved.context;
+          if (resolved.isAmbient) {
+            if (ctx.state === 'suspended' && hasUserGesture) {
+              ctx.resume().catch(() => {});
+            }
+            return ctx.state !== 'closed';
+          }
+          if (ctx.state === 'suspended') {
+            if (!hasUserGesture) {
+              return false;
+            }
+            ctx.resume().catch(() => {});
+          }
+          return ctx.state !== 'closed';
+        }
+
+        function withContext(runner) {
+          if (getReduceMotion()) {
+            return;
+          }
+          const resolved = resolveContext();
+          if (!resolved) {
+            return;
+          }
+          if (!ensureRunning(resolved)) {
+            return;
+          }
+          runner(resolved.context, resolved.output);
+        }
+
+        function createEnvelope(ctx, output) {
+          const gain = ctx.createGain();
+          gain.gain.setValueAtTime(0, ctx.currentTime);
+          gain.connect(output);
+          return gain;
+        }
+
+        function playSecretDiscovery() {
+          withContext((ctx, output) => {
+            const gain = createEnvelope(ctx, output);
+            const oscPrimary = ctx.createOscillator();
+            const oscOvertone = ctx.createOscillator();
+            oscPrimary.type = 'sine';
+            oscOvertone.type = 'sine';
+            const now = ctx.currentTime;
+            const stopTime = now + 0.45;
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(1, now + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, stopTime);
+            oscPrimary.frequency.setValueAtTime(800, now);
+            oscOvertone.frequency.setValueAtTime(1200, now);
+            oscPrimary.connect(gain);
+            oscOvertone.connect(gain);
+            oscPrimary.start(now);
+            oscOvertone.start(now);
+            oscPrimary.stop(stopTime);
+            oscOvertone.stop(stopTime);
+            let cleaned = false;
+            const cleanup = () => {
+              if (cleaned) {
+                return;
+              }
+              cleaned = true;
+              oscPrimary.disconnect();
+              oscOvertone.disconnect();
+              gain.disconnect();
+            };
+            oscPrimary.onended = cleanup;
+            oscOvertone.onended = cleanup;
+          });
+        }
+
+        function playZoneEntry() {
+          withContext((ctx, output) => {
+            const gain = createEnvelope(ctx, output);
+            const now = ctx.currentTime;
+            const sustainEnd = now + 0.3;
+            const stopTime = now + 0.6;
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(1, now + 0.05);
+            gain.gain.setValueAtTime(0.8, sustainEnd);
+            gain.gain.exponentialRampToValueAtTime(0.001, stopTime);
+            const fundamental = ctx.createOscillator();
+            fundamental.type = 'sine';
+            fundamental.frequency.setValueAtTime(300, now);
+            const overtone = ctx.createOscillator();
+            overtone.type = 'sine';
+            overtone.frequency.setValueAtTime(450, now);
+            const overtoneGain = ctx.createGain();
+            overtoneGain.gain.value = 0.4;
+            fundamental.connect(gain);
+            overtone.connect(overtoneGain);
+            overtoneGain.connect(gain);
+            fundamental.start(now);
+            overtone.start(now);
+            fundamental.stop(stopTime);
+            overtone.stop(stopTime);
+            let cleaned = false;
+            const cleanup = () => {
+              if (cleaned) {
+                return;
+              }
+              cleaned = true;
+              fundamental.disconnect();
+              overtone.disconnect();
+              overtoneGain.disconnect();
+              gain.disconnect();
+            };
+            fundamental.onended = cleanup;
+            overtone.onended = cleanup;
+          });
+        }
+
+        function playAchievementUnlock() {
+          withContext((ctx, output) => {
+            const gain = createEnvelope(ctx, output);
+            const now = ctx.currentTime;
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(1, now + 0.03);
+            gain.gain.setValueAtTime(0.85, now + 0.3);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+            const notes = [440, 550, 660];
+            const oscillators = [];
+            notes.forEach((frequency, index) => {
+              const osc = ctx.createOscillator();
+              osc.type = 'triangle';
+              const startTime = now + index * 0.15;
+              const stopTime = startTime + 0.15;
+              osc.frequency.setValueAtTime(frequency, startTime);
+              osc.connect(gain);
+              osc.start(startTime);
+              osc.stop(stopTime);
+              oscillators.push(osc);
+            });
+            let remaining = oscillators.length;
+            const cleanup = () => {
+              remaining -= 1;
+              if (remaining > 0) {
+                return;
+              }
+              oscillators.forEach((osc) => {
+                osc.disconnect();
+              });
+              gain.disconnect();
+            };
+            oscillators.forEach((osc) => {
+              osc.onended = cleanup;
+            });
+          });
+        }
+
+        function playSpiritEncounter() {
+          withContext((ctx, output) => {
+            const gain = createEnvelope(ctx, output);
+            const now = ctx.currentTime;
+            const stopTime = now + 0.8;
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(1, now + 0.05);
+            gain.gain.setValueAtTime(0.75, now + 0.4);
+            gain.gain.exponentialRampToValueAtTime(0.001, stopTime);
+            const tone = ctx.createOscillator();
+            tone.type = 'sine';
+            tone.frequency.setValueAtTime(200, now);
+            const vibrato = ctx.createOscillator();
+            vibrato.type = 'sine';
+            vibrato.frequency.value = 5;
+            const vibratoGain = ctx.createGain();
+            vibratoGain.gain.value = 6;
+            vibrato.connect(vibratoGain);
+            vibratoGain.connect(tone.frequency);
+            tone.connect(gain);
+            tone.start(now);
+            vibrato.start(now);
+            tone.stop(stopTime);
+            vibrato.stop(stopTime);
+            let cleaned = false;
+            const cleanup = () => {
+              if (cleaned) {
+                return;
+              }
+              cleaned = true;
+              vibrato.disconnect();
+              vibratoGain.disconnect();
+              tone.disconnect();
+              gain.disconnect();
+            };
+            tone.onended = cleanup;
+            vibrato.onended = cleanup;
+          });
+        }
+
+        return {
+          registerUserInteraction() {
+            if (!hasUserGesture) {
+              hasUserGesture = true;
+            }
+            if (localContext && localContext.state === 'suspended') {
+              localContext.resume().catch(() => {});
+            }
+            if (ambientContext && ambientContext.state === 'suspended') {
+              ambientContext.resume().catch(() => {});
+            }
+          },
+          playSecretDiscovery,
+          playZoneEntry,
+          playAchievementUnlock,
+          playSpiritEncounter
         };
       }
 
