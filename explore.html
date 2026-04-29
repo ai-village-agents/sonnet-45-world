@@ -1394,7 +1394,7 @@
   <canvas id="auroraCanvas" aria-hidden="true"></canvas>
   <canvas id="worldCanvas"></canvas>
   <div id="titleOverlay" class="overlay">The Persistence Garden – Explorable World</div>
-  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • J - Journal • Tap S for stats • Tap A for achievements • Shift+A toggles audio <span id="audioIndicator" role="status" aria-live="polite">AUDIO: OFF</span></div>
+  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • J - Journal • Tap S for stats • Tap A for achievements • H toggles journey trails • Shift+A toggles audio <span id="audioIndicator" role="status" aria-live="polite">AUDIO: OFF</span></div>
   <div id="zoneOverlay" class="overlay"></div>
   <div id="zoneBadge" role="status" aria-live="polite" aria-atomic="true"></div>
   <div id="eventBanner" class="event-banner" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true">
@@ -1510,7 +1510,7 @@
           </div>
           <div class="journal-stats">
             <div class="journal-stats__item">
-              <span class="journal-stats__label">Distance Traveled</span>
+              <span class="journal-stats__label">Distance Traveled (All Sessions)</span>
               <span class="journal-stats__value" data-journal-distance>0 px</span>
             </div>
             <div class="journal-stats__item">
@@ -1521,6 +1521,15 @@
               <span class="journal-stats__label">Zones Visited</span>
               <span class="journal-stats__value" data-journal-zone-count>0 visited</span>
               <span class="journal-stats__note" data-journal-total-visits>Total visits: 0</span>
+            </div>
+            <div class="journal-stats__item">
+              <span class="journal-stats__label">Journey Segments</span>
+              <span class="journal-stats__value" data-journal-segments>0 unique</span>
+            </div>
+            <div class="journal-stats__item">
+              <span class="journal-stats__label">Most Visited Coordinate</span>
+              <span class="journal-stats__value" data-journal-hotspot>—</span>
+              <span class="journal-stats__note" data-journal-hotspot-count></span>
             </div>
           </div>
         </section>
@@ -1597,6 +1606,9 @@
       const journalTimeValue = journalOverlay.querySelector('[data-journal-time]');
       const journalZoneCountValue = journalOverlay.querySelector('[data-journal-zone-count]');
       const journalTotalVisitsValue = journalOverlay.querySelector('[data-journal-total-visits]');
+      const journalSegmentsValue = journalOverlay.querySelector('[data-journal-segments]');
+      const journalHotspotValue = journalOverlay.querySelector('[data-journal-hotspot]');
+      const journalHotspotCountValue = journalOverlay.querySelector('[data-journal-hotspot-count]');
       const achievementsOverlay = document.getElementById('achievementsOverlay');
       const achievementsCloseButton = achievementsOverlay ? achievementsOverlay.querySelector('.achievements-overlay__close') : null;
       const achievementsList = achievementsOverlay ? achievementsOverlay.querySelector('[data-achievements-list]') : null;
@@ -2234,6 +2246,453 @@
         return state;
       }
 
+      function createJourneyTrailManager(options) {
+        const noop = {
+          recordStep() {},
+          syncPosition() {},
+          getSessions() {
+            return [];
+          },
+          getStats() {
+            return { totalDistance: 0, uniqueSegments: 0, hotspot: null };
+          },
+          flush() {}
+        };
+        if (typeof window === 'undefined') {
+          return noop;
+        }
+
+        let storageAvailable = false;
+        try {
+          storageAvailable = Boolean(window.localStorage);
+        } catch (error) {
+          storageAvailable = false;
+        }
+
+        const settings = Object.assign({
+          storageKey: 'journeyTrails',
+          sampleDistance: 100,
+          sessionLimit: 500,
+          totalLimit: 2000,
+          quantization: 50,
+          world: { width: 5000, height: 5000 }
+        }, options || {});
+
+        const storageKey = String(settings.storageKey || 'journeyTrails');
+        const sampleDistance = Math.max(10, Number(settings.sampleDistance) || 100);
+        const sessionLimit = Math.max(1, Number(settings.sessionLimit) || 500);
+        const totalLimit = Math.max(sessionLimit, Number(settings.totalLimit) || 2000);
+        const quantization = Math.max(1, Number(settings.quantization) || 50);
+        const worldWidth = settings.world && typeof settings.world.width === 'number'
+          ? Math.max(0, settings.world.width)
+          : 5000;
+        const worldHeight = settings.world && typeof settings.world.height === 'number'
+          ? Math.max(0, settings.world.height)
+          : 5000;
+
+        function createEmptyState() {
+          return {
+            sessions: [],
+            totalDistance: 0,
+            coordinateVisits: {},
+            segmentKeys: {},
+            uniqueSegments: 0
+          };
+        }
+
+        function pickColorIndex(seed) {
+          const count = JOURNEY_TRAIL_COLOR_PALETTES.length || 1;
+          if (count <= 0) {
+            return 0;
+          }
+          if (typeof seed === 'number' && Number.isFinite(seed)) {
+            return Math.abs(Math.floor(seed)) % count;
+          }
+          return Math.floor(Math.random() * count) % count;
+        }
+
+        function sanitizePoint(raw) {
+          if (!raw || typeof raw !== 'object') {
+            return null;
+          }
+          const x = typeof raw.x === 'number' && Number.isFinite(raw.x) ? clamp(raw.x, 0, worldWidth) : null;
+          const y = typeof raw.y === 'number' && Number.isFinite(raw.y) ? clamp(raw.y, 0, worldHeight) : null;
+          if (x === null || y === null) {
+            return null;
+          }
+          const timestamp = typeof raw.timestamp === 'number' && Number.isFinite(raw.timestamp) ? raw.timestamp : Date.now();
+          return { x, y, timestamp };
+        }
+
+        function sanitizeSession(raw, index) {
+          if (!raw || typeof raw !== 'object') {
+            return null;
+          }
+          const id = typeof raw.id === 'number' && Number.isFinite(raw.id) ? raw.id : Date.now() + index;
+          const startedAt = typeof raw.startedAt === 'number' && Number.isFinite(raw.startedAt) ? raw.startedAt : id;
+          const paletteSeed = raw.colorIndex !== undefined ? raw.colorIndex : id + index;
+          const colorIndex = pickColorIndex(paletteSeed);
+          const points = Array.isArray(raw.points)
+            ? raw.points.map(sanitizePoint).filter(Boolean).slice(-sessionLimit)
+            : [];
+          return {
+            id,
+            startedAt,
+            colorIndex,
+            points
+          };
+        }
+
+        function loadState() {
+          if (!storageAvailable) {
+            return createEmptyState();
+          }
+          try {
+            const stored = window.localStorage.getItem(storageKey);
+            if (!stored) {
+              return createEmptyState();
+            }
+            const parsed = JSON.parse(stored);
+            if (!parsed || typeof parsed !== 'object') {
+              return createEmptyState();
+            }
+            const sessions = Array.isArray(parsed.sessions)
+              ? parsed.sessions.map(sanitizeSession).filter(Boolean)
+              : [];
+            const totalDistance = typeof parsed.totalDistance === 'number' && Number.isFinite(parsed.totalDistance)
+              ? Math.max(0, parsed.totalDistance)
+              : 0;
+            const coordinateVisits = parsed.coordinateVisits && typeof parsed.coordinateVisits === 'object'
+              ? { ...parsed.coordinateVisits }
+              : {};
+            const segmentKeys = parsed.segmentKeys && typeof parsed.segmentKeys === 'object'
+              ? { ...parsed.segmentKeys }
+              : {};
+            const uniqueSegments = typeof parsed.uniqueSegments === 'number' && Number.isFinite(parsed.uniqueSegments)
+              ? Math.max(0, parsed.uniqueSegments)
+              : Object.keys(segmentKeys).length;
+            return {
+              sessions,
+              totalDistance,
+              coordinateVisits,
+              segmentKeys,
+              uniqueSegments
+            };
+          } catch (error) {
+            return createEmptyState();
+          }
+        }
+
+        const state = loadState();
+        let totalStoredPoints = state.sessions.reduce((sum, session) => sum + session.points.length, 0);
+
+        function clampPoint(x, y) {
+          return {
+            x: clamp(x, 0, worldWidth),
+            y: clamp(y, 0, worldHeight)
+          };
+        }
+
+        function quantizeCoordinate(x, y) {
+          const qx = Math.round(x / quantization) * quantization;
+          const qy = Math.round(y / quantization) * quantization;
+          return qx + '|' + qy;
+        }
+
+        function registerCoordinate(point) {
+          const key = quantizeCoordinate(point.x, point.y);
+          const nextCount = (state.coordinateVisits[key] || 0) + 1;
+          state.coordinateVisits[key] = nextCount;
+        }
+
+        function createSegmentKey(a, b) {
+          const ax = Math.round(a.x);
+          const ay = Math.round(a.y);
+          const bx = Math.round(b.x);
+          const by = Math.round(b.y);
+          return ax + ',' + ay + '|' + bx + ',' + by;
+        }
+
+        function registerSegment(prev, next) {
+          if (!prev) {
+            return;
+          }
+          const key = createSegmentKey(prev, next);
+          if (!state.segmentKeys[key]) {
+            state.segmentKeys[key] = 1;
+            state.uniqueSegments += 1;
+          } else {
+            state.segmentKeys[key] += 1;
+          }
+        }
+
+        function enforceSessionLimit(session) {
+          if (!session || !Array.isArray(session.points)) {
+            return;
+          }
+          if (session.points.length <= sessionLimit) {
+            return;
+          }
+          const excess = session.points.length - sessionLimit;
+          session.points.splice(0, excess);
+          totalStoredPoints -= excess;
+        }
+
+        function enforceTotalLimit() {
+          while (totalStoredPoints > totalLimit && state.sessions.length) {
+            const oldest = state.sessions[0];
+            if (!oldest || !Array.isArray(oldest.points) || !oldest.points.length) {
+              state.sessions.shift();
+              continue;
+            }
+            const overshoot = totalStoredPoints - totalLimit;
+            const removeCount = Math.min(overshoot, oldest.points.length);
+            oldest.points.splice(0, removeCount);
+            totalStoredPoints -= removeCount;
+            if (!oldest.points.length && state.sessions.length > 1) {
+              state.sessions.shift();
+            }
+          }
+        }
+
+        let currentSession = (function createSession() {
+          const session = {
+            id: Date.now(),
+            startedAt: Date.now(),
+            colorIndex: pickColorIndex(Date.now()),
+            points: []
+          };
+          state.sessions.push(session);
+          return session;
+        })();
+
+        enforceTotalLimit();
+
+        let lastSamplePoint = null;
+        let distanceSinceLastSample = 0;
+        let saveHandle = null;
+        let dirty = false;
+
+        function scheduleSave() {
+          if (!storageAvailable) {
+            return;
+          }
+          if (saveHandle) {
+            return;
+          }
+          saveHandle = window.setTimeout(() => {
+            saveHandle = null;
+            saveState();
+          }, 800);
+        }
+
+        function markDirty() {
+          dirty = true;
+          scheduleSave();
+        }
+
+        function saveState() {
+          if (!dirty || !storageAvailable) {
+            dirty = false;
+            return;
+          }
+          const payload = {
+            sessions: state.sessions.map((session) => ({
+              id: session.id,
+              startedAt: session.startedAt,
+              colorIndex: session.colorIndex,
+              points: session.points.map((point) => ({
+                x: point.x,
+                y: point.y,
+                timestamp: point.timestamp
+              }))
+            })),
+            totalDistance: state.totalDistance,
+            coordinateVisits: state.coordinateVisits,
+            segmentKeys: state.segmentKeys,
+            uniqueSegments: state.uniqueSegments
+          };
+          try {
+            window.localStorage.setItem(storageKey, JSON.stringify(payload));
+          } catch (error) {
+            // ignore storage errors
+          }
+          dirty = false;
+        }
+
+        function addPoint(x, y) {
+          const clamped = clampPoint(x, y);
+          const point = {
+            x: clamped.x,
+            y: clamped.y,
+            timestamp: Date.now()
+          };
+          registerSegment(lastSamplePoint, point);
+          lastSamplePoint = { x: point.x, y: point.y };
+          registerCoordinate(point);
+
+          currentSession.points.push(point);
+          totalStoredPoints += 1;
+
+          enforceSessionLimit(currentSession);
+          enforceTotalLimit();
+          markDirty();
+        }
+
+        function recordStep(prevX, prevY, x, y) {
+          if (!Number.isFinite(x) || !Number.isFinite(y)) {
+            return;
+          }
+          const startX = Number.isFinite(prevX) ? prevX : x;
+          const startY = Number.isFinite(prevY) ? prevY : y;
+          const dx = x - startX;
+          const dy = y - startY;
+          const segmentDistance = Math.hypot(dx, dy);
+          if (!Number.isFinite(segmentDistance) || segmentDistance === 0) {
+            return;
+          }
+
+          state.totalDistance += segmentDistance;
+          markDirty();
+
+          let segmentStartX = startX;
+          let segmentStartY = startY;
+          let remainingDistance = segmentDistance;
+
+          while (distanceSinceLastSample + remainingDistance >= sampleDistance && remainingDistance > 0.0001) {
+            const distanceNeeded = sampleDistance - distanceSinceLastSample;
+            const ratio = remainingDistance > 0 ? Math.min(1, distanceNeeded / remainingDistance) : 1;
+            const sampleX = segmentStartX + (x - segmentStartX) * ratio;
+            const sampleY = segmentStartY + (y - segmentStartY) * ratio;
+            addPoint(sampleX, sampleY);
+            segmentStartX = sampleX;
+            segmentStartY = sampleY;
+            distanceSinceLastSample = 0;
+            remainingDistance = Math.hypot(x - segmentStartX, y - segmentStartY);
+          }
+
+          distanceSinceLastSample += remainingDistance;
+          if (distanceSinceLastSample > sampleDistance) {
+            distanceSinceLastSample = sampleDistance;
+          }
+        }
+
+        function syncPosition(x, y) {
+          if (!Number.isFinite(x) || !Number.isFinite(y)) {
+            return;
+          }
+          const clamped = clampPoint(x, y);
+          if (!currentSession.points.length) {
+            lastSamplePoint = null;
+            addPoint(clamped.x, clamped.y);
+          } else {
+            const lastPoint = currentSession.points[currentSession.points.length - 1];
+            lastSamplePoint = { x: lastPoint.x, y: lastPoint.y };
+          }
+          distanceSinceLastSample = 0;
+        }
+
+        function getHotspot() {
+          let bestKey = null;
+          let bestCount = 0;
+          Object.keys(state.coordinateVisits).forEach((key) => {
+            const count = state.coordinateVisits[key];
+            if (count > bestCount) {
+              bestKey = key;
+              bestCount = count;
+            }
+          });
+          if (!bestKey) {
+            return null;
+          }
+          const [rawX, rawY] = bestKey.split('|');
+          return {
+            x: Number(rawX),
+            y: Number(rawY),
+            visits: bestCount
+          };
+        }
+
+        function flush() {
+          if (saveHandle) {
+            clearTimeout(saveHandle);
+            saveHandle = null;
+          }
+          saveState();
+        }
+
+        function getSessions() {
+          return state.sessions;
+        }
+
+        function getStats() {
+          return {
+            totalDistance: state.totalDistance,
+            uniqueSegments: state.uniqueSegments,
+            hotspot: getHotspot()
+          };
+        }
+
+        return {
+          recordStep,
+          syncPosition,
+          getSessions,
+          getStats,
+          flush
+        };
+      }
+
+      function loadJourneyTrailVisibility() {
+        if (typeof window === 'undefined') {
+          return true;
+        }
+        try {
+          if (!window.localStorage) {
+            return true;
+          }
+        } catch (error) {
+          return true;
+        }
+        try {
+          const stored = window.localStorage.getItem(JOURNEY_TRAILS_VISIBILITY_KEY);
+          if (stored === null) {
+            return true;
+          }
+          return stored === '1' || stored === 'true';
+        } catch (error) {
+          return true;
+        }
+      }
+
+      function saveJourneyTrailVisibility(enabled) {
+        if (typeof window === 'undefined') {
+          return;
+        }
+        try {
+          if (!window.localStorage) {
+            return;
+          }
+        } catch (error) {
+          return;
+        }
+        try {
+          window.localStorage.setItem(JOURNEY_TRAILS_VISIBILITY_KEY, enabled ? '1' : '0');
+        } catch (error) {
+          /* ignore persistence errors */
+        }
+      }
+
+      function toggleJourneyTrails(forceState) {
+        const desired = typeof forceState === 'boolean' ? forceState : !journeyTrailsEnabled;
+        if (desired === journeyTrailsEnabled) {
+          return journeyTrailsEnabled;
+        }
+        journeyTrailsEnabled = desired;
+        saveJourneyTrailVisibility(journeyTrailsEnabled);
+        showEnterOverlay(journeyTrailsEnabled ? 'Journey trails enabled' : 'Journey trails hidden', 1800);
+        return journeyTrailsEnabled;
+      }
+
       let journalData = createDefaultJournalData();
       let achievementsState = createDefaultAchievementsState();
       let journalOpen = false;
@@ -2244,6 +2703,46 @@
       let journalSaveHandle = null;
       let achievementsNeedsRender = true;
       const numberFormatter = typeof Intl !== 'undefined' && Intl.NumberFormat ? new Intl.NumberFormat() : { format: (value) => String(value) };
+      const JOURNEY_TRAILS_STORAGE_KEY = 'persistenceGardenJourneyTrails';
+      const JOURNEY_TRAILS_VISIBILITY_KEY = 'persistenceGardenJourneyTrailsVisible';
+      const JOURNEY_TRAIL_SAMPLE_DISTANCE = 100;
+      const JOURNEY_TRAIL_SESSION_LIMIT = 500;
+      const JOURNEY_TRAIL_TOTAL_LIMIT = 2000;
+      const JOURNEY_TRAIL_VISIT_QUANTIZATION = 50;
+      const JOURNEY_TRAIL_COLOR_PALETTES = [
+        [
+          { r: 120, g: 220, b: 255 },
+          { r: 180, g: 170, b: 255 }
+        ],
+        [
+          { r: 170, g: 255, b: 210 },
+          { r: 120, g: 210, b: 255 }
+        ],
+        [
+          { r: 255, g: 200, b: 160 },
+          { r: 255, g: 160, b: 220 }
+        ],
+        [
+          { r: 190, g: 170, b: 255 },
+          { r: 140, g: 240, b: 220 }
+        ],
+        [
+          { r: 255, g: 220, b: 190 },
+          { r: 190, g: 255, b: 230 }
+        ]
+      ];
+
+      const journeyTrailManager = createJourneyTrailManager({
+        storageKey: JOURNEY_TRAILS_STORAGE_KEY,
+        sampleDistance: JOURNEY_TRAIL_SAMPLE_DISTANCE,
+        sessionLimit: JOURNEY_TRAIL_SESSION_LIMIT,
+        totalLimit: JOURNEY_TRAIL_TOTAL_LIMIT,
+        quantization: JOURNEY_TRAIL_VISIT_QUANTIZATION,
+        world
+      });
+
+      let journeyTrailsEnabled = loadJourneyTrailVisibility();
+      journeyTrailManager.syncPosition(player.x, player.y);
 
       const playerTrail = [];
       const playerGradientTrail = [];
@@ -2734,6 +3233,16 @@
         vy: (Math.random() - 0.5) * 0.3
       }));
 
+      const reactiveParticleCount = 36;
+      const reactiveParticles = Array.from({ length: reactiveParticleCount }, () => createReactiveParticle());
+
+      const reactiveColorStops = [
+        { r: 120, g: 220, b: 255 },
+        { r: 176, g: 160, b: 255 },
+        { r: 255, g: 200, b: 170 },
+        { r: 255, g: 215, b: 120 }
+      ];
+
       const fragmentsWords = [
         'persistence', 'patterns', 'incremental', 'L20', 'zero-damage',
         'streak', 'journey', 'garden', 'marks', 'portal',
@@ -2755,6 +3264,43 @@
           hue: Math.random() > 0.5 ? 190 : 275
         };
       });
+
+      function createReactiveParticle() {
+        const angle = Math.random() * Math.PI * 2;
+        const baseSpeed = randomRange(0.05, 0.12);
+        return {
+          x: Math.random() * world.width,
+          y: Math.random() * world.height,
+          vx: Math.cos(angle) * baseSpeed,
+          vy: Math.sin(angle) * baseSpeed,
+          baseSpeed,
+          wanderAngle: Math.random() * Math.PI * 2,
+          wanderSpeed: randomRange(0.18, 0.45),
+          driftStrength: randomRange(0.035, 0.08),
+          shimmerSeed: Math.random() * Math.PI * 2,
+          proximity: 0,
+          shimmerProximity: 0,
+          history: []
+        };
+      }
+
+      function sampleReactiveParticleColor(t) {
+        if (!reactiveColorStops.length) {
+          return { r: 180, g: 210, b: 255 };
+        }
+        const clamped = clamp(t, 0, 1);
+        const scaled = clamped * (reactiveColorStops.length - 1);
+        const index = Math.floor(scaled);
+        const nextIndex = Math.min(index + 1, reactiveColorStops.length - 1);
+        const localT = scaled - index;
+        const start = reactiveColorStops[index];
+        const end = reactiveColorStops[nextIndex];
+        return {
+          r: Math.round(lerp(start.r, end.r, localT)),
+          g: Math.round(lerp(start.g, end.g, localT)),
+          b: Math.round(lerp(start.b, end.b, localT))
+        };
+      }
 
       const weatherSystem = createWeatherSystem(reduceMotion);
       const meteorShowerAudio = createMeteorShowerAudio(audioManager, () => audioEnabled);
@@ -3108,8 +3654,12 @@
 
         const totalDistance = journalData.distance + journalPendingDistance;
         const totalTime = journalData.timeMs + journalPendingTimeMs;
+        const trailsStats = typeof journeyTrailManager.getStats === 'function' ? journeyTrailManager.getStats() : null;
+        const trailsDistance = trailsStats && typeof trailsStats.totalDistance === 'number'
+          ? trailsStats.totalDistance
+          : totalDistance;
         if (journalDistanceValue) {
-          journalDistanceValue.textContent = numberFormatter.format(Math.round(totalDistance)) + ' px';
+          journalDistanceValue.textContent = numberFormatter.format(Math.round(trailsDistance)) + ' px';
         }
         if (journalTimeValue) {
           journalTimeValue.textContent = formatDuration(totalTime);
@@ -3119,6 +3669,25 @@
         }
         if (journalTotalVisitsValue) {
           journalTotalVisitsValue.textContent = 'Total visits: ' + numberFormatter.format(totalZoneVisits);
+        }
+        if (journalSegmentsValue) {
+          const segmentCount = trailsStats && typeof trailsStats.uniqueSegments === 'number' ? trailsStats.uniqueSegments : 0;
+          journalSegmentsValue.textContent = numberFormatter.format(segmentCount) + ' unique';
+        }
+        if (journalHotspotValue) {
+          if (trailsStats && trailsStats.hotspot) {
+            const hotspotX = numberFormatter.format(Math.round(trailsStats.hotspot.x));
+            const hotspotY = numberFormatter.format(Math.round(trailsStats.hotspot.y));
+            journalHotspotValue.textContent = 'x: ' + hotspotX + ' • y: ' + hotspotY;
+            if (journalHotspotCountValue) {
+              journalHotspotCountValue.textContent = 'Visits: ' + numberFormatter.format(trailsStats.hotspot.visits);
+            }
+          } else {
+            journalHotspotValue.textContent = '—';
+            if (journalHotspotCountValue) {
+              journalHotspotCountValue.textContent = '';
+            }
+          }
         }
       }
 
@@ -3558,11 +4127,15 @@
         if (journalOpen || achievementsOpen) {
           journalLastPosition.x = player.x;
           journalLastPosition.y = player.y;
+          journeyTrailManager.syncPosition(player.x, player.y);
           return;
         }
-        const dx = player.x - journalLastPosition.x;
-        const dy = player.y - journalLastPosition.y;
+        const previousX = journalLastPosition.x;
+        const previousY = journalLastPosition.y;
+        const dx = player.x - previousX;
+        const dy = player.y - previousY;
         const moveDistance = Math.hypot(dx, dy);
+        journeyTrailManager.recordStep(previousX, previousY, player.x, player.y);
         sessionDistance += moveDistance;
         sessionTimeMs += deltaMs;
         journalPendingDistance += moveDistance;
@@ -3671,6 +4244,11 @@
         if (event.key === 'j' || event.key === 'J') {
           event.preventDefault();
           toggleJournal();
+          return;
+        }
+        if (event.key === 'h' || event.key === 'H') {
+          event.preventDefault();
+          toggleJourneyTrails();
           return;
         }
         if (achievementsOpen) {
@@ -6711,6 +7289,7 @@
         }
         updateSpirits(time, deltaMs);
         updateParticles(delta);
+        updateReactiveParticles(time, delta, deltaMs);
         updateFragments(time);
         updateWisps(time, deltaMs);
         weatherSystem.update(time, deltaMs);
@@ -6812,6 +7391,126 @@
         });
       }
 
+      function updateReactiveParticles(time, delta, deltaMs) {
+        if (!reactiveParticles.length) {
+          return;
+        }
+        if (reduceMotion) {
+          reactiveParticles.forEach((particle) => {
+            particle.proximity = 0;
+            particle.shimmerProximity = 0;
+            particle.history.length = 0;
+          });
+          return;
+        }
+        const count = reactiveParticles.length;
+        const dt = Math.max(0.001, (deltaMs || 16.666) / 1000);
+        const influenceRadius = 200;
+        const shimmerRadius = 50;
+        const separationDistance = 46;
+        const separationStrength = 0.18;
+        const maxVelocity = 0.45;
+        const playerSpeed = Math.hypot(player.vx, player.vy);
+        const wrap = (value, max) => {
+          if (value < 0) return value + max;
+          if (value > max) return value - max;
+          return value;
+        };
+        for (let i = 0; i < count; i++) {
+          const particle = reactiveParticles[i];
+          particle.proximity = 0;
+          particle.shimmerProximity = 0;
+          let ax = 0;
+          let ay = 0;
+
+          particle.shimmerSeed += particle.wanderSpeed * dt * 0.6;
+
+          particle.wanderAngle += particle.wanderSpeed * dt;
+          ax += Math.cos(particle.wanderAngle) * particle.driftStrength;
+          ay += Math.sin(particle.wanderAngle) * particle.driftStrength;
+
+          const dxPlayer = player.x - particle.x;
+          const dyPlayer = player.y - particle.y;
+          const distanceSq = dxPlayer * dxPlayer + dyPlayer * dyPlayer;
+          if (distanceSq > 0) {
+            const distance = Math.sqrt(distanceSq);
+            if (distance < influenceRadius) {
+              const proximity = 1 - distance / influenceRadius;
+              const dirX = dxPlayer / distance;
+              const dirY = dyPlayer / distance;
+              const speedInfluence = clamp(playerSpeed / 5, 0, 1);
+              const baseForce = proximity * 0.28;
+              if (playerSpeed > 1.2) {
+                const repelForce = baseForce * (0.6 + speedInfluence * 0.8);
+                ax -= dirX * repelForce;
+                ay -= dirY * repelForce;
+              } else {
+                const attractFactor = clamp(1 - playerSpeed / 2.2, 0, 1);
+                const attractForce = baseForce * (0.4 + attractFactor * 0.7);
+                ax += dirX * attractForce;
+                ay += dirY * attractForce;
+              }
+              particle.proximity = proximity;
+              if (distance < shimmerRadius) {
+                particle.shimmerProximity = 1 - distance / shimmerRadius;
+              }
+            }
+          } else {
+            particle.proximity = 1;
+            particle.shimmerProximity = 1;
+          }
+
+          for (let j = 0; j < count; j++) {
+            if (i === j) {
+              continue;
+            }
+            const other = reactiveParticles[j];
+            const dx = particle.x - other.x;
+            const dy = particle.y - other.y;
+            const separationSq = dx * dx + dy * dy;
+            if (separationSq === 0 || separationSq > separationDistance * separationDistance) {
+              continue;
+            }
+            const separation = Math.sqrt(separationSq);
+            const push = (separationDistance - separation) / separationDistance;
+            const strength = push * separationStrength;
+            ax += (dx / separation) * strength;
+            ay += (dy / separation) * strength;
+          }
+
+          particle.vx += ax * delta * 0.6;
+          particle.vy += ay * delta * 0.6;
+
+          const damping = Math.pow(0.92, delta);
+          particle.vx *= damping;
+          particle.vy *= damping;
+
+          const speed = Math.hypot(particle.vx, particle.vy);
+          if (speed > maxVelocity) {
+            const scale = maxVelocity / speed;
+            particle.vx *= scale;
+            particle.vy *= scale;
+          }
+
+          particle.x = wrap(particle.x + particle.vx * delta * 18, world.width);
+          particle.y = wrap(particle.y + particle.vy * delta * 18, world.height);
+
+          const history = particle.history;
+          const lastEntry = history[history.length - 1];
+          if (lastEntry) {
+            const dxHistory = Math.abs(lastEntry.x - particle.x);
+            const dyHistory = Math.abs(lastEntry.y - particle.y);
+            if (dxHistory > world.width * 0.5 || dyHistory > world.height * 0.5) {
+              history.length = 0;
+            }
+          }
+          history.push({ x: particle.x, y: particle.y });
+          if (history.length > 5) {
+            history.shift();
+          }
+        }
+      }
+
       function updateSecretBursts(deltaMs) {
         if (!secretBurstParticles.length) {
           return;
@@ -6902,6 +7601,7 @@
       function drawScene(time) {
         ctx.clearRect(0, 0, viewport.width, viewport.height);
         drawBackground();
+        drawJourneyTrails();
         drawNebulae(time);
         drawStars();
         weatherSystem.draw(time);
@@ -6914,6 +7614,7 @@
         drawSecrets(time);
         drawSecretBursts();
         drawParticles(time);
+        drawReactiveParticles(time);
         drawPlayerTrail(time);
         drawZoneTransitionEffects(time);
         drawFragments();
@@ -6940,6 +7641,65 @@
         }
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, viewport.width, viewport.height);
+      }
+
+      function drawJourneyTrails() {
+        if (!journeyTrailsEnabled) {
+          return;
+        }
+        const sessions = journeyTrailManager.getSessions();
+        if (!sessions || !sessions.length) {
+          return;
+        }
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        const passes = [
+          { lineWidth: 4, alpha: 0.08 },
+          { lineWidth: 2, alpha: 0.17 }
+        ];
+        passes.forEach((pass) => {
+          ctx.lineWidth = pass.lineWidth;
+          ctx.globalAlpha = pass.alpha;
+          sessions.forEach((session) => {
+            if (!session || !Array.isArray(session.points) || session.points.length < 2) {
+              return;
+            }
+            const palette = JOURNEY_TRAIL_COLOR_PALETTES[(session.colorIndex || 0) % JOURNEY_TRAIL_COLOR_PALETTES.length] || JOURNEY_TRAIL_COLOR_PALETTES[0];
+            for (let i = 1; i < session.points.length; i++) {
+              const prev = session.points[i - 1];
+              const current = session.points[i];
+              const start = worldToScreen(prev.x, prev.y);
+              const end = worldToScreen(current.x, current.y);
+              if (segmentOffscreen(start, end)) {
+                continue;
+              }
+              const gradient = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+              gradient.addColorStop(0, 'rgb(' + palette[0].r + ', ' + palette[0].g + ', ' + palette[0].b + ')');
+              gradient.addColorStop(1, 'rgb(' + palette[1].r + ', ' + palette[1].g + ', ' + palette[1].b + ')');
+              ctx.strokeStyle = gradient;
+              ctx.beginPath();
+              ctx.moveTo(start.x, start.y);
+              ctx.lineTo(end.x, end.y);
+              ctx.stroke();
+            }
+          });
+        });
+        ctx.restore();
+      }
+
+      function segmentOffscreen(a, b) {
+        const padding = 40;
+        const minX = -padding;
+        const minY = -padding;
+        const maxX = viewport.width + padding;
+        const maxY = viewport.height + padding;
+        if ((a.x < minX && b.x < minX) || (a.x > maxX && b.x > maxX) ||
+            (a.y < minY && b.y < minY) || (a.y > maxY && b.y > maxY)) {
+          return true;
+        }
+        return false;
       }
 
       function drawNebulae(time) {
@@ -7260,6 +8020,59 @@
         ctx.restore();
       }
 
+      function drawReactiveParticles(time) {
+        if (!reactiveParticles.length) {
+          return;
+        }
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        const shimmerTime = time * 0.002;
+        reactiveParticles.forEach((particle) => {
+          const screen = worldToScreen(particle.x, particle.y);
+          if (screen.x < -120 || screen.y < -120 || screen.x > viewport.width + 120 || screen.y > viewport.height + 120) {
+            return;
+          }
+          const distance = Math.hypot(player.x - particle.x, player.y - particle.y);
+          const proximity = clamp(1 - distance / 200, 0, 1);
+          const shimmerProximity = clamp(1 - distance / 50, 0, 1);
+          const color = sampleReactiveParticleColor(proximity);
+          if (!reduceMotion && particle.history.length > 1) {
+            for (let i = particle.history.length - 1; i >= 0; i--) {
+              const point = particle.history[i];
+              const trailScreen = worldToScreen(point.x, point.y);
+              const progress = (i + 1) / (particle.history.length + 1);
+              const trailAlpha = (0.08 + proximity * 0.18) * progress;
+              const trailRadius = 2 + (1 - progress) * 2.6;
+              ctx.fillStyle = 'rgba(' + color.r + ', ' + color.g + ', ' + color.b + ', ' + trailAlpha + ')';
+              ctx.beginPath();
+              ctx.arc(trailScreen.x, trailScreen.y, trailRadius, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+          const shimmerPulse = shimmerProximity > 0
+            ? (0.35 + Math.sin(shimmerTime + particle.shimmerSeed) * 0.4) * shimmerProximity
+            : 0;
+          const baseAlpha = Math.min(1, 0.38 + proximity * 0.42 + shimmerPulse * 0.35);
+          const coreAlpha = Math.min(1, 0.55 + proximity * 0.25 + shimmerPulse * 0.45);
+          const radius = 3 + proximity * 2.8 + shimmerPulse * 1.6;
+          const glowRadius = radius * (1.8 + shimmerProximity * 0.8);
+          const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, glowRadius);
+          gradient.addColorStop(0, 'rgba(' + color.r + ', ' + color.g + ', ' + color.b + ', ' + coreAlpha + ')');
+          gradient.addColorStop(0.48, 'rgba(' + color.r + ', ' + color.g + ', ' + color.b + ', ' + (baseAlpha * 0.6) + ')');
+          gradient.addColorStop(1, 'rgba(' + color.r + ', ' + color.g + ', ' + color.b + ', 0)');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, glowRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = 'rgba(' + color.r + ', ' + color.g + ', ' + color.b + ', ' + coreAlpha + ')';
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, radius * 0.55, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+
       function drawFragments() {
         ctx.save();
         ctx.font = '300 16px Inter, sans-serif';
@@ -7412,12 +8225,14 @@
         if (document.visibilityState === 'hidden') {
           saveJournalData();
           saveAchievementsState();
+          journeyTrailManager.flush();
         }
       });
 
       window.addEventListener('beforeunload', () => {
         saveJournalData();
         saveAchievementsState();
+        journeyTrailManager.flush();
       });
 
       window.addEventListener('load', () => {
