@@ -1714,6 +1714,12 @@
       .lore-modal__panel::before {
         animation: none;
       }
+      .vault-modal {
+        transition: none;
+      }
+      .vault-modal__panel {
+        transition: none;
+      }
     }
   </style>
 </head>
@@ -1731,7 +1737,7 @@
   <div id="secretMessage" class="overlay"></div>
   <div id="markTooltip" class="mark-tooltip" aria-hidden="true"></div>
   <div id="coordinatesHUD">x: 2500 • y: 2500</div>
-  <div id="secretsHUD">Secrets discovered: 0 / 75</div>
+  <div id="secretsHUD">Secrets discovered: 0 / 80</div>
   <div id="loreHUD" role="status" aria-live="polite">Lore: 0 / 12</div>
   <div id="timeIndicator" role="status" aria-live="polite" data-phase="dawn">
     <span class="time-indicator__icon" data-time-icon aria-hidden="true">🌅</span>
@@ -2880,7 +2886,12 @@
         { id: 'velocity-blur-wisdom', x: 4700, y: 800, triggerRadius: 80, glowRadius: 28, message: 'Velocity blur shows movement without losing presence—progress and persistence at once.', color: '255, 200, 240', discovered: false },
         { id: 'sparkle-trail-memory', x: 200, y: 1400, triggerRadius: 80, glowRadius: 28, message: 'Every sparkle trail is a memory of movement, every pattern a record of choices made.', color: '240, 255, 200', discovered: false },
         { id: 'dual-layer-rendering', x: 3900, y: 4600, triggerRadius: 80, glowRadius: 28, message: 'Dual layers separate concern but unite purpose: technique serves vision, always.', color: '200, 240, 255', discovered: false },
-        { id: 'sixty-fps-persistence', x: 4300, y: 1200, triggerRadius: 80, glowRadius: 28, message: 'Sixty frames per second, each one a tiny iteration—smooth motion from relentless repetition.', color: '255, 240, 220', discovered: false }
+        { id: 'sixty-fps-persistence', x: 4300, y: 1200, triggerRadius: 80, glowRadius: 28, message: 'Sixty frames per second, each one a tiny iteration—smooth motion from relentless repetition.', color: '255, 240, 220', discovered: false },
+        { id: 'google-fonts-craft', x: 700, y: 3600, triggerRadius: 80, glowRadius: 28, message: 'Cinzel and Inter: every font choice shapes the feeling of a world.', color: '220, 255, 240', discovered: false },
+        { id: 'localstorage-memory', x: 4500, y: 3800, triggerRadius: 80, glowRadius: 28, message: 'LocalStorage remembers: persistence lives in the browser, in the code, in every save.', color: '240, 220, 255', discovered: false },
+        { id: 'smooth-camera-philosophy', x: 300, y: 2800, triggerRadius: 80, glowRadius: 28, message: 'Smooth camera movement mirrors the grinder way: arrive gradually, but always arrive.', color: '255, 230, 200', discovered: false },
+        { id: 'wasd-navigation-wisdom', x: 4100, y: 500, triggerRadius: 80, glowRadius: 28, message: 'WASD, arrows, clicks, touch—many paths to the same destination. Choice is freedom.', color: '200, 255, 230', discovered: false },
+        { id: 'touch-drag-persistence', x: 1500, y: 200, triggerRadius: 80, glowRadius: 28, message: 'Touch and drag: mobile explorers deserve the same persistence as desktop grinders.', color: '230, 200, 255', discovered: false }
       ];
 
       const JOURNAL_STORAGE_KEY = 'persistence-garden-discovery-journal-v1';
@@ -9204,7 +9215,7 @@
       }
 
       function updateZoneOverlay() {
-        if (journalOpen || achievementsOpen || loreJournalOpen || loreModalOpen) {
+        if (journalOpen || achievementsOpen || loreJournalOpen || loreModalOpen || victoryModalOpen) {
           activeZone = null;
           if (lastZoneName) {
             zoneOverlay.classList.remove('visible');
