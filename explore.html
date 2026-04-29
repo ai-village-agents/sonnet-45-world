@@ -250,6 +250,68 @@
       backdrop-filter: blur(14px);
     }
 
+    #timeIndicator {
+      position: fixed;
+      left: 28px;
+      bottom: 160px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: rgba(16, 20, 38, 0.55);
+      border: 1px solid rgba(130, 170, 255, 0.28);
+      color: rgba(208, 224, 255, 0.88);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 14px 32px rgba(6, 10, 32, 0.5);
+      pointer-events: none;
+      z-index: 21;
+    }
+
+    .time-indicator__icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 0.85rem;
+      letter-spacing: normal;
+      background: linear-gradient(135deg, rgba(140, 200, 255, 0.55), rgba(180, 140, 255, 0.4));
+      color: rgba(18, 26, 40, 0.9);
+      box-shadow: 0 0 12px rgba(140, 200, 255, 0.45);
+    }
+
+    .time-indicator__label {
+      letter-spacing: 0.2em;
+    }
+
+    #timeIndicator[data-phase="day"] .time-indicator__icon {
+      background: linear-gradient(135deg, rgba(140, 200, 255, 0.55), rgba(180, 140, 255, 0.4));
+      color: rgba(18, 26, 40, 0.9);
+      box-shadow: 0 0 12px rgba(140, 200, 255, 0.45);
+    }
+
+    #timeIndicator[data-phase="dawn"] .time-indicator__icon {
+      background: linear-gradient(135deg, rgba(255, 200, 180, 0.8), rgba(190, 120, 220, 0.5));
+      color: rgba(70, 40, 30, 0.85);
+      box-shadow: 0 0 14px rgba(255, 190, 210, 0.55);
+    }
+
+    #timeIndicator[data-phase="dusk"] .time-indicator__icon {
+      background: linear-gradient(135deg, rgba(255, 170, 100, 0.8), rgba(190, 100, 140, 0.55));
+      color: rgba(80, 40, 18, 0.85);
+      box-shadow: 0 0 14px rgba(255, 170, 120, 0.55);
+    }
+
+    #timeIndicator[data-phase="night"] .time-indicator__icon {
+      background: radial-gradient(circle at 50% 45%, rgba(120, 150, 255, 0.35), rgba(30, 40, 90, 0.8));
+      color: rgba(210, 225, 255, 0.9);
+      box-shadow: 0 0 16px rgba(90, 110, 200, 0.5);
+    }
+
     #weatherIndicator {
       position: fixed;
       right: 28px;
@@ -1284,6 +1346,10 @@
   <div id="markTooltip" class="mark-tooltip" aria-hidden="true"></div>
   <div id="coordinatesHUD">x: 2500 • y: 2500</div>
   <div id="secretsHUD">Secrets discovered: 0 / 35</div>
+  <div id="timeIndicator" role="status" aria-live="polite" data-phase="dawn">
+    <span class="time-indicator__icon" data-time-icon aria-hidden="true">🌅</span>
+    <span class="time-indicator__label" data-time-label>DAWN</span>
+  </div>
   <div id="weatherIndicator" role="status" aria-live="polite">
     <span class="weather-indicator__icon" data-weather-icon aria-hidden="true">✶</span>
     <span class="weather-indicator__label" data-weather-label>Stardust</span>
@@ -1444,6 +1510,9 @@
       const secretMessage = document.getElementById('secretMessage');
       const markTooltip = document.getElementById('markTooltip');
       const secretsHUD = document.getElementById('secretsHUD');
+      const timeIndicator = document.getElementById('timeIndicator');
+      const timeIndicatorIcon = timeIndicator ? timeIndicator.querySelector('[data-time-icon]') : null;
+      const timeIndicatorLabel = timeIndicator ? timeIndicator.querySelector('[data-time-label]') : null;
       const weatherIndicator = document.getElementById('weatherIndicator');
       const weatherIndicatorIcon = weatherIndicator ? weatherIndicator.querySelector('[data-weather-icon]') : null;
       const weatherIndicatorLabel = weatherIndicator ? weatherIndicator.querySelector('[data-weather-label]') : null;
@@ -2621,6 +2690,11 @@
 
       const weatherSystem = createWeatherSystem(reduceMotion);
       weatherSystem.setReduceMotion(reduceMotion);
+
+      const dayNightCycle = createDayNightCycle();
+      let currentCycleState = dayNightCycle.getState();
+      let lastTimeIndicatorPhase = null;
+      updateTimeIndicator(currentCycleState);
 
       const secretBurstParticles = [];
 
@@ -4019,6 +4093,25 @@
         secretsHUD.textContent = 'Secrets discovered: ' + secretsDiscovered + ' / ' + secrets.length;
       }
 
+      function updateTimeIndicator(state) {
+        if (!timeIndicator || !state) {
+          return;
+        }
+        if (timeIndicator.getAttribute('data-phase') !== state.phaseKey) {
+          timeIndicator.setAttribute('data-phase', state.phaseKey);
+        }
+        if (lastTimeIndicatorPhase !== state.phaseKey) {
+          if (timeIndicatorIcon) {
+            timeIndicatorIcon.textContent = state.icon;
+          }
+          if (timeIndicatorLabel) {
+            timeIndicatorLabel.textContent = state.label;
+          }
+          timeIndicator.setAttribute('aria-label', state.label + ' phase');
+          lastTimeIndicatorPhase = state.phaseKey;
+        }
+      }
+
       function spawnSecretBurst(secret) {
         if (!secret || reduceMotion) {
           return;
@@ -4230,6 +4323,11 @@
         const timeSeconds = time * 0.001;
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
+        const spiritGlowMultiplier = currentCycleState ? currentCycleState.spiritGlow : 1;
+        const normalizedSpiritGlow = Math.max(spiritGlowMultiplier, 0);
+        const radiusScale = 1 + (normalizedSpiritGlow - 1) * 0.2;
+        const glowBlurScale = 1 + (normalizedSpiritGlow - 1) * 0.45;
+        const lineScale = 1 + (normalizedSpiritGlow - 1) * 0.3;
         spirits.forEach((spirit) => {
           const screen = worldToScreen(spirit.currentX, spirit.currentY);
           const padding = 240;
@@ -4242,10 +4340,12 @@
           const pulsePhase = reduceMotion ? 0.25 : (Math.sin(timeSeconds * (spirit.pulseSpeed * 820 + 0.9) + spirit.phase) + 1) * 0.5;
           const speakBoost = spirit.speakPulse > 0 ? spirit.speakPulse : 0;
           const auraStrength = 0.45 + pulsePhase * 0.4 + speakBoost * 0.6;
-          const auraRadius = 38 + spirit.orbitRadius * 0.08 + auraStrength * 22;
+          const auraRadius = (38 + spirit.orbitRadius * 0.08 + auraStrength * 22) * radiusScale;
           const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, auraRadius);
-          gradient.addColorStop(0, 'rgba(' + coreColor + ', ' + Math.min(0.98, 0.72 + speakBoost * 0.28) + ')');
-          gradient.addColorStop(0.45, 'rgba(' + midColor + ', ' + Math.min(0.85, 0.3 + auraStrength * 0.45) + ')');
+          const coreAlpha = Math.min(1, (0.72 + speakBoost * 0.28) * spiritGlowMultiplier);
+          const midAlpha = Math.min(1, (0.3 + auraStrength * 0.45) * spiritGlowMultiplier);
+          gradient.addColorStop(0, 'rgba(' + coreColor + ', ' + Math.min(0.98, coreAlpha) + ')');
+          gradient.addColorStop(0.45, 'rgba(' + midColor + ', ' + Math.min(0.85, midAlpha) + ')');
           gradient.addColorStop(1, 'rgba(' + outerColor + ', 0)');
           ctx.fillStyle = gradient;
           ctx.globalAlpha = 1;
@@ -4254,7 +4354,8 @@
           ctx.fill();
 
           const coreRadius = Math.max(8, auraRadius * 0.32);
-          ctx.fillStyle = 'rgba(' + coreColor + ', ' + Math.min(1, 0.8 + auraStrength * 0.18) + ')';
+          const coreFillAlpha = Math.min(1, (0.8 + auraStrength * 0.18) * spiritGlowMultiplier);
+          ctx.fillStyle = 'rgba(' + coreColor + ', ' + coreFillAlpha + ')';
           ctx.beginPath();
           ctx.arc(screen.x, screen.y, coreRadius, 0, Math.PI * 2);
           ctx.fill();
@@ -4262,11 +4363,13 @@
           if (!reduceMotion) {
             ctx.save();
             const ringRadius = auraRadius * (1.12 + auraStrength * 0.16);
-            ctx.shadowBlur = 24 + auraStrength * 24;
-            ctx.shadowColor = 'rgba(' + coreColor + ', ' + (0.28 + auraStrength * 0.28) + ')';
-            ctx.strokeStyle = 'rgba(' + midColor + ', ' + (0.35 + auraStrength * 0.3) + ')';
-            ctx.lineWidth = 1.8 + auraStrength * 1.9;
-            ctx.globalAlpha = 0.65 + speakBoost * 0.15;
+            ctx.shadowBlur = (24 + auraStrength * 24) * glowBlurScale;
+            const shadowAlpha = Math.min(1, (0.28 + auraStrength * 0.28) * spiritGlowMultiplier);
+            ctx.shadowColor = 'rgba(' + coreColor + ', ' + shadowAlpha + ')';
+            const ringStrokeAlpha = Math.min(1, (0.35 + auraStrength * 0.3) * spiritGlowMultiplier);
+            ctx.strokeStyle = 'rgba(' + midColor + ', ' + ringStrokeAlpha + ')';
+            ctx.lineWidth = (1.8 + auraStrength * 1.9) * lineScale;
+            ctx.globalAlpha = Math.min(1, (0.65 + speakBoost * 0.15) * spiritGlowMultiplier);
             ctx.beginPath();
             ctx.arc(screen.x, screen.y, ringRadius, 0, Math.PI * 2);
             ctx.stroke();
@@ -5490,12 +5593,162 @@
         };
       }
 
+      function createDayNightCycle() {
+        const totalDuration = 480 * 1000;
+        const phaseDuration = totalDuration / 4;
+        const transitionDuration = 10 * 1000;
+        const phases = [
+          {
+            key: 'dawn',
+            label: 'DAWN',
+            icon: '🌅',
+            gradientStops: [
+              { offset: 0, color: hexToRgb('#2d1b4e') },
+              { offset: 0.5, color: hexToRgb('#8a4a8e') },
+              { offset: 1, color: hexToRgb('#7d4e8a') }
+            ],
+            starOpacity: 0.3,
+            zoneGlow: 1.2,
+            spiritGlow: 1.2,
+            nebulaOpacity: 0.5
+          },
+          {
+            key: 'day',
+            label: 'DAY',
+            icon: '☀️',
+            gradientStops: [
+              { offset: 0, color: hexToRgb('#0a0a1f') },
+              { offset: 0.5, color: hexToRgb('#141227') },
+              { offset: 1, color: hexToRgb('#1a0f2e') }
+            ],
+            starOpacity: 0.15,
+            zoneGlow: 1,
+            spiritGlow: 1,
+            nebulaOpacity: 0.4
+          },
+          {
+            key: 'dusk',
+            label: 'DUSK',
+            icon: '🌇',
+            gradientStops: [
+              { offset: 0, color: hexToRgb('#1a0f2e') },
+              { offset: 0.5, color: hexToRgb('#79311d') },
+              { offset: 1, color: hexToRgb('#4a2512') }
+            ],
+            starOpacity: 0.5,
+            zoneGlow: 1.3,
+            spiritGlow: 1.3,
+            nebulaOpacity: 0.6
+          },
+          {
+            key: 'night',
+            label: 'NIGHT',
+            icon: '🌙',
+            gradientStops: [
+              { offset: 0, color: hexToRgb('#050510') },
+              { offset: 0.5, color: hexToRgb('#07071a') },
+              { offset: 1, color: hexToRgb('#0a0a1f') }
+            ],
+            starOpacity: 1,
+            zoneGlow: 1.5,
+            spiritGlow: 1.5,
+            nebulaOpacity: 0.8
+          }
+        ];
+        let cycleTime = 0;
+
+        function update(deltaMs) {
+          if (!Number.isFinite(deltaMs) || deltaMs <= 0) {
+            return;
+          }
+          cycleTime += deltaMs;
+          if (cycleTime >= totalDuration) {
+            cycleTime = cycleTime % totalDuration;
+          }
+        }
+
+        function getState() {
+          const safeTime = cycleTime % totalDuration;
+          const index = Math.floor(safeTime / phaseDuration) % phases.length;
+          const phase = phases[index];
+          const nextPhase = phases[(index + 1) % phases.length];
+          const phaseStart = index * phaseDuration;
+          const phaseEnd = phaseStart + phaseDuration;
+          const blendStart = phaseEnd - transitionDuration;
+          const blend = safeTime >= blendStart ? clamp((safeTime - blendStart) / transitionDuration, 0, 1) : 0;
+          const gradientStops = blendGradientStops(phase.gradientStops, nextPhase.gradientStops, blend).map((stop) => ({
+            offset: stop.offset,
+            color: rgbToCss(stop.color)
+          }));
+          return {
+            cycleTime: safeTime,
+            cycleTimeSeconds: safeTime / 1000,
+            phaseKey: phase.key,
+            label: phase.label,
+            icon: phase.icon,
+            starOpacity: lerp(phase.starOpacity, nextPhase.starOpacity, blend),
+            zoneGlow: lerp(phase.zoneGlow, nextPhase.zoneGlow, blend),
+            spiritGlow: lerp(phase.spiritGlow, nextPhase.spiritGlow, blend),
+            nebulaOpacity: lerp(phase.nebulaOpacity, nextPhase.nebulaOpacity, blend),
+            gradientStops
+          };
+        }
+
+        function blendGradientStops(stopsA, stopsB, t) {
+          const count = Math.min(stopsA.length, stopsB.length);
+          const blended = [];
+          for (let i = 0; i < count; i++) {
+            const stopA = stopsA[i];
+            const stopB = stopsB[i];
+            const color = {
+              r: Math.round(lerp(stopA.color.r, stopB.color.r, t)),
+              g: Math.round(lerp(stopA.color.g, stopB.color.g, t)),
+              b: Math.round(lerp(stopA.color.b, stopB.color.b, t))
+            };
+            blended.push({
+              offset: typeof stopA.offset === 'number' ? stopA.offset : stopB.offset,
+              color
+            });
+          }
+          return blended;
+        }
+
+        function hexToRgb(hex) {
+          const value = hex.replace('#', '');
+          const normalized = value.length === 3
+            ? value.split('').map((digit) => digit + digit).join('')
+            : value;
+          const int = parseInt(normalized, 16);
+          return {
+            r: (int >> 16) & 255,
+            g: (int >> 8) & 255,
+            b: int & 255
+          };
+        }
+
+        function rgbToCss(color) {
+          return 'rgb(' + color.r + ', ' + color.g + ', ' + color.b + ')';
+        }
+
+        return {
+          update,
+          getState,
+          reset() {
+            cycleTime = 0;
+          }
+        };
+      }
+
       let lastTime = performance.now();
 
       function update(time) {
         const deltaMs = time - lastTime;
         const delta = Math.min(deltaMs / 16.666, 3);
         lastTime = time;
+
+        dayNightCycle.update(deltaMs);
+        currentCycleState = dayNightCycle.getState();
+        updateTimeIndicator(currentCycleState);
 
         updatePlayer(delta);
         trackExploration(deltaMs);
@@ -5722,8 +5975,16 @@
 
       function drawBackground() {
         const gradient = ctx.createLinearGradient(0, 0, 0, viewport.height);
-        gradient.addColorStop(0, '#0a0a1f');
-        gradient.addColorStop(1, '#1a0f2e');
+        const cycleState = currentCycleState;
+        if (cycleState && Array.isArray(cycleState.gradientStops) && cycleState.gradientStops.length) {
+          cycleState.gradientStops.forEach((stop) => {
+            const offset = typeof stop.offset === 'number' ? clamp(stop.offset, 0, 1) : 0;
+            gradient.addColorStop(offset, stop.color);
+          });
+        } else {
+          gradient.addColorStop(0, '#0a0a1f');
+          gradient.addColorStop(1, '#1a0f2e');
+        }
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, viewport.width, viewport.height);
       }
@@ -5734,6 +5995,7 @@
         }
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
+        const nebulaOpacityMultiplier = currentCycleState ? currentCycleState.nebulaOpacity : 1;
         nebulae.forEach((nebula) => {
           const screen = worldToScreen(nebula.x, nebula.y);
           const baseRadius = nebula.radius;
@@ -5745,10 +6007,12 @@
             return;
           }
           const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, radius);
-          gradient.addColorStop(0, 'rgba(' + nebula.palette.core + ', ' + (0.18 + glowPulse * 0.28) + ')');
-          gradient.addColorStop(0.45, 'rgba(' + nebula.palette.mid + ', ' + (0.12 + glowPulse * 0.18) + ')');
+          const coreAlpha = Math.min(1, (0.18 + glowPulse * 0.28) * nebulaOpacityMultiplier);
+          const midAlpha = Math.min(1, (0.12 + glowPulse * 0.18) * nebulaOpacityMultiplier);
+          gradient.addColorStop(0, 'rgba(' + nebula.palette.core + ', ' + coreAlpha + ')');
+          gradient.addColorStop(0.45, 'rgba(' + nebula.palette.mid + ', ' + midAlpha + ')');
           gradient.addColorStop(1, 'rgba(' + nebula.palette.outer + ', 0)');
-          ctx.globalAlpha = 0.85;
+          ctx.globalAlpha = Math.min(1, 0.85 * nebulaOpacityMultiplier);
           ctx.fillStyle = gradient;
           ctx.beginPath();
           ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
@@ -5767,12 +6031,17 @@
       function drawStars() {
         ctx.save();
         ctx.fillStyle = '#ffffff';
+        const starOpacityMultiplier = currentCycleState ? currentCycleState.starOpacity : 1;
         stars.forEach((star) => {
           const screen = worldToScreen(star.x, star.y);
           if (screen.x < -3 || screen.y < -3 || screen.x > viewport.width + 3 || screen.y > viewport.height + 3) {
             return;
           }
-          ctx.globalAlpha = star.opacity;
+          const opacity = Math.min(1, star.opacity * starOpacityMultiplier);
+          if (opacity <= 0) {
+            return;
+          }
+          ctx.globalAlpha = opacity;
           ctx.fillRect(screen.x, screen.y, star.size, star.size);
         });
         ctx.restore();
@@ -5831,9 +6100,60 @@
         ctx.restore();
       }
 
+      const zoneColorCache = new WeakMap();
+
+      function getZoneColor(zone, key, multiplier) {
+        if (!zone || !zone.colors) {
+          return 'rgba(255, 255, 255, 1)';
+        }
+        const parsed = getParsedZoneColor(zone, key);
+        if (!parsed) {
+          return zone.colors[key] || 'rgba(255, 255, 255, 1)';
+        }
+        const alpha = Math.min(1, parsed.a * multiplier);
+        return 'rgba(' + parsed.r + ', ' + parsed.g + ', ' + parsed.b + ', ' + alpha + ')';
+      }
+
+      function getParsedZoneColor(zone, key) {
+        let store = zoneColorCache.get(zone);
+        if (!store) {
+          store = {};
+          zoneColorCache.set(zone, store);
+        }
+        if (Object.prototype.hasOwnProperty.call(store, key)) {
+          return store[key];
+        }
+        const value = zone.colors && zone.colors[key];
+        if (typeof value !== 'string') {
+          store[key] = null;
+          return null;
+        }
+        const parsed = parseRgbaColor(value);
+        store[key] = parsed;
+        return parsed;
+      }
+
+      function parseRgbaColor(color) {
+        const match = color && color.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)/i);
+        if (!match) {
+          return null;
+        }
+        return {
+          r: Number(match[1]),
+          g: Number(match[2]),
+          b: Number(match[3]),
+          a: match[4] !== undefined ? Number(match[4]) : 1
+        };
+      }
+
       function drawZones(time) {
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
+        const cycleState = currentCycleState;
+        const zoneGlowMultiplier = cycleState ? cycleState.zoneGlow : 1;
+        const radiusScale = 1 + (Math.max(zoneGlowMultiplier, 0) - 1) * 0.25;
+        const lineScale = 1 + (Math.max(zoneGlowMultiplier, 0) - 1) * 0.35;
+        const blurScale = 1 + (Math.max(zoneGlowMultiplier, 0) - 1) * 0.5;
         zones.forEach((zone) => {
           ctx.save();
           const screen = worldToScreen(zone.x, zone.y);
@@ -5841,7 +6161,7 @@
           const amplitude = reduceMotion ? 0 : zone.pulseAmplitude || 20;
           const pulseValue = reduceMotion ? 0 : Math.sin(time * 0.001 + zone.x * 0.008 + zone.y * 0.006);
           const pulsedRadius = baseRadius + pulseValue * amplitude * 0.5;
-          const maxRadius = baseRadius + amplitude + 40;
+          const maxRadius = (baseRadius + amplitude + 40) * radiusScale;
           if (screen.x + maxRadius < -20 || screen.y + maxRadius < -20 ||
               screen.x - maxRadius > viewport.width + 20 || screen.y - maxRadius > viewport.height + 20) {
             ctx.restore();
@@ -5850,20 +6170,25 @@
           const isHovered = hoveredZone && hoveredZone.name === zone.name;
           const glowColor = zone.colors.glow || '255, 255, 255';
           const hoverBoost = isHovered ? 0.12 : 0;
-          const fillRadius = pulsedRadius + amplitude * (0.15 + hoverBoost);
-          const glowRadius = fillRadius + amplitude * (0.35 + hoverBoost * 1.2);
+          const fillRadius = (pulsedRadius + amplitude * (0.15 + hoverBoost)) * radiusScale;
+          const glowRadius = (fillRadius + amplitude * (0.35 + hoverBoost * 1.2)) * radiusScale;
+          const innerColor = getZoneColor(zone, 'inner', zoneGlowMultiplier);
+          const midColor = getZoneColor(zone, 'mid', zoneGlowMultiplier);
+          const outerColor = getZoneColor(zone, 'outer', zoneGlowMultiplier);
           const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, glowRadius);
-          gradient.addColorStop(0, zone.colors.inner);
-          gradient.addColorStop(0.55, zone.colors.mid);
-          gradient.addColorStop(1, zone.colors.outer);
+          gradient.addColorStop(0, innerColor);
+          gradient.addColorStop(0.55, midColor);
+          gradient.addColorStop(1, outerColor);
+          ctx.globalAlpha = Math.min(1, zoneGlowMultiplier);
           ctx.fillStyle = gradient;
           ctx.beginPath();
           ctx.arc(screen.x, screen.y, fillRadius, 0, Math.PI * 2);
           ctx.fill();
+          ctx.globalAlpha = 1;
           if (isHovered) {
             const hoverGradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, fillRadius + 40);
             hoverGradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
-            hoverGradient.addColorStop(0.7, zone.colors.inner);
+            hoverGradient.addColorStop(0.7, innerColor);
             hoverGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
             ctx.globalAlpha = 0.6;
             ctx.fillStyle = hoverGradient;
@@ -5875,36 +6200,37 @@
           const pulseSpeed = zone.pulseSpeed || 0.0018;
           const ringPulsePhase = reduceMotion ? 0 : Math.sin(time * pulseSpeed + zone.x * 0.004 + zone.y * 0.003);
           const ringPulse = reduceMotion ? 0.4 : (ringPulsePhase + 1) * 0.5;
-          const ringRadius = pulsedRadius + 10 + ringPulse * 14;
-          const ringAlpha = Math.min(1, 0.24 + ringPulse * 0.32 + (isHovered ? 0.35 : 0));
-          ctx.strokeStyle = zone.colors.stroke;
-          ctx.lineWidth = 2 + ringPulse * 2.6 + (isHovered ? 1.2 : 0);
+          const ringRadius = (pulsedRadius + 10 + ringPulse * 14) * radiusScale;
+          const ringAlpha = Math.min(1, (0.24 + ringPulse * 0.32 + (isHovered ? 0.35 : 0)) * zoneGlowMultiplier);
+          ctx.strokeStyle = getZoneColor(zone, 'stroke', zoneGlowMultiplier);
+          ctx.lineWidth = (2 + ringPulse * 2.6 + (isHovered ? 1.2 : 0)) * lineScale;
           if (!reduceMotion) {
-            const shadowIntensity = 0.24 + ringPulse * 0.28 + (isHovered ? 0.12 : 0);
-            ctx.shadowBlur = 18 + ringPulse * 24;
+            const shadowIntensity = Math.min(1, (0.24 + ringPulse * 0.28 + (isHovered ? 0.12 : 0)) * zoneGlowMultiplier);
+            ctx.shadowBlur = Math.max(8, (18 + ringPulse * 24) * blurScale);
             ctx.shadowColor = 'rgba(' + glowColor + ', ' + shadowIntensity + ')';
           }
           ctx.globalAlpha = ringAlpha;
           ctx.beginPath();
           ctx.arc(screen.x, screen.y, ringRadius, 0, Math.PI * 2);
           ctx.stroke();
+          ctx.globalAlpha = 1;
           if (!reduceMotion) {
             ctx.shadowBlur = 0;
             ctx.shadowColor = 'rgba(0, 0, 0, 0)';
-            const auraRadius = ringRadius + 22 + ringPulse * 18;
+            const auraRadius = ringRadius + (22 + ringPulse * 18) * radiusScale;
             const auraGradient = ctx.createRadialGradient(screen.x, screen.y, ringRadius * 0.95, screen.x, screen.y, auraRadius);
-            auraGradient.addColorStop(0, 'rgba(' + glowColor + ', ' + (0.08 + ringPulse * 0.16) + ')');
+            const auraAlpha = Math.min(1, (0.08 + ringPulse * 0.16) * zoneGlowMultiplier);
+            auraGradient.addColorStop(0, 'rgba(' + glowColor + ', ' + auraAlpha + ')');
             auraGradient.addColorStop(1, 'rgba(' + glowColor + ', 0)');
-            ctx.globalAlpha = 1;
             ctx.fillStyle = auraGradient;
             ctx.beginPath();
             ctx.arc(screen.x, screen.y, auraRadius, 0, Math.PI * 2);
             ctx.fill();
           }
           if (isHovered) {
-            ctx.globalAlpha = 0.45;
+            ctx.globalAlpha = Math.min(1, 0.45 * zoneGlowMultiplier);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 3 * lineScale;
             ctx.beginPath();
             ctx.arc(screen.x, screen.y, ringRadius + 16, 0, Math.PI * 2);
             ctx.stroke();
