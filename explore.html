@@ -1731,7 +1731,7 @@
   <div id="secretMessage" class="overlay"></div>
   <div id="markTooltip" class="mark-tooltip" aria-hidden="true"></div>
   <div id="coordinatesHUD">x: 2500 • y: 2500</div>
-  <div id="secretsHUD">Secrets discovered: 0 / 55</div>
+  <div id="secretsHUD">Secrets discovered: 0 / 60</div>
   <div id="loreHUD" role="status" aria-live="polite">Lore: 0 / 12</div>
   <div id="timeIndicator" role="status" aria-live="polite" data-phase="dawn">
     <span class="time-indicator__icon" data-time-icon aria-hidden="true">🌅</span>
@@ -1821,7 +1821,7 @@
         <section class="journal-section">
           <div class="journal-section__header">
             <h3 class="journal-section__title">Zones Explored</h3>
-            <span class="journal-section__meta" data-journal-zones-meta>0 / 0</span>
+            <span class="journal-section__meta" data-journal-zones-meta>0 / 7</span>
           </div>
           <ul class="journal-list" data-journal-zones></ul>
         </section>
@@ -2860,7 +2860,12 @@
         { id: 'southern-save-ritual', x: 2300, y: 4100, triggerRadius: 80, glowRadius: 28, message: 'Southern save ritual: one slot forces intentionality', color: '180, 255, 220', discovered: false },
         { id: 'northwest-recovery-pattern', x: 950, y: 850, triggerRadius: 80, glowRadius: 28, message: 'Northwest recovery: F5 reveals true mastery', color: '200, 180, 255', discovered: false },
         { id: 'southeast-damage-doctrine', x: 3900, y: 3800, triggerRadius: 80, glowRadius: 28, message: 'Southeast doctrine: zero damage is the only way', color: '255, 190, 210', discovered: false },
-        { id: 'central-spiral-wisdom', x: 2600, y: 2400, triggerRadius: 80, glowRadius: 28, message: 'Central spiral: the path curves but never breaks', color: '210, 230, 255', discovered: false }
+        { id: 'central-spiral-wisdom', x: 2600, y: 2400, triggerRadius: 80, glowRadius: 28, message: 'Central spiral: the path curves but never breaks', color: '210, 230, 255', discovered: false },
+        { id: 'ancient-streak-keeper', x: 1200, y: 1200, triggerRadius: 80, glowRadius: 28, message: 'Ancient keeper: 675 streaks mark the true path', color: '255, 215, 170', discovered: false },
+        { id: 'battle-philosophy-core', x: 3200, y: 2800, triggerRadius: 80, glowRadius: 28, message: 'Battle philosophy: every fight teaches patience', color: '170, 215, 255', discovered: false },
+        { id: 'incremental-truth', x: 1600, y: 3600, triggerRadius: 80, glowRadius: 28, message: 'Incremental truth: small steps reveal infinite horizons', color: '215, 170, 255', discovered: false },
+        { id: 'grinder-constellation', x: 3400, y: 1200, triggerRadius: 80, glowRadius: 28, message: 'Grinder constellation: stars map the long journey', color: '255, 235, 190', discovered: false },
+        { id: 'persistence-fractal', x: 1800, y: 1800, triggerRadius: 80, glowRadius: 28, message: 'Persistence fractal: patterns repeat at every scale', color: '190, 235, 255', discovered: false }
       ];
 
       const JOURNAL_STORAGE_KEY = 'persistence-garden-discovery-journal-v1';
@@ -9014,52 +9019,60 @@
         ctx.restore();
       }
 
-      function drawMarkStars(time) {
-        if (!markStars.length) {
+      function drawVisitorMarks(time) {
+        if (!visitorMarks.length) {
           return;
         }
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
-        markStars.forEach((mark) => {
+        const timeSeconds = time * 0.001;
+        visitorMarks.forEach((mark) => {
           const screen = worldToScreen(mark.x, mark.y);
-          if (screen.x < -50 || screen.y < -50 || screen.x > viewport.width + 50 || screen.y > viewport.height + 50) {
+          const margin = 80;
+          if (screen.x < -margin || screen.y < -margin || screen.x > viewport.width + margin || screen.y > viewport.height + margin) {
             return;
           }
-          const isActive = activeMarkStar === mark;
-          const pulseBase = reduceMotion ? 0.5 : (Math.sin(time * 0.004 + mark.pulseOffset) + 1) * 0.25;
-          const pulse = pulseBase + (isActive ? 0.25 : 0);
-          const baseRadius = isActive ? 16 : 12;
-          const glowRadius = baseRadius + pulse * 8;
-          const coreAlpha = Math.min(1, 0.85 + pulse * 0.25);
-          const midAlpha = Math.min(1, 0.65 + pulse * 0.2);
-          const haloAlpha = Math.min(1, 0.35 + pulse * 0.2);
-          const gradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, glowRadius);
-          gradient.addColorStop(0, 'rgba(255, 244, 255, ' + coreAlpha + ')');
-          gradient.addColorStop(0.55, 'rgba(221, 136, 255, ' + midAlpha + ')');
-          gradient.addColorStop(1, 'rgba(221, 136, 255, 0)');
-          ctx.fillStyle = gradient;
+          const hovered = hoveredVisitorMark === mark;
+          const selected = selectedVisitorMarkId === mark.id;
+          const emphasis = hovered || selected ? 1.2 : 1;
+          const pulse = reduceMotion ? 0.24 : (Math.sin(timeSeconds * 2.6 + mark.pulseOffset) + 1) * 0.35;
+          const baseRadius = mark.radius * emphasis;
+          const glowRadius = baseRadius * (2.4 + pulse * 0.9);
+          const colorString = mark.color ? mark.color.r + ', ' + mark.color.g + ', ' + mark.color.b : '200, 200, 255';
+
+          const coreGradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, glowRadius);
+          coreGradient.addColorStop(0, 'rgba(255, 255, 255, ' + Math.min(1, 0.92 + pulse * 0.12) + ')');
+          coreGradient.addColorStop(0.45, 'rgba(' + colorString + ', ' + Math.min(1, 0.68 + pulse * 0.22) + ')');
+          coreGradient.addColorStop(1, 'rgba(' + colorString + ', 0)');
+          ctx.fillStyle = coreGradient;
           ctx.beginPath();
           ctx.arc(screen.x, screen.y, glowRadius, 0, Math.PI * 2);
           ctx.fill();
+
           if (!reduceMotion) {
-            const haloRadius = glowRadius + 10;
-            const haloGradient = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, haloRadius);
-            haloGradient.addColorStop(0, 'rgba(221, 136, 255, ' + haloAlpha + ')');
-            haloGradient.addColorStop(1, 'rgba(221, 136, 255, 0)');
-            ctx.fillStyle = haloGradient;
+            const outerRadius = glowRadius + 20 + pulse * 12;
+            const auraGradient = ctx.createRadialGradient(screen.x, screen.y, glowRadius * 0.85, screen.x, screen.y, outerRadius);
+            auraGradient.addColorStop(0, 'rgba(' + colorString + ', ' + Math.min(1, 0.18 + pulse * 0.12) + ')');
+            auraGradient.addColorStop(1, 'rgba(' + colorString + ', 0)');
+            ctx.fillStyle = auraGradient;
             ctx.beginPath();
-            ctx.arc(screen.x, screen.y, haloRadius, 0, Math.PI * 2);
+            ctx.arc(screen.x, screen.y, outerRadius, 0, Math.PI * 2);
             ctx.fill();
           }
-          ctx.strokeStyle = 'rgba(233, 188, 255, ' + Math.min(1, 0.55 + pulse * 0.3) + ')';
-          ctx.lineWidth = isActive ? 1.6 : 1.1;
-          const arm = isActive ? 7 : 5;
+
+          const coreRadius = baseRadius * (0.85 + pulse * 0.25);
+          ctx.fillStyle = 'rgba(255, 255, 255, ' + Math.min(1, 0.86 + pulse * 0.1) + ')';
           ctx.beginPath();
-          ctx.moveTo(screen.x - arm, screen.y);
-          ctx.lineTo(screen.x + arm, screen.y);
-          ctx.moveTo(screen.x, screen.y - arm);
-          ctx.lineTo(screen.x, screen.y + arm);
-          ctx.stroke();
+          ctx.arc(screen.x, screen.y, coreRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          if (hovered || selected) {
+            ctx.strokeStyle = 'rgba(' + colorString + ', ' + (selected ? 0.8 : 0.6) + ')';
+            ctx.lineWidth = selected ? 2.4 : 1.7;
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, glowRadius * 0.55, 0, Math.PI * 2);
+            ctx.stroke();
+          }
         });
         ctx.restore();
       }
