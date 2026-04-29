@@ -375,7 +375,8 @@
       }
     }
 
-    .journal-overlay {
+    .journal-overlay,
+    .achievements-overlay {
       position: fixed;
       inset: 0;
       display: flex;
@@ -391,13 +392,15 @@
       z-index: 50;
     }
 
-    .journal-overlay.is-visible {
+    .journal-overlay.is-visible,
+    .achievements-overlay.is-visible {
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
     }
 
-    .journal-overlay__panel {
+    .journal-overlay__panel,
+    .achievements-overlay__panel {
       position: relative;
       width: min(640px, 92vw);
       max-height: min(560px, 88vh);
@@ -411,7 +414,8 @@
       flex-direction: column;
     }
 
-    .journal-overlay__panel::before {
+    .journal-overlay__panel::before,
+    .achievements-overlay__panel::before {
       content: '';
       position: absolute;
       inset: -2px;
@@ -422,7 +426,8 @@
       z-index: -2;
     }
 
-    .journal-overlay__panel::after {
+    .journal-overlay__panel::after,
+    .achievements-overlay__panel::after {
       content: '';
       position: absolute;
       inset: 0;
@@ -432,7 +437,8 @@
       pointer-events: none;
     }
 
-    .journal-overlay__title {
+    .journal-overlay__title,
+    .achievements-overlay__title {
       margin: 0 0 18px;
       font-family: 'Cinzel', serif;
       font-size: clamp(1.6rem, 3vw, 2.3rem);
@@ -442,7 +448,8 @@
       text-align: center;
     }
 
-    .journal-overlay__close {
+    .journal-overlay__close,
+    .achievements-overlay__close {
       position: absolute;
       top: 14px;
       right: 18px;
@@ -458,12 +465,15 @@
     }
 
     .journal-overlay__close:hover,
-    .journal-overlay__close:focus-visible {
+    .journal-overlay__close:focus-visible,
+    .achievements-overlay__close:hover,
+    .achievements-overlay__close:focus-visible {
       background: rgba(70, 110, 200, 0.75);
       transform: scale(1.06);
     }
 
-    .journal-overlay__content {
+    .journal-overlay__content,
+    .achievements-overlay__content {
       overflow-y: auto;
       padding-right: 6px;
       margin-right: -6px;
@@ -877,12 +887,204 @@
         transform: rotate(360deg);
       }
     }
+
+    .achievements-overlay__header {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .achievements-overlay__summary {
+      margin: 0;
+      font-size: 0.95rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(206, 220, 255, 0.8);
+    }
+
+    .achievement-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .achievement-item {
+      padding: 18px 20px;
+      border-radius: 18px;
+      border: 1px solid rgba(150, 200, 255, 0.22);
+      background: rgba(20, 26, 52, 0.8);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .achievement-item::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      background: radial-gradient(circle at 20% 10%, rgba(140, 210, 255, 0.18), transparent 55%),
+                  radial-gradient(circle at 80% 120%, rgba(200, 150, 255, 0.18), transparent 50%);
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    .achievement-item__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .achievement-item__title {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(235, 242, 255, 0.95);
+    }
+
+    .achievement-item__status {
+      font-size: 0.8rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(160, 200, 255, 0.78);
+      white-space: nowrap;
+    }
+
+    .achievement-item__description {
+      margin: 0 0 10px;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: rgba(210, 224, 255, 0.88);
+    }
+
+    .achievement-item__meta {
+      margin: 8px 0 0;
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(170, 200, 255, 0.68);
+    }
+
+    .achievement-item--unlocked {
+      border-color: rgba(150, 255, 220, 0.35);
+      background: rgba(24, 36, 68, 0.88);
+      box-shadow: 0 26px 64px rgba(20, 60, 120, 0.45);
+    }
+
+    .achievement-item--unlocked .achievement-item__status {
+      color: rgba(150, 255, 220, 0.85);
+    }
+
+    .achievement-item--locked .achievement-item__status {
+      color: rgba(170, 200, 255, 0.7);
+    }
+
+    .achievement-progress {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .achievement-progress__track {
+      position: relative;
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(30, 38, 72, 0.8);
+      overflow: hidden;
+    }
+
+    .achievement-progress__fill {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(120, 200, 255, 0.95), rgba(180, 150, 255, 0.95));
+      transform-origin: left center;
+      transform: scaleX(0);
+      transition: transform 0.4s ease;
+    }
+
+    .achievement-progress__label {
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(190, 210, 255, 0.76);
+    }
+
+    .achievement-toasts {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 120;
+      pointer-events: none;
+    }
+
+    .achievement-toast {
+      width: clamp(240px, 24vw, 320px);
+      padding: 16px 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(150, 210, 255, 0.32);
+      background: linear-gradient(145deg, rgba(22, 28, 56, 0.92), rgba(36, 24, 68, 0.88));
+      box-shadow: 0 20px 48px rgba(12, 20, 48, 0.6);
+      opacity: 0;
+      transform: translateX(16px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      pointer-events: auto;
+      overflow: hidden;
+    }
+
+    .achievement-toast.is-visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .achievement-toast__heading {
+      margin: 0 0 6px;
+      font-size: 0.78rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(140, 210, 255, 0.78);
+    }
+
+    .achievement-toast__title {
+      margin: 0 0 4px;
+      font-size: 1rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(240, 246, 255, 0.94);
+    }
+
+    .achievement-toast__description {
+      margin: 0;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: rgba(200, 214, 255, 0.82);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .achievement-toast {
+        transition: none;
+        transform: none;
+      }
+      .achievement-progress__fill {
+        transition: none;
+      }
+    }
   </style>
 </head>
 <body>
   <canvas id="worldCanvas"></canvas>
   <div id="titleOverlay" class="overlay">The Persistence Garden – Explorable World</div>
-  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • J - Journal • Press S for stats • Tap A for audio <span id="audioIndicator" role="status" aria-live="polite">AUDIO: OFF</span></div>
+  <div id="controlsHint" class="overlay">WASD/Arrows to move • Click to drift • M for map • J - Journal • Tap S for stats • Tap A for achievements • Shift+A toggles audio <span id="audioIndicator" role="status" aria-live="polite">AUDIO: OFF</span></div>
   <div id="zoneOverlay" class="overlay"></div>
   <div id="zoneBadge" role="status" aria-live="polite" aria-atomic="true"></div>
   <div id="enterOverlay" class="overlay"></div>
@@ -1004,6 +1206,19 @@
       </div>
     </div>
   </div>
+  <div id="achievementsOverlay" class="journal-overlay achievements-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="achievementsOverlayTitle">
+    <div class="journal-overlay__panel achievements-overlay__panel">
+      <button type="button" class="journal-overlay__close achievements-overlay__close" aria-label="Close achievements panel">&times;</button>
+      <h2 id="achievementsOverlayTitle" class="journal-overlay__title achievements-overlay__title">Aurora Achievements</h2>
+      <div class="journal-overlay__content achievements-overlay__content">
+        <div class="achievements-overlay__header">
+          <p class="achievements-overlay__summary" data-achievements-summary>0 / 0 achievements unlocked</p>
+        </div>
+        <ul class="achievement-list" data-achievements-list></ul>
+      </div>
+    </div>
+  </div>
+  <div id="achievementToasts" class="achievement-toasts" aria-live="polite" aria-atomic="false"></div>
   <script>
     (function () {
       const world = { width: 5000, height: 5000 };
@@ -1043,6 +1258,11 @@
       const journalTimeValue = journalOverlay.querySelector('[data-journal-time]');
       const journalZoneCountValue = journalOverlay.querySelector('[data-journal-zone-count]');
       const journalTotalVisitsValue = journalOverlay.querySelector('[data-journal-total-visits]');
+      const achievementsOverlay = document.getElementById('achievementsOverlay');
+      const achievementsCloseButton = achievementsOverlay ? achievementsOverlay.querySelector('.achievements-overlay__close') : null;
+      const achievementsList = achievementsOverlay ? achievementsOverlay.querySelector('[data-achievements-list]') : null;
+      const achievementsSummary = achievementsOverlay ? achievementsOverlay.querySelector('[data-achievements-summary]') : null;
+      const achievementToastsContainer = document.getElementById('achievementToasts');
       let audioEnabled = false;
       let aKeyDownTimestamp = null;
       let sKeyDownTimestamp = null;
@@ -1324,6 +1544,66 @@
       ];
 
       const JOURNAL_STORAGE_KEY = 'persistence-garden-discovery-journal-v1';
+      const ACHIEVEMENTS_STORAGE_KEY = 'persistence-garden-achievements-v1';
+
+      const achievementsCatalog = [
+        {
+          id: 'first-steps',
+          title: 'First Steps',
+          description: 'Travel 500px across the world.',
+          type: 'distance',
+          goal: 500
+        },
+        {
+          id: 'explorer',
+          title: 'Explorer',
+          description: 'Visit three distinct zones.',
+          type: 'zones',
+          goal: 3
+        },
+        {
+          id: 'cartographer',
+          title: 'Cartographer',
+          description: 'Chart all six zones in the garden.',
+          type: 'zones',
+          goal: 6
+        },
+        {
+          id: 'seeker',
+          title: 'Seeker',
+          description: 'Discover five hidden secrets.',
+          type: 'secrets',
+          goal: 5
+        },
+        {
+          id: 'master-seeker',
+          title: 'Master Seeker',
+          description: 'Discover all twenty-five secrets.',
+          type: 'secrets',
+          goal: 25
+        },
+        {
+          id: 'wanderer',
+          title: 'Wanderer',
+          description: 'Travel 10,000px across the world.',
+          type: 'distance',
+          goal: 10000
+        },
+        {
+          id: 'journeyer',
+          title: 'Journeyer',
+          description: 'Spend five minutes exploring the garden.',
+          type: 'time',
+          goal: 5 * 60 * 1000
+        },
+        {
+          id: 'pilgrim',
+          title: 'Pilgrim',
+          description: 'Spend fifteen minutes immersed in the world.',
+          type: 'time',
+          goal: 15 * 60 * 1000
+        }
+      ];
 
       function createDefaultJournalData() {
         return {
@@ -1334,13 +1614,26 @@
         };
       }
 
+      function createDefaultAchievementsState() {
+        const state = {};
+        achievementsCatalog.forEach((achievement) => {
+          state[achievement.id] = {
+            unlocked: false,
+            unlockedAt: null
+          };
+        });
+        return state;
+      }
+
       let journalData = createDefaultJournalData();
+      let achievementsState = createDefaultAchievementsState();
       let journalOpen = false;
+      let achievementsOpen = false;
       let journalPendingDistance = 0;
       let journalPendingTimeMs = 0;
       let journalLastPosition = { x: player.x, y: player.y };
       let journalSaveHandle = null;
-
+      let achievementsNeedsRender = true;
       const numberFormatter = typeof Intl !== 'undefined' && Intl.NumberFormat ? new Intl.NumberFormat() : { format: (value) => String(value) };
 
       const playerTrail = [];
@@ -1512,8 +1805,8 @@
         }
         if (cleaned.length <= 64) {
           return cleaned;
-        }
-        return cleaned.slice(0, 61).trimEnd() + '…';
+      }
+      return cleaned.slice(0, 61).trimEnd() + '…';
       }
 
       function randomPointInZone(zone, inset = 0) {
@@ -1540,8 +1833,10 @@
       let lastStatsLocation = 'Exploring the void';
 
       loadJournalData();
+      loadAchievementsState();
       applyLoadedJournalState();
       renderJournal();
+      evaluateAchievements('initial-load');
       const initialStarBaseline = performance.now();
       shootingStars.forEach((star, index) => {
         resetShootingStar(star, initialStarBaseline + index * 2400);
@@ -1677,6 +1972,35 @@
         }
       }
 
+      function loadAchievementsState() {
+        if (typeof window === 'undefined' || !window.localStorage) {
+          achievementsState = createDefaultAchievementsState();
+          achievementsNeedsRender = true;
+          return;
+        }
+        try {
+          const stored = window.localStorage.getItem(ACHIEVEMENTS_STORAGE_KEY);
+          const defaults = createDefaultAchievementsState();
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed && typeof parsed === 'object') {
+              Object.keys(defaults).forEach((id) => {
+                const entry = parsed[id];
+                if (entry && typeof entry === 'object') {
+                  defaults[id].unlocked = Boolean(entry.unlocked);
+                  defaults[id].unlockedAt = typeof entry.unlockedAt === 'number' ? entry.unlockedAt : null;
+                }
+              });
+            }
+          }
+          achievementsState = defaults;
+          achievementsNeedsRender = true;
+        } catch (err) {
+          achievementsState = createDefaultAchievementsState();
+          achievementsNeedsRender = true;
+        }
+      }
+
       function applyLoadedJournalState() {
         const discoveredIds = new Set(journalData.secrets.map((entry) => entry.id));
         secrets.forEach((secret) => {
@@ -1730,6 +2054,20 @@
         if (journalOpen) {
           renderJournal();
         }
+        if (achievementsOpen && achievementsNeedsRender) {
+          renderAchievements();
+        }
+      }
+
+      function saveAchievementsState() {
+        if (typeof window === 'undefined' || !window.localStorage) {
+          return;
+        }
+        try {
+          window.localStorage.setItem(ACHIEVEMENTS_STORAGE_KEY, JSON.stringify(achievementsState));
+        } catch (err) {
+          /* localStorage failures are non-fatal */
+        }
       }
 
       function scheduleJournalSave() {
@@ -1746,6 +2084,9 @@
         scheduleJournalSave();
         if (journalOpen) {
           renderJournal();
+        }
+        if (achievementsOpen && achievementsNeedsRender) {
+          renderAchievements();
         }
       }
 
@@ -1899,6 +2240,203 @@
         }
       }
 
+      function getAchievementMetrics() {
+        return {
+          totalDistance: journalData.distance + journalPendingDistance,
+          totalTime: journalData.timeMs + journalPendingTimeMs,
+          uniqueZonesVisited: Object.keys(journalData.zones).length,
+          secretsFound: journalData.secrets.length
+        };
+      }
+
+      function getAchievementProgress(achievement, metrics) {
+        const goal = achievement.goal || 0;
+        let current = 0;
+        let percent = 0;
+        let label = '';
+        if (achievement.type === 'distance') {
+          current = metrics.totalDistance;
+          percent = goal > 0 ? Math.min(current / goal, 1) : 1;
+          label = numberFormatter.format(Math.round(current)) + ' / ' + numberFormatter.format(goal) + ' px';
+        } else if (achievement.type === 'zones') {
+          current = metrics.uniqueZonesVisited;
+          percent = goal > 0 ? Math.min(current / goal, 1) : 1;
+          label = current + ' / ' + goal + ' zones';
+        } else if (achievement.type === 'secrets') {
+          current = metrics.secretsFound;
+          percent = goal > 0 ? Math.min(current / goal, 1) : 1;
+          label = current + ' / ' + goal + ' secrets';
+        } else if (achievement.type === 'time') {
+          current = metrics.totalTime;
+          percent = goal > 0 ? Math.min(current / goal, 1) : 1;
+          const clampedCurrent = Math.min(current, goal);
+          label = formatDuration(clampedCurrent) + ' / ' + formatDuration(goal);
+        }
+        return {
+          current,
+          goal,
+          percent: Math.max(0, Math.min(percent, 1)),
+          label
+        };
+      }
+
+      function isAchievementComplete(achievement, metrics) {
+        const progress = getAchievementProgress(achievement, metrics);
+        return progress.current >= progress.goal;
+      }
+
+      function unlockAchievement(achievement) {
+        const record = achievementsState[achievement.id] || { unlocked: false, unlockedAt: null };
+        if (record.unlocked) {
+          return;
+        }
+        record.unlocked = true;
+        record.unlockedAt = Date.now();
+        achievementsState[achievement.id] = record;
+        saveAchievementsState();
+        achievementsNeedsRender = true;
+        showAchievementToast(achievement);
+      }
+
+      function evaluateAchievements(reason) {
+        const metrics = getAchievementMetrics();
+        let unlockedAny = false;
+        achievementsCatalog.forEach((achievement) => {
+          const record = achievementsState[achievement.id] || (achievementsState[achievement.id] = { unlocked: false, unlockedAt: null });
+          if (!record.unlocked && isAchievementComplete(achievement, metrics)) {
+            unlockAchievement(achievement);
+            unlockedAny = true;
+          }
+        });
+        if (unlockedAny || achievementsOpen) {
+          achievementsNeedsRender = true;
+          if (achievementsOpen) {
+            renderAchievements();
+          }
+        }
+      }
+
+      function showAchievementToast(achievement) {
+        if (!achievementToastsContainer) {
+          return;
+        }
+        const toast = document.createElement('div');
+        toast.className = 'achievement-toast';
+
+        const heading = document.createElement('div');
+        heading.className = 'achievement-toast__heading';
+        heading.textContent = 'Achievement unlocked';
+
+        const title = document.createElement('div');
+        title.className = 'achievement-toast__title';
+        title.textContent = achievement.title;
+
+        const description = document.createElement('p');
+        description.className = 'achievement-toast__description';
+        description.textContent = achievement.description;
+
+        toast.appendChild(heading);
+        toast.appendChild(title);
+        toast.appendChild(description);
+
+        achievementToastsContainer.appendChild(toast);
+        requestAnimationFrame(() => {
+          toast.classList.add('is-visible');
+        });
+
+        const displayDuration = 4000;
+        window.setTimeout(() => {
+          toast.classList.remove('is-visible');
+          window.setTimeout(() => {
+            toast.remove();
+          }, 420);
+        }, displayDuration);
+      }
+
+      function renderAchievements() {
+        if (!achievementsOverlay || !achievementsList) {
+          achievementsNeedsRender = false;
+          return;
+        }
+        const metrics = getAchievementMetrics();
+        achievementsList.innerHTML = '';
+        let unlockedCount = 0;
+
+        achievementsCatalog.forEach((achievement) => {
+          const record = achievementsState[achievement.id] || (achievementsState[achievement.id] = { unlocked: false, unlockedAt: null });
+          const unlocked = Boolean(record.unlocked);
+          if (unlocked) {
+            unlockedCount += 1;
+          }
+
+          const item = document.createElement('li');
+          item.className = 'achievement-item';
+          item.classList.add(unlocked ? 'achievement-item--unlocked' : 'achievement-item--locked');
+
+          const header = document.createElement('div');
+          header.className = 'achievement-item__header';
+
+          const titleEl = document.createElement('h3');
+          titleEl.className = 'achievement-item__title';
+          titleEl.textContent = achievement.title;
+          header.appendChild(titleEl);
+
+          const statusEl = document.createElement('span');
+          statusEl.className = 'achievement-item__status';
+          if (unlocked) {
+            statusEl.textContent = 'Unlocked';
+          } else {
+            const progress = getAchievementProgress(achievement, metrics);
+            statusEl.textContent = Math.floor(progress.percent * 100) + '%';
+          }
+          header.appendChild(statusEl);
+          item.appendChild(header);
+
+          const descriptionEl = document.createElement('p');
+          descriptionEl.className = 'achievement-item__description';
+          descriptionEl.textContent = achievement.description;
+          item.appendChild(descriptionEl);
+
+          if (unlocked) {
+            if (record.unlockedAt) {
+              const metaEl = document.createElement('p');
+              metaEl.className = 'achievement-item__meta';
+              metaEl.textContent = 'Unlocked ' + formatTimestamp(record.unlockedAt);
+              item.appendChild(metaEl);
+            }
+          } else {
+            const progress = getAchievementProgress(achievement, metrics);
+            const progressContainer = document.createElement('div');
+            progressContainer.className = 'achievement-progress';
+
+            const trackEl = document.createElement('div');
+            trackEl.className = 'achievement-progress__track';
+
+            const fillEl = document.createElement('div');
+            fillEl.className = 'achievement-progress__fill';
+            fillEl.style.transform = 'scaleX(' + progress.percent + ')';
+
+            trackEl.appendChild(fillEl);
+            progressContainer.appendChild(trackEl);
+
+            const labelEl = document.createElement('div');
+            labelEl.className = 'achievement-progress__label';
+            labelEl.textContent = progress.label;
+            progressContainer.appendChild(labelEl);
+
+            item.appendChild(progressContainer);
+          }
+
+          achievementsList.appendChild(item);
+        });
+
+        if (achievementsSummary) {
+          achievementsSummary.textContent = unlockedCount + ' / ' + achievementsCatalog.length + ' achievements unlocked';
+        }
+
+        achievementsNeedsRender = false;
+      }
+
       function resetInputState() {
         inputState.up = false;
         inputState.down = false;
@@ -1918,6 +2456,7 @@
         }
         closeZoneModal();
         hideStatsPanel();
+        closeAchievements();
         journalOpen = true;
         if (flushJournalAccumulators()) {
           scheduleJournalSave();
@@ -1958,6 +2497,58 @@
           closeJournal();
         } else {
           openJournal();
+        }
+      }
+
+      function openAchievements() {
+        if (achievementsOpen) {
+          return;
+        }
+        if (!achievementsOverlay) {
+          return;
+        }
+        closeZoneModal();
+        hideStatsPanel();
+        closeJournal();
+        achievementsOpen = true;
+        if (flushJournalAccumulators()) {
+          scheduleJournalSave();
+        }
+        achievementsNeedsRender = true;
+        renderAchievements();
+        achievementsOverlay.classList.add('is-visible');
+        achievementsOverlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('achievements-open');
+        resetInputState();
+        requestAnimationFrame(() => {
+          if (!achievementsCloseButton) {
+            return;
+          }
+          try {
+            achievementsCloseButton.focus({ preventScroll: true });
+          } catch (err) {
+            /* ignore focus errors */
+          }
+        });
+      }
+
+      function closeAchievements() {
+        if (!achievementsOpen) {
+          return;
+        }
+        achievementsOpen = false;
+        if (achievementsOverlay) {
+          achievementsOverlay.classList.remove('is-visible');
+          achievementsOverlay.setAttribute('aria-hidden', 'true');
+        }
+        document.body.classList.remove('achievements-open');
+      }
+
+      function toggleAchievements() {
+        if (achievementsOpen) {
+          closeAchievements();
+        } else {
+          openAchievements();
         }
       }
 
@@ -2042,6 +2633,8 @@
           };
         }
         markJournalDirty();
+        achievementsNeedsRender = true;
+        evaluateAchievements('zone-visit');
       }
 
       function recordSecretDiscovery(secret) {
@@ -2070,10 +2663,12 @@
           discoveredAt: Date.now()
         });
         markJournalDirty();
+        achievementsNeedsRender = true;
+        evaluateAchievements('secret-discovery');
       }
 
       function trackExploration(deltaMs) {
-        if (journalOpen) {
+        if (journalOpen || achievementsOpen) {
           journalLastPosition.x = player.x;
           journalLastPosition.y = player.y;
           return;
@@ -2100,6 +2695,8 @@
         }
         if (committed) {
           markJournalDirty();
+          evaluateAchievements('exploration');
+          achievementsNeedsRender = true;
         }
       }
 
@@ -2165,9 +2762,22 @@
       }
 
       window.addEventListener('keydown', (event) => {
+        if ((event.key === 'a' || event.key === 'A') && !event.repeat) {
+          aKeyDownTimestamp = event.timeStamp;
+        }
+        if ((event.key === 's' || event.key === 'S') && !event.repeat) {
+          sKeyDownTimestamp = event.timeStamp;
+        }
         if (event.key === 'j' || event.key === 'J') {
           event.preventDefault();
           toggleJournal();
+          return;
+        }
+        if (achievementsOpen) {
+          if (event.key === 'Escape' || event.key === 'Esc') {
+            event.preventDefault();
+            closeAchievements();
+          }
           return;
         }
         if (journalOpen) {
@@ -2182,12 +2792,6 @@
           closeZoneModal();
           return;
         }
-        if ((event.key === 'a' || event.key === 'A') && !event.repeat) {
-          aKeyDownTimestamp = event.timeStamp;
-        }
-        if ((event.key === 's' || event.key === 'S') && !event.repeat) {
-          sKeyDownTimestamp = event.timeStamp;
-        }
         if (event.key === 'm' || event.key === 'M') {
           minimapVisible = !minimapVisible;
           minimapContainer.classList.toggle('hidden', !minimapVisible);
@@ -2200,14 +2804,16 @@
       });
 
       window.addEventListener('keyup', (event) => {
-        if (journalOpen) {
-          return;
-        }
         if ((event.key === 'a' || event.key === 'A') && aKeyDownTimestamp !== null) {
           const elapsed = event.timeStamp - aKeyDownTimestamp;
+          const shiftActive = typeof event.getModifierState === 'function' ? event.getModifierState('Shift') : event.shiftKey;
           aKeyDownTimestamp = null;
-          if (!event.shiftKey && !event.ctrlKey && !event.metaKey && elapsed < 220) {
-            toggleAudio();
+          if (elapsed < 220) {
+            if (shiftActive) {
+              toggleAudio();
+            } else if (!journalOpen) {
+              toggleAchievements();
+            }
             inputState.left = false;
             player.vx = Math.max(0, player.vx);
             player.target = null;
@@ -2215,6 +2821,12 @@
             event.preventDefault();
             return;
           }
+        }
+        if (journalOpen) {
+          return;
+        }
+        if (achievementsOpen) {
+          return;
         }
         if ((event.key === 's' || event.key === 'S') && sKeyDownTimestamp !== null) {
           const elapsed = event.timeStamp - sKeyDownTimestamp;
@@ -2463,8 +3075,22 @@
         });
       }
 
+      if (achievementsCloseButton) {
+        achievementsCloseButton.addEventListener('click', () => {
+          closeAchievements();
+        });
+      }
+
+      if (achievementsOverlay) {
+        achievementsOverlay.addEventListener('click', (event) => {
+          if (event.target === achievementsOverlay) {
+            closeAchievements();
+          }
+        });
+      }
+
       canvas.addEventListener('pointerdown', (event) => {
-        if (journalOpen) {
+        if (journalOpen || achievementsOpen) {
           return;
         }
         if (zoneModal.classList.contains('active')) {
@@ -2493,7 +3119,7 @@
       });
 
       canvas.addEventListener('pointermove', (event) => {
-        if (journalOpen) {
+        if (journalOpen || achievementsOpen) {
           setHoverPoint(null);
           return;
         }
@@ -2521,7 +3147,7 @@
       });
 
       function endPointerDrag(event) {
-        if (journalOpen) {
+        if (journalOpen || achievementsOpen) {
           pointerDrag.active = false;
           return;
         }
@@ -2544,7 +3170,7 @@
       }
 
       canvas.addEventListener('pointerup', (event) => {
-        if (journalOpen) {
+        if (journalOpen || achievementsOpen) {
           return;
         }
         endPointerDrag(event);
@@ -2565,7 +3191,7 @@
       });
 
       canvas.addEventListener('pointercancel', (event) => {
-        if (journalOpen) {
+        if (journalOpen || achievementsOpen) {
           return;
         }
         endPointerDrag(event);
@@ -2582,7 +3208,7 @@
       });
 
       canvas.addEventListener('pointerenter', (event) => {
-        if (journalOpen) {
+        if (journalOpen || achievementsOpen) {
           return;
         }
         if (zoneModal.classList.contains('active')) {
@@ -2627,7 +3253,7 @@
       }
 
       function updateSecretProximity() {
-        if (journalOpen || zoneModal.classList.contains('active')) {
+        if (journalOpen || achievementsOpen || zoneModal.classList.contains('active')) {
           if (audioManager && audioManager.isSupported) {
             audioManager.setSecretProximity(false);
           }
@@ -2675,7 +3301,7 @@
         if (!markTooltip) {
           return;
         }
-        if (journalOpen || zoneModal.classList.contains('active')) {
+        if (journalOpen || achievementsOpen || zoneModal.classList.contains('active')) {
           hideMarkTooltip();
           return;
         }
@@ -3713,6 +4339,9 @@
 
         updatePlayer(delta);
         trackExploration(deltaMs);
+        if (achievementsOpen && achievementsNeedsRender) {
+          renderAchievements();
+        }
         updateCamera(delta);
         updateParticles(delta);
         updateFragments(time);
@@ -4189,7 +4818,7 @@
       }
 
       function updateZoneOverlay() {
-        if (journalOpen) {
+        if (journalOpen || achievementsOpen) {
           activeZone = null;
           if (lastZoneName) {
             zoneOverlay.classList.remove('visible');
@@ -4301,11 +4930,13 @@
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
           saveJournalData();
+          saveAchievementsState();
         }
       });
 
       window.addEventListener('beforeunload', () => {
         saveJournalData();
+        saveAchievementsState();
       });
 
       window.addEventListener('load', () => {
