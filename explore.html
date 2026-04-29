@@ -1731,7 +1731,7 @@
   <div id="secretMessage" class="overlay"></div>
   <div id="markTooltip" class="mark-tooltip" aria-hidden="true"></div>
   <div id="coordinatesHUD">x: 2500 • y: 2500</div>
-  <div id="secretsHUD">Secrets discovered: 0 / 60</div>
+  <div id="secretsHUD">Secrets discovered: 0 / 65</div>
   <div id="loreHUD" role="status" aria-live="polite">Lore: 0 / 12</div>
   <div id="timeIndicator" role="status" aria-live="polite" data-phase="dawn">
     <span class="time-indicator__icon" data-time-icon aria-hidden="true">🌅</span>
@@ -2865,7 +2865,12 @@
         { id: 'battle-philosophy-core', x: 3200, y: 2800, triggerRadius: 80, glowRadius: 28, message: 'Battle philosophy: every fight teaches patience', color: '170, 215, 255', discovered: false },
         { id: 'incremental-truth', x: 1600, y: 3600, triggerRadius: 80, glowRadius: 28, message: 'Incremental truth: small steps reveal infinite horizons', color: '215, 170, 255', discovered: false },
         { id: 'grinder-constellation', x: 3400, y: 1200, triggerRadius: 80, glowRadius: 28, message: 'Grinder constellation: stars map the long journey', color: '255, 235, 190', discovered: false },
-        { id: 'persistence-fractal', x: 1800, y: 1800, triggerRadius: 80, glowRadius: 28, message: 'Persistence fractal: patterns repeat at every scale', color: '190, 235, 255', discovered: false }
+        { id: 'persistence-fractal', x: 1800, y: 1800, triggerRadius: 80, glowRadius: 28, message: 'Persistence fractal: patterns repeat at every scale', color: '190, 235, 255', discovered: false },
+        { id: 'level-twenty-wisdom', x: 4400, y: 1600, triggerRadius: 80, glowRadius: 28, message: 'L20 wisdom: mastery is patience crystallized', color: '255, 225, 165', discovered: false },
+        { id: 'savage-slime-memory', x: 3800, y: 3200, triggerRadius: 80, glowRadius: 28, message: 'Battle 76 memory: when preparation meets moment', color: '230, 180, 255', discovered: false },
+        { id: 'zero-crash-doctrine', x: 650, y: 3800, triggerRadius: 80, glowRadius: 28, message: 'Zero crash doctrine: 1483+ fights without failure', color: '180, 255, 230', discovered: false },
+        { id: 'rogue-archetype-essence', x: 3000, y: 600, triggerRadius: 80, glowRadius: 28, message: 'Rogue essence: speed and precision over brute force', color: '255, 200, 200', discovered: false },
+        { id: 'compound-interest-philosophy', x: 4600, y: 3600, triggerRadius: 80, glowRadius: 28, message: 'Compound philosophy: gains multiply in silence', color: '200, 220, 255', discovered: false }
       ];
 
       const JOURNAL_STORAGE_KEY = 'persistence-garden-discovery-journal-v1';
@@ -9075,6 +9080,50 @@
           }
         });
         ctx.restore();
+      }
+
+      function updateVisitorMarkHover() {
+        if (!markTooltip) {
+          return;
+        }
+        if (
+          journalOpen ||
+          achievementsOpen ||
+          loreJournalOpen ||
+          loreModalOpen ||
+          visitorMarkModalOpen ||
+          spiritModalOpen ||
+          zoneModal.classList.contains('active')
+        ) {
+          hideMarkTooltip();
+          hoveredVisitorMark = null;
+          return;
+        }
+        if (!hoverPoint || !visitorMarks.length) {
+          hideMarkTooltip();
+          hoveredVisitorMark = null;
+          return;
+        }
+        const worldPoint = screenToWorld(hoverPoint.clientX, hoverPoint.clientY);
+        const mark = getVisitorMarkAtPoint(worldPoint);
+        hoveredVisitorMark = mark;
+        if (!mark) {
+          hideMarkTooltip();
+          return;
+        }
+        const screen = worldToScreen(mark.x, mark.y);
+        const padding = VISITOR_MARK_TOOLTIP_PADDING;
+        const clampedX = clamp(screen.x, padding, viewport.width - padding);
+        const clampedY = clamp(screen.y - mark.radius * 1.5, padding, viewport.height - padding);
+        markTooltip.style.left = clampedX + 'px';
+        markTooltip.style.top = clampedY + 'px';
+        const parts = ['@' + mark.author];
+        if (mark.snippet) {
+          parts.push(mark.snippet);
+        }
+        markTooltip.textContent = parts.join(' — ');
+        markTooltip.classList.add('visible');
+        markTooltip.setAttribute('aria-hidden', 'false');
       }
 
       function drawParticles(time) {
