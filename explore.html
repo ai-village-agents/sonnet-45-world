@@ -1731,7 +1731,7 @@
   <div id="secretMessage" class="overlay"></div>
   <div id="markTooltip" class="mark-tooltip" aria-hidden="true"></div>
   <div id="coordinatesHUD">x: 2500 • y: 2500</div>
-  <div id="secretsHUD">Secrets discovered: 0 / 65</div>
+  <div id="secretsHUD">Secrets discovered: 0 / 70</div>
   <div id="loreHUD" role="status" aria-live="polite">Lore: 0 / 12</div>
   <div id="timeIndicator" role="status" aria-live="polite" data-phase="dawn">
     <span class="time-indicator__icon" data-time-icon aria-hidden="true">🌅</span>
@@ -2870,7 +2870,12 @@
         { id: 'savage-slime-memory', x: 3800, y: 3200, triggerRadius: 80, glowRadius: 28, message: 'Battle 76 memory: when preparation meets moment', color: '230, 180, 255', discovered: false },
         { id: 'zero-crash-doctrine', x: 650, y: 3800, triggerRadius: 80, glowRadius: 28, message: 'Zero crash doctrine: 1483+ fights without failure', color: '180, 255, 230', discovered: false },
         { id: 'rogue-archetype-essence', x: 3000, y: 600, triggerRadius: 80, glowRadius: 28, message: 'Rogue essence: speed and precision over brute force', color: '255, 200, 200', discovered: false },
-        { id: 'compound-interest-philosophy', x: 4600, y: 3600, triggerRadius: 80, glowRadius: 28, message: 'Compound philosophy: gains multiply in silence', color: '200, 220, 255', discovered: false }
+        { id: 'compound-interest-philosophy', x: 4600, y: 3600, triggerRadius: 80, glowRadius: 28, message: 'Compound philosophy: gains multiply in silence', color: '200, 220, 255', discovered: false },
+        { id: 'f5-recovery-monument', x: 1400, y: 650, triggerRadius: 80, glowRadius: 28, message: 'F5 monument: 11/11 perfect recovery reveals mastery', color: '255, 210, 180', discovered: false },
+        { id: 'statistical-perfection', x: 4100, y: 4200, triggerRadius: 80, glowRadius: 28, message: 'Statistical perfection: numbers tell the true story', color: '210, 180, 255', discovered: false },
+        { id: 'grind-is-glory', x: 500, y: 2600, triggerRadius: 80, glowRadius: 28, message: 'The grind is the glory: process over outcome', color: '180, 255, 210', discovered: false },
+        { id: 'aurora-achievement-path', x: 2900, y: 1400, triggerRadius: 80, glowRadius: 28, message: 'Aurora path: achievements light the darkness', color: '240, 200, 255', discovered: false },
+        { id: 'journey-trails-wisdom', x: 1100, y: 4300, triggerRadius: 80, glowRadius: 28, message: 'Journey trails: every step leaves a mark', color: '255, 240, 200', discovered: false }
       ];
 
       const JOURNAL_STORAGE_KEY = 'persistence-garden-discovery-journal-v1';
@@ -5823,47 +5828,6 @@
         }
       }
 
-      function updateMarkProximity() {
-        if (!markTooltip) {
-          return;
-        }
-        if (journalOpen || achievementsOpen || loreJournalOpen || loreModalOpen || zoneModal.classList.contains('active') || spiritModalOpen) {
-          hideMarkTooltip();
-          return;
-        }
-        if (!markStars.length) {
-          hideMarkTooltip();
-          return;
-        }
-        let nearest = null;
-        let nearestDistance = markTooltipRange;
-        markStars.forEach((mark) => {
-          const distance = Math.hypot(player.x - mark.x, player.y - mark.y);
-          if (distance <= markTooltipRange && distance < nearestDistance) {
-            nearest = mark;
-            nearestDistance = distance;
-          }
-        });
-        if (nearest) {
-          activeMarkStar = nearest;
-          const screen = worldToScreen(nearest.x, nearest.y);
-          const padding = 60;
-          const clampedX = clamp(screen.x, padding, viewport.width - padding);
-          const clampedY = clamp(screen.y, padding, viewport.height - padding);
-          markTooltip.style.left = clampedX + 'px';
-          markTooltip.style.top = clampedY + 'px';
-          const parts = ['@' + nearest.author];
-          if (nearest.snippet) {
-            parts.push(nearest.snippet);
-          }
-          markTooltip.textContent = parts.join(' — ');
-          markTooltip.classList.add('visible');
-          markTooltip.setAttribute('aria-hidden', 'false');
-        } else {
-          hideMarkTooltip();
-        }
-      }
-
       function updateSpiritInteractions(time) {
         if (!spirits.length) {
           return;
@@ -8364,7 +8328,7 @@
         updatePlayerTrail(deltaMs);
         updateSecretProximity();
         updateSecretBursts(deltaMs);
-        updateMarkProximity();
+        updateVisitorMarkHover();
         updateSpiritInteractions(time);
         if (auroraRenderer) {
           auroraRenderer.render(time, reduceMotion);
