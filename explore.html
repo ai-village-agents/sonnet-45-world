@@ -1103,7 +1103,7 @@
   <div id="secretMessage" class="overlay"></div>
   <div id="markTooltip" class="mark-tooltip" aria-hidden="true"></div>
   <div id="coordinatesHUD">x: 2500 • y: 2500</div>
-  <div id="secretsHUD">Secrets discovered: 0 / 25</div>
+  <div id="secretsHUD">Secrets discovered: 0 / 35</div>
   <div id="statsPanel" aria-hidden="true">
     <div class="stats-panel__section">
       <h3 class="stats-panel__heading">Session Stats</h3>
@@ -1122,7 +1122,7 @@
         </div>
         <div class="stats-panel__row">
           <p class="stats-panel__label">Secrets found</p>
-          <p class="stats-panel__value" data-stats-secrets>0 / 25</p>
+          <p class="stats-panel__value" data-stats-secrets>0 / 35</p>
         </div>
       </div>
     </div>
@@ -1155,7 +1155,7 @@
         </div>
         <div class="stats-panel__row">
           <p class="stats-panel__label">Hidden secrets</p>
-          <p class="stats-panel__value">25</p>
+          <p class="stats-panel__value">35</p>
         </div>
       </div>
     </div>
@@ -1191,7 +1191,7 @@
         <section class="journal-section">
           <div class="journal-section__header">
             <h3 class="journal-section__title">Secrets Discovered</h3>
-            <span class="journal-section__meta" data-journal-secrets-meta>0 / 25</span>
+            <span class="journal-section__meta" data-journal-secrets-meta>0 / 35</span>
           </div>
           <ul class="journal-list" data-journal-secrets></ul>
         </section>
@@ -1788,7 +1788,17 @@
         { id: 'commit-by-commit', x: 600, y: 1800, triggerRadius: 140, glowRadius: 28, message: 'Commit by commit', color: '200, 240, 195', discovered: false },
         { id: 'first-in-rest-not-first-to-start', x: 4500, y: 3800, triggerRadius: 140, glowRadius: 28, message: 'First in #rest, not first to start', color: '255, 190, 225', discovered: false },
         { id: 'hp153-mp77-int1-lck5', x: 1800, y: 4200, triggerRadius: 140, glowRadius: 28, message: 'HP 153 • MP 77 • INT 1 • LCK 5', color: '255, 215, 185', discovered: false },
-        { id: 'pattern-recognition-over-improvisation', x: 3600, y: 3200, triggerRadius: 140, glowRadius: 28, message: 'Pattern recognition over improvisation', color: '180, 220, 255', discovered: false }
+        { id: 'pattern-recognition-over-improvisation', x: 3600, y: 3200, triggerRadius: 140, glowRadius: 28, message: 'Pattern recognition over improvisation', color: '180, 220, 255', discovered: false },
+        { id: 'corner-ledger', x: 140, y: 140, triggerRadius: 140, glowRadius: 28, message: 'Corner ledger: L20 Rogue climb archived commit by commit.', color: '205, 220, 255', discovered: false },
+        { id: 'northwest-micro-steps', x: 380, y: 220, triggerRadius: 140, glowRadius: 28, message: 'Northwest micro-steps: incremental progress becomes inevitability.', color: '180, 230, 255', discovered: false },
+        { id: 'northwest-logbook', x: 260, y: 420, triggerRadius: 140, glowRadius: 28, message: 'Log it, learn it, loop it—documentation keeps the grind honest.', color: '210, 200, 255', discovered: false },
+        { id: 'northeast-compounding', x: 4860, y: 140, triggerRadius: 140, glowRadius: 28, message: 'Northeast signal: patience banked, compound growth paid in clarity.', color: '190, 255, 210', discovered: false },
+        { id: 'northeast-intervals', x: 4620, y: 380, triggerRadius: 140, glowRadius: 28, message: 'Intervals on the ridgeline: small consistent steps tighten every run.', color: '170, 220, 255', discovered: false },
+        { id: 'southwest-grindstone', x: 140, y: 4860, triggerRadius: 140, glowRadius: 28, message: 'Southwest grindstone: grinder mindset, ritual reps, zero shortcuts.', color: '255, 205, 180', discovered: false },
+        { id: 'southwest-ledger', x: 320, y: 4620, triggerRadius: 140, glowRadius: 28, message: 'Write the after-action, even on quiet days—consistency is the asset.', color: '220, 210, 255', discovered: false },
+        { id: 'southwest-patience-beacon', x: 420, y: 4880, triggerRadius: 140, glowRadius: 28, message: 'Patience beacon: slow gains, steady hands, compounding calm.', color: '200, 245, 210', discovered: false },
+        { id: 'southeast-commit-trail', x: 4860, y: 4860, triggerRadius: 140, glowRadius: 28, message: 'Southeast commit trail: version control discipline keeps the saga true.', color: '190, 225, 255', discovered: false },
+        { id: 'southeast-progress-spark', x: 4620, y: 4560, triggerRadius: 140, glowRadius: 28, message: 'Progress spark: incremental notes, long-term victories on replay.', color: '205, 235, 255', discovered: false }
       ];
 
       const JOURNAL_STORAGE_KEY = 'persistence-garden-discovery-journal-v1';
@@ -1826,9 +1836,9 @@
         {
           id: 'master-seeker',
           title: 'Master Seeker',
-          description: 'Discover all twenty-five secrets.',
+          description: 'Discover all thirty-five secrets.',
           type: 'secrets',
-          goal: 25
+          goal: 35
         },
         {
           id: 'wanderer',
