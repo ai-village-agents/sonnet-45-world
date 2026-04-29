@@ -2628,6 +2628,9 @@
 
       function updateSecretProximity() {
         if (journalOpen || zoneModal.classList.contains('active')) {
+          if (audioManager && audioManager.isSupported) {
+            audioManager.setSecretProximity(false);
+          }
           if (secretMessage.classList.contains('visible')) {
             secretMessage.classList.remove('visible');
           }
@@ -2644,6 +2647,9 @@
             closestDistance = distance;
           }
         });
+        if (audioManager && audioManager.isSupported) {
+          audioManager.setSecretProximity(Boolean(nearbySecret));
+        }
         if (nearbySecret) {
           if (!nearbySecret.discovered) {
             nearbySecret.discovered = true;
@@ -3357,348 +3363,22 @@
             enable: () => false,
             disable: () => {},
             setZone: () => {},
-            refresh: () => {}
+            refresh: () => {},
+            setSecretProximity: () => {}
           };
         }
 
         let context = null;
         let masterGain = null;
-        let currentZoneKey = null;
-        const zoneStates = new Map();
         let suspendTimer = null;
-        let noiseBuffer = null;
-        const fadeSeconds = 1.5;
+        const fadeSeconds = 1.2;
+        const MASTER_TARGET_GAIN = 0.1;
 
-        function ensureNoiseBuffer(ctx) {
-          if (!noiseBuffer) {
-            noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-            const data = noiseBuffer.getChannelData(0);
-            for (let i = 0; i < data.length; i += 1) {
-              data[i] = Math.random() * 2 - 1;
-            }
-          }
-          return noiseBuffer;
-        }
-
-        function createLoopingNoise(ctx) {
-          const source = ctx.createBufferSource();
-          source.buffer = ensureNoiseBuffer(ctx);
-          source.loop = true;
-          source.start(0);
-          return source;
-        }
-
-        function applyLFO(ctx, param, frequency, depth, type) {
-          const lfo = ctx.createOscillator();
-          lfo.type = type || 'sine';
-          lfo.frequency.value = frequency;
-          const lfoGain = ctx.createGain();
-          lfoGain.gain.value = depth;
-          lfo.connect(lfoGain);
-          lfoGain.connect(param);
-          lfo.start();
-          return lfo;
-        }
-
-        const zoneBlueprints = {
-          'path-of-patterns': {
-            level: 1,
-            setup(ctx, zoneGain) {
-              const crystalline = ctx.createGain();
-              crystalline.gain.value = 0.05;
-              crystalline.connect(zoneGain);
-
-              const primary = ctx.createOscillator();
-              primary.type = 'triangle';
-              primary.frequency.value = 720;
-              primary.connect(crystalline);
-              primary.start();
-              applyLFO(ctx, primary.detune, 0.24, 6);
-
-              const companion = ctx.createOscillator();
-              companion.type = 'triangle';
-              companion.frequency.value = 728;
-              companion.connect(crystalline);
-              companion.start();
-              applyLFO(ctx, companion.detune, 0.28, 7);
-
-              applyLFO(ctx, crystalline.gain, 0.32, 0.015);
-
-              const sparkle = ctx.createOscillator();
-              sparkle.type = 'sine';
-              sparkle.frequency.value = 1180;
-              const sparkleGain = ctx.createGain();
-              sparkleGain.gain.value = 0.012;
-              sparkle.connect(sparkleGain);
-              sparkleGain.connect(zoneGain);
-              sparkle.start();
-              applyLFO(ctx, sparkle.detune, 0.45, 10);
-
-              const shimmerNoise = createLoopingNoise(ctx);
-              const shimmerFilter = ctx.createBiquadFilter();
-              shimmerFilter.type = 'highpass';
-              shimmerFilter.frequency.value = 3000;
-              shimmerFilter.Q.value = 0.8;
-              const shimmerGain = ctx.createGain();
-              shimmerGain.gain.value = 0.01;
-              shimmerNoise.connect(shimmerFilter);
-              shimmerFilter.connect(shimmerGain);
-              shimmerGain.connect(zoneGain);
-            }
-          },
-          'hall-of-persistence': {
-            level: 1,
-            setup(ctx, zoneGain) {
-              const droneMix = ctx.createGain();
-              droneMix.gain.value = 0.09;
-              const warmFilter = ctx.createBiquadFilter();
-              warmFilter.type = 'lowpass';
-              warmFilter.frequency.value = 850;
-              warmFilter.Q.value = 0.9;
-              droneMix.connect(warmFilter);
-              warmFilter.connect(zoneGain);
-
-              const base = ctx.createOscillator();
-              base.type = 'sine';
-              base.frequency.value = 110;
-              const baseGain = ctx.createGain();
-              baseGain.gain.value = 0.08;
-              base.connect(baseGain);
-              baseGain.connect(droneMix);
-              base.start();
-              applyLFO(ctx, base.detune, 0.08, 3);
-
-              const middle = ctx.createOscillator();
-              middle.type = 'sine';
-              middle.frequency.value = 220;
-              const middleGain = ctx.createGain();
-              middleGain.gain.value = 0.06;
-              middle.connect(middleGain);
-              middleGain.connect(droneMix);
-              middle.start();
-              applyLFO(ctx, middle.detune, 0.12, 4);
-
-              const overtone = ctx.createOscillator();
-              overtone.type = 'triangle';
-              overtone.frequency.value = 330;
-              const overtoneGain = ctx.createGain();
-              overtoneGain.gain.value = 0.04;
-              overtone.connect(overtoneGain);
-              overtoneGain.connect(droneMix);
-              overtone.start();
-              applyLFO(ctx, overtone.detune, 0.16, 6);
-
-              applyLFO(ctx, droneMix.gain, 0.07, 0.028);
-
-              const warmthNoise = createLoopingNoise(ctx);
-              const warmthFilter = ctx.createBiquadFilter();
-              warmthFilter.type = 'lowpass';
-              warmthFilter.frequency.value = 520;
-              const warmthGain = ctx.createGain();
-              warmthGain.gain.value = 0.008;
-              warmthNoise.connect(warmthFilter);
-              warmthFilter.connect(warmthGain);
-              warmthGain.connect(zoneGain);
-            }
-          },
-          'rpg-journey': {
-            level: 1,
-            setup(ctx, zoneGain) {
-              const mix = ctx.createGain();
-              mix.gain.value = 0.08;
-              const toneFilter = ctx.createBiquadFilter();
-              toneFilter.type = 'lowpass';
-              toneFilter.frequency.value = 1400;
-              toneFilter.Q.value = 0.6;
-              mix.connect(toneFilter);
-              toneFilter.connect(zoneGain);
-
-              const chord = [196, 246.94, 293.66, 329.63];
-              const gains = [0.08, 0.06, 0.05, 0.04];
-              chord.forEach((freq, index) => {
-                const osc = ctx.createOscillator();
-                osc.type = index < 2 ? 'sawtooth' : 'triangle';
-                osc.frequency.value = freq;
-                const oscGain = ctx.createGain();
-                oscGain.gain.value = gains[index];
-                osc.connect(oscGain);
-                oscGain.connect(mix);
-                osc.start();
-                applyLFO(ctx, osc.detune, 0.14 + index * 0.04, 6 + index * 2.5);
-              });
-
-              applyLFO(ctx, mix.gain, 0.18, 0.022);
-
-              const sweepLfo = ctx.createOscillator();
-              sweepLfo.type = 'sine';
-              sweepLfo.frequency.value = 0.05;
-              const sweepDepth = ctx.createGain();
-              sweepDepth.gain.value = 320;
-              sweepLfo.connect(sweepDepth);
-              sweepDepth.connect(toneFilter.frequency);
-              sweepLfo.start();
-
-              const sparkle = ctx.createOscillator();
-              sparkle.type = 'sine';
-              sparkle.frequency.value = 880;
-              const sparkleGain = ctx.createGain();
-              sparkleGain.gain.value = 0.01;
-              sparkle.connect(sparkleGain);
-              sparkleGain.connect(zoneGain);
-              sparkle.start();
-              applyLFO(ctx, sparkle.detune, 0.4, 15);
-
-              const ambienceNoise = createLoopingNoise(ctx);
-              const ambienceFilter = ctx.createBiquadFilter();
-              ambienceFilter.type = 'bandpass';
-              ambienceFilter.frequency.value = 1600;
-              ambienceFilter.Q.value = 1.8;
-              const ambienceGain = ctx.createGain();
-              ambienceGain.gain.value = 0.009;
-              ambienceNoise.connect(ambienceFilter);
-              ambienceFilter.connect(ambienceGain);
-              ambienceGain.connect(zoneGain);
-            }
-          },
-          'garden-of-marks': {
-            level: 1,
-            setup(ctx, zoneGain) {
-              const whisper = ctx.createGain();
-              whisper.gain.value = 0.05;
-              whisper.connect(zoneGain);
-
-              const whisperTone = ctx.createOscillator();
-              whisperTone.type = 'sine';
-              whisperTone.frequency.value = 1040;
-              whisperTone.connect(whisper);
-              whisperTone.start();
-              applyLFO(ctx, whisperTone.detune, 0.3, 14);
-
-              applyLFO(ctx, whisper.gain, 0.24, 0.016);
-
-              const airyTone = ctx.createOscillator();
-              airyTone.type = 'triangle';
-              airyTone.frequency.value = 2080;
-              const airyGain = ctx.createGain();
-              airyGain.gain.value = 0.012;
-              airyTone.connect(airyGain);
-              airyGain.connect(zoneGain);
-              airyTone.start();
-              applyLFO(ctx, airyTone.detune, 0.42, 20);
-
-              const breathNoise = createLoopingNoise(ctx);
-              const breathFilter = ctx.createBiquadFilter();
-              breathFilter.type = 'bandpass';
-              breathFilter.frequency.value = 4600;
-              breathFilter.Q.value = 5.5;
-              const breathGain = ctx.createGain();
-              breathGain.gain.value = 0.013;
-              breathNoise.connect(breathFilter);
-              breathFilter.connect(breathGain);
-              breathGain.connect(zoneGain);
-            }
-          },
-          'about-garden': {
-            level: 1,
-            setup(ctx, zoneGain) {
-              const harmony = ctx.createGain();
-              harmony.gain.value = 0.06;
-              harmony.connect(zoneGain);
-
-              const baseTone = ctx.createOscillator();
-              baseTone.type = 'sine';
-              baseTone.frequency.value = 260;
-              baseTone.connect(harmony);
-              baseTone.start();
-              applyLFO(ctx, baseTone.detune, 0.12, 3.5);
-
-              const midTone = ctx.createOscillator();
-              midTone.type = 'sine';
-              midTone.frequency.value = 392;
-              const midGain = ctx.createGain();
-              midGain.gain.value = 0.045;
-              midTone.connect(midGain);
-              midGain.connect(zoneGain);
-              midTone.start();
-              applyLFO(ctx, midGain.gain, 0.1, 0.012);
-
-              const chime = ctx.createOscillator();
-              chime.type = 'triangle';
-              chime.frequency.value = 660;
-              const chimeGain = ctx.createGain();
-              chimeGain.gain.value = 0.012;
-              chime.connect(chimeGain);
-              chimeGain.connect(zoneGain);
-              chime.start();
-              applyLFO(ctx, chime.detune, 0.35, 9);
-
-              const hushNoise = createLoopingNoise(ctx);
-              const hushFilter = ctx.createBiquadFilter();
-              hushFilter.type = 'lowpass';
-              hushFilter.frequency.value = 900;
-              const hushGain = ctx.createGain();
-              hushGain.gain.value = 0.006;
-              hushNoise.connect(hushFilter);
-              hushFilter.connect(hushGain);
-              hushGain.connect(zoneGain);
-            }
-          },
-          'portal-garden': {
-            level: 1,
-            setup(ctx, zoneGain) {
-              const mix = ctx.createGain();
-              mix.gain.value = 0.07;
-              const portalFilter = ctx.createBiquadFilter();
-              portalFilter.type = 'bandpass';
-              portalFilter.frequency.value = 680;
-              portalFilter.Q.value = 2.1;
-              mix.connect(portalFilter);
-              portalFilter.connect(zoneGain);
-
-              const base = ctx.createOscillator();
-              base.type = 'sawtooth';
-              base.frequency.value = 180;
-              const baseGain = ctx.createGain();
-              baseGain.gain.value = 0.042;
-              base.connect(baseGain);
-              baseGain.connect(mix);
-              base.start();
-              applyLFO(ctx, base.detune, 0.15, 18);
-
-              const overtone = ctx.createOscillator();
-              overtone.type = 'sine';
-              overtone.frequency.value = 420;
-              const overtoneGain = ctx.createGain();
-              overtoneGain.gain.value = 0.024;
-              overtone.connect(overtoneGain);
-              overtoneGain.connect(mix);
-              overtone.start();
-              applyLFO(ctx, overtone.detune, 0.22, 32);
-
-              applyLFO(ctx, mix.gain, 0.17, 0.02);
-
-              const filterSweep = ctx.createOscillator();
-              filterSweep.type = 'sine';
-              filterSweep.frequency.value = 0.065;
-              const sweepDepth = ctx.createGain();
-              sweepDepth.gain.value = 420;
-              filterSweep.connect(sweepDepth);
-              sweepDepth.connect(portalFilter.frequency);
-              filterSweep.start();
-
-              const shimmerNoise = createLoopingNoise(ctx);
-              const shimmerFilter = ctx.createBiquadFilter();
-              shimmerFilter.type = 'bandpass';
-              shimmerFilter.frequency.value = 1500;
-              shimmerFilter.Q.value = 3.6;
-              const shimmerGain = ctx.createGain();
-              shimmerGain.gain.value = 0.011;
-              shimmerNoise.connect(shimmerFilter);
-              shimmerFilter.connect(shimmerGain);
-              shimmerGain.connect(zoneGain);
-            }
-          }
-        };
+        const zoneVoices = new Map();
+        let currentZoneKey = null;
+        let isActive = false;
+        let hasNearbySecret = false;
+        let chimeTimer = null;
 
         function ensureContext() {
           if (context) {
@@ -3708,15 +3388,167 @@
           masterGain = context.createGain();
           masterGain.gain.value = 0;
           masterGain.connect(context.destination);
-          zoneStates.clear();
-          Object.entries(zoneBlueprints).forEach(([key, config]) => {
-            const zoneGain = context.createGain();
+
+          setupBaseDrone(context);
+          setupZoneVoices(context);
+          applyZone(currentZoneKey);
+
+          return context;
+        }
+
+        function setupBaseDrone(ctx) {
+          const baseBus = ctx.createGain();
+          baseBus.gain.value = 0.35;
+          baseBus.connect(masterGain);
+
+          const root = ctx.createOscillator();
+          root.type = 'sine';
+          root.frequency.value = 80;
+          root.connect(baseBus);
+          root.start();
+
+          const companion = ctx.createOscillator();
+          companion.type = 'sine';
+          companion.frequency.value = 83;
+          const companionGain = ctx.createGain();
+          companionGain.gain.value = 0.18;
+          companion.connect(companionGain);
+          companionGain.connect(baseBus);
+          companion.start();
+
+          const breath = ctx.createOscillator();
+          breath.type = 'sine';
+          breath.frequency.value = 0.07;
+          const breathDepth = ctx.createGain();
+          breathDepth.gain.value = 0.08;
+          breath.connect(breathDepth);
+          breathDepth.connect(baseBus.gain);
+          breath.start();
+        }
+
+        function setupZoneVoices(ctx) {
+          const configs = {
+            'path-of-patterns': {
+              type: 'triangle',
+              frequency: 240,
+              gain: 0.6,
+              harmonics: [
+                { frequency: 360, type: 'sine', gain: 0.24 },
+                { frequency: 480, type: 'sine', gain: 0.18 }
+              ],
+              detune: { amount: 6, speed: 0.05 },
+              tremolo: { frequency: 0.12, depth: 0.25 }
+            },
+            'hall-of-persistence': {
+              type: 'sine',
+              frequency: 160,
+              gain: 0.55,
+              harmonics: [
+                { frequency: 320, type: 'sine', gain: 0.28 }
+              ],
+              detune: { amount: 5, speed: 0.04 },
+              tremolo: { frequency: 0.09, depth: 0.2 }
+            },
+            'rpg-journey': {
+              type: 'sawtooth',
+              frequency: 220,
+              gain: 0.58,
+              harmonics: [
+                { frequency: 330, type: 'triangle', gain: 0.22 },
+                { frequency: 440, type: 'sine', gain: 0.18 }
+              ],
+              detune: { amount: 8, speed: 0.06 },
+              tremolo: { frequency: 0.14, depth: 0.22 }
+            },
+            'garden-of-marks': {
+              type: 'triangle',
+              frequency: 280,
+              gain: 0.6,
+              harmonics: [
+                { frequency: 560, type: 'sine', gain: 0.2 }
+              ],
+              detune: { amount: 7, speed: 0.07 },
+              tremolo: { frequency: 0.16, depth: 0.24 }
+            },
+            'about-garden': {
+              type: 'sine',
+              frequency: 200,
+              gain: 0.52,
+              harmonics: [
+                { frequency: 400, type: 'sine', gain: 0.24 },
+                { frequency: 600, type: 'triangle', gain: 0.16 }
+              ],
+              detune: { amount: 4, speed: 0.05 },
+              tremolo: { frequency: 0.11, depth: 0.2 }
+            },
+            'portal-garden': {
+              type: 'triangle',
+              frequency: 180,
+              gain: 0.62,
+              harmonics: [
+                { frequency: 270, type: 'sine', gain: 0.26 },
+                { frequency: 540, type: 'sine', gain: 0.18 }
+              ],
+              detune: { amount: 6, speed: 0.05 },
+              tremolo: { frequency: 0.13, depth: 0.23 }
+            }
+          };
+
+          Object.entries(configs).forEach(([key, config]) => {
+            const zoneGain = ctx.createGain();
             zoneGain.gain.value = 0;
             zoneGain.connect(masterGain);
-            config.setup(context, zoneGain);
-            zoneStates.set(key, { gain: zoneGain, level: config.level });
+
+            const timbreGain = ctx.createGain();
+            timbreGain.gain.value = 1;
+            timbreGain.connect(zoneGain);
+
+            const primary = ctx.createOscillator();
+            primary.type = config.type;
+            primary.frequency.value = config.frequency;
+            primary.connect(timbreGain);
+            primary.start();
+
+            if (config.harmonics && config.harmonics.length) {
+              config.harmonics.forEach((harmonic) => {
+                const overtone = ctx.createOscillator();
+                overtone.type = harmonic.type || config.type;
+                overtone.frequency.value = harmonic.frequency;
+                const overtoneGain = ctx.createGain();
+                overtoneGain.gain.value = harmonic.gain;
+                overtone.connect(overtoneGain);
+                overtoneGain.connect(timbreGain);
+                overtone.start();
+              });
+            }
+
+            if (config.detune) {
+              const detuneLfo = ctx.createOscillator();
+              detuneLfo.type = 'sine';
+              detuneLfo.frequency.value = config.detune.speed;
+              const detuneDepth = ctx.createGain();
+              detuneDepth.gain.value = config.detune.amount;
+              detuneLfo.connect(detuneDepth);
+              detuneDepth.connect(primary.detune);
+              detuneLfo.start();
+            }
+
+            if (config.tremolo) {
+              const tremoloLfo = ctx.createOscillator();
+              tremoloLfo.type = 'sine';
+              tremoloLfo.frequency.value = config.tremolo.frequency;
+              const tremoloDepth = ctx.createGain();
+              tremoloDepth.gain.value = config.tremolo.depth;
+              tremoloLfo.connect(tremoloDepth);
+              tremoloDepth.connect(timbreGain.gain);
+              tremoloLfo.start();
+            }
+
+            zoneVoices.set(key, {
+              gain: zoneGain,
+              targetGain: config.gain
+            });
           });
-          return context;
         }
 
         function rampParam(param, target, duration) {
@@ -3736,12 +3568,60 @@
             return;
           }
           const now = context.currentTime;
-          zoneStates.forEach(({ gain, level }, key) => {
-            const target = zoneKey && key === zoneKey ? level : 0;
-            gain.gain.cancelScheduledValues(now);
-            gain.gain.setValueAtTime(gain.gain.value, now);
-            gain.gain.linearRampToValueAtTime(target, now + fadeSeconds);
+          zoneVoices.forEach((voice, key) => {
+            const target = zoneKey && key === zoneKey ? voice.targetGain : 0;
+            voice.gain.gain.cancelScheduledValues(now);
+            voice.gain.gain.setValueAtTime(voice.gain.gain.value, now);
+            voice.gain.gain.linearRampToValueAtTime(target, now + fadeSeconds);
           });
+        }
+
+        function clearChimeTimer() {
+          if (chimeTimer) {
+            clearTimeout(chimeTimer);
+            chimeTimer = null;
+          }
+        }
+
+        function scheduleNextChime() {
+          if (!isActive || !hasNearbySecret || chimeTimer) {
+            return;
+          }
+          const delayMs = randomRange(15000, 30000);
+          chimeTimer = setTimeout(() => {
+            chimeTimer = null;
+            playSecretChime();
+          }, delayMs);
+        }
+
+        function playSecretChime() {
+          if (!isActive || !hasNearbySecret) {
+            return;
+          }
+          const ctx = ensureContext();
+          if (!ctx) {
+            return;
+          }
+          const chimeOsc = ctx.createOscillator();
+          chimeOsc.type = 'sine';
+          chimeOsc.frequency.value = randomRange(680, 980);
+          const chimeGain = ctx.createGain();
+          chimeGain.gain.value = 0;
+          chimeOsc.connect(chimeGain);
+          chimeGain.connect(masterGain);
+
+          const now = ctx.currentTime;
+          chimeGain.gain.setValueAtTime(0, now);
+          chimeGain.gain.linearRampToValueAtTime(0.65, now + 0.18);
+          chimeGain.gain.linearRampToValueAtTime(0, now + 1.4);
+
+          chimeOsc.start(now);
+          chimeOsc.stop(now + 1.6);
+          chimeOsc.onended = () => {
+            chimeGain.disconnect();
+          };
+
+          scheduleNextChime();
         }
 
         function enable() {
@@ -3756,8 +3636,12 @@
             clearTimeout(suspendTimer);
             suspendTimer = null;
           }
-          rampParam(masterGain.gain, 0.6, fadeSeconds);
+          isActive = true;
+          rampParam(masterGain.gain, MASTER_TARGET_GAIN, fadeSeconds);
           applyZone(currentZoneKey);
+          if (hasNearbySecret) {
+            scheduleNextChime();
+          }
           return true;
         }
 
@@ -3765,13 +3649,15 @@
           if (!context) {
             return;
           }
+          isActive = false;
           rampParam(masterGain.gain, 0, 0.6);
           const now = context.currentTime;
-          zoneStates.forEach(({ gain }) => {
-            gain.gain.cancelScheduledValues(now);
-            gain.gain.setValueAtTime(gain.gain.value, now);
-            gain.gain.linearRampToValueAtTime(0, now + 0.6);
+          zoneVoices.forEach((voice) => {
+            voice.gain.gain.cancelScheduledValues(now);
+            voice.gain.gain.setValueAtTime(voice.gain.gain.value, now);
+            voice.gain.gain.linearRampToValueAtTime(0, now + 0.6);
           });
+          clearChimeTimer();
           if (suspendTimer) {
             clearTimeout(suspendTimer);
           }
@@ -3779,7 +3665,7 @@
             if (context && context.state === 'running') {
               context.suspend().catch(() => {});
             }
-          }, 900);
+          }, 1000);
         }
 
         function refresh() {
@@ -3787,6 +3673,20 @@
             return;
           }
           applyZone(currentZoneKey);
+        }
+
+        function setSecretProximity(state) {
+          if (state === hasNearbySecret) {
+            return;
+          }
+          hasNearbySecret = state;
+          if (!hasNearbySecret) {
+            clearChimeTimer();
+            return;
+          }
+          if (isActive) {
+            scheduleNextChime();
+          }
         }
 
         return {
@@ -3799,7 +3699,8 @@
             }
             applyZone(zoneKey);
           },
-          refresh
+          refresh,
+          setSecretProximity
         };
       }
 
